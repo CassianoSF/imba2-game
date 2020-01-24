@@ -5,14 +5,14 @@ var state = {
 }
 
 class Gun
-    @rate = 100
+    @rate = 10000
     @busy
 
     def fire
         return if @busy
         @busy = true
         state.bullets.push(Bullet.new.fly())
-        setTimeout(&, 1) do
+        setTimeout(&, 60000/@rate) do
             @busy = false
 
 class Player
@@ -51,8 +51,8 @@ class Player
 
 class Bullet
     @position = {
-        x: state.player.position.x
-        y: state.player.position.y
+        x: state.player.position.x + Math.cos((state.player.rotation) * 3.1415 / 180) * 5
+        y: state.player.position.y + Math.sin((state.player.rotation) * 3.1415 / 180) * 5
     }
     @rotation = state.player.rotation + 90
 

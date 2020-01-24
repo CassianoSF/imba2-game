@@ -1124,7 +1124,7 @@ class Gun {
 		return $1.set(this,value);
 	}
 	get rate() {
-		return $1.has(this) ? $1.get(this) : 100;
+		return $1.has(this) ? $1.get(this) : 10000;
 	}
 	set busy(value) {
 		return $2.set(this,value);
@@ -1139,7 +1139,7 @@ class Gun {
 		state.bullets.push(new Bullet().fly());
 		return setTimeout(function() {
 			return self.busy = false;
-		},1);
+		},60000 / this.rate);
 	}
 } Gun.init$();
 class Player {
@@ -1228,8 +1228,8 @@ class Bullet {
 	}
 	get position() {
 		if (!$6.has(this)) { $6.set(this,{
-			x: state.player.position.x,
-			y: state.player.position.y
+			x: state.player.position.x + Math.cos((state.player.rotation) * 3.1415 / 180) * 5,
+			y: state.player.position.y + Math.sin((state.player.rotation) * 3.1415 / 180) * 5
 		}); }		return $6.get(this);
 	}
 	set rotation(value) {
