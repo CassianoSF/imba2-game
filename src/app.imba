@@ -5,7 +5,7 @@ var state = {
 }
 
 class Gun
-    @rate = 10000
+    @rate = 5000
     @busy
 
     def fire
@@ -37,15 +37,15 @@ class Player
         @rotation = -Math.atan2(state.mouse.x - @position.x, state.mouse.y - @position.y) / 3.1415 * 180.0
 
     def move
-        @position.x -= 1 if state.keys.a
-        @position.x += 1 if state.keys.d
-        @position.y += 1 if state.keys.w
-        @position.y -= 1 if state.keys.s
+        @position.x -= 2 if state.keys.a
+        @position.x += 2 if state.keys.d
+        @position.y += 2 if state.keys.w
+        @position.y -= 2 if state.keys.s
 
     def render
         @update()
         <g transform="translate({@position.x}, {@position.y}) rotate({@rotation})">
-            <circle r=8 fill="{state.mouse.press ? "white" : "green"}">
+            <circle r=8 fill="white">
             <g transform='translate(5, 5)'>
                 <rect height=10 width=2 fill="white">
 
@@ -57,11 +57,11 @@ class Bullet
     @rotation = state.player.rotation + 90
 
     def fly
+        @position.x += Math.cos((@rotation) * 3.1415 / 180) * 1
+        @position.y += Math.sin((@rotation) * 3.1415 / 180) * 1
+        if @distanceToPlayerX() > state.boundings.width or @distanceToPlayerY() > state.boundings.height
+            return @deleteBullet()
         setTimeout(&, 16) do
-            @position.x += Math.cos((@rotation) * 3.1415 / 180) * 20
-            @position.y += Math.sin((@rotation) * 3.1415 / 180) * 20
-            if @distanceToPlayerX() > 1000 or @distanceToPlayerY() > 1000
-                return @deleteBullet()
             @fly()
         return self
 
@@ -89,7 +89,7 @@ tag app-root
         state.ready = true
         state.player = @player
         @player.init()
-        setInterval(&, 1) do
+        setInterval(&, 16) do
             self.render()
 
         window.addEventListener('keydown', &) do |e|
@@ -118,4 +118,4 @@ tag app-root
                     @player.render()
                     for bullet in state.bullets
                         <g transform="translate({bullet.position.x}, {bullet.position.y}) rotate({bullet.rotation})">
-                            <rect width=10 height=1 fill="yellow">
+                            <rect width=30 height=1 fill="yellow">

@@ -1124,7 +1124,7 @@ class Gun {
 		return $1.set(this,value);
 	}
 	get rate() {
-		return $1.has(this) ? $1.get(this) : 10000;
+		return $1.has(this) ? $1.get(this) : 5000;
 	}
 	set busy(value) {
 		return $2.set(this,value);
@@ -1190,21 +1190,21 @@ class Player {
 	}
 	
 	move(){
-		if (state.keys.a) this.position.x = this.position.x - 1;
-		if (state.keys.d) this.position.x = this.position.x + 1;
-		if (state.keys.w) this.position.y = this.position.y + 1;
-		if (state.keys.s) { return this.position.y = this.position.y - 1 }	}
+		if (state.keys.a) this.position.x = this.position.x - 2;
+		if (state.keys.d) this.position.x = this.position.x + 2;
+		if (state.keys.w) this.position.y = this.position.y + 2;
+		if (state.keys.s) { return this.position.y = this.position.y - 2 }	}
 	
 	render(){
-		var t$0, b$0, d$0, c$$ = (imba.ctx||{}), c$0, v$0, t$1, b$1, d$1, v$1, t$2;
+		var t$0, b$0, d$0, c$$ = (imba.ctx||{}), c$0, v$0, t$1, t$2;
 		this.update();
 		t$0=(b$0=d$0=1,c$$.b) || (b$0=d$0=0,c$$.b=t$0=imba.createSVGElement('g',0,null,null,null,null));
 		b$0||(t$0.up$=c$$._);
 		c$0 = t$0.$b || (t$0.$b={});
 		(v$0=("translate(" + (this.position.x) + ", " + (this.position.y) + ") rotate(" + (this.rotation) + ")"),v$0===c$0.c || (t$0.set$('transform',c$0.c=v$0)));
-		t$1 = (b$1=d$1=1,c$0.d) || (b$1=d$1=0,c$0.d=t$1=imba.createSVGElement('circle',0,t$0,null,null,null));
-		b$1 || (t$1.set$('r',8));
-		(v$1=("" + (state.mouse.press ? "white" : "green")),v$1===c$0.e || (t$1.set$('fill',c$0.e=v$1)));
+		b$0 || (t$1=imba.createSVGElement('circle',0,t$0,null,null,null));
+		b$0 || (t$1.set$('r',8));
+		b$0 || (t$1.set$('fill',"white"));
 		b$0 || (t$1=imba.createSVGElement('g',0,t$0,null,null,null));
 		b$0 || (t$1.set$('transform','translate(5, 5)'));
 		b$0 || (t$2=imba.createSVGElement('rect',0,t$1,null,null,null));
@@ -1241,12 +1241,12 @@ class Bullet {
 	
 	fly(){
 		var self = this;
-		setTimeout(function() {
-			self.position.x = self.position.x + Math.cos((self.rotation) * 3.1415 / 180) * 20;
-			self.position.y = self.position.y + Math.sin((self.rotation) * 3.1415 / 180) * 20;
-			if (self.distanceToPlayerX() > 1000 || self.distanceToPlayerY() > 1000) {
-				return self.deleteBullet();
-			}			return self.fly();
+		this.position.x = this.position.x + Math.cos((this.rotation) * 3.1415 / 180) * 1;
+		this.position.y = this.position.y + Math.sin((this.rotation) * 3.1415 / 180) * 1;
+		if (this.distanceToPlayerX() > state.boundings.width || this.distanceToPlayerY() > state.boundings.height) {
+			return this.deleteBullet();
+		}		setTimeout(function() {
+			return self.fly();
 		},16);
 		return this;
 	}
@@ -1265,10 +1265,10 @@ class Bullet {
 	
 	render(){
 		var t$0, b$0, d$0, c$$ = (imba.ctx||{}), c$0, v$0, t$1;
-		t$0=(b$0=d$0=1,c$$.f) || (b$0=d$0=0,c$$.f=t$0=imba.createSVGElement('g',0,null,null,null,null));
+		t$0=(b$0=d$0=1,c$$.d) || (b$0=d$0=0,c$$.d=t$0=imba.createSVGElement('g',0,null,null,null,null));
 		b$0||(t$0.up$=c$$._);
-		c$0 = t$0.$f || (t$0.$f={});
-		(v$0=("translate(" + (this.position.x) + ", " + (this.position.y) + ") rotate(" + (this.rotation) + ")"),v$0===c$0.g || (t$0.set$('transform',c$0.g=v$0)));
+		c$0 = t$0.$d || (t$0.$d={});
+		(v$0=("translate(" + (this.position.x) + ", " + (this.position.y) + ") rotate(" + (this.rotation) + ")"),v$0===c$0.e || (t$0.set$('transform',c$0.e=v$0)));
 		b$0 || (t$1=imba.createSVGElement('rect',0,t$0,null,null,null));
 		b$0 || (t$1.set$('height',10));
 		b$0 || (t$1.set$('width',1));
@@ -1306,7 +1306,7 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		this.player.init();
 		setInterval(function() {
 			return self.render();
-		},1);
+		},16);
 		
 		window.addEventListener('keydown',function(e) {
 			return state.keys[e.key] = true;
@@ -1335,35 +1335,35 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 	}
 	
 	render(){
-		var t$0, c$0, b$0, d$0, t$1, b$1, d$1, i$$2, j$$2, k$3, c$3, t$4, b$4, d$4, c$4, v$4, t$5;
+		var t$0, c$0, b$0, d$0, t$1, b$1, d$1, g$$2, h$$2, k$3, c$3, t$4, b$4, d$4, c$4, v$4, t$5;
 		t$0=this;
 		t$0.open$();
 		c$0 = (b$0=d$0=1,t$0.$) || (b$0=d$0=0,t$0.$={});
-		t$1 = (b$1=d$1=1,c$0.h) || (b$1=d$1=0,c$0.h=this.container = t$1=imba.createSVGElement('svg',1024,t$0,null,null,null));
+		t$1 = (b$1=d$1=1,c$0.f) || (b$1=d$1=0,c$0.f=this.container = t$1=imba.createSVGElement('svg',1024,t$0,null,null,null));
 		b$1 || (t$1.set$('transform',"scale(1,-1)"));
 		b$1 || (t$1.set$('height',"100%"));
 		b$1 || (t$1.set$('width',"100%"));
 		b$1 || (t$1.set$('style',"background-color: black"));
 		if (state.ready) {
-			(imba.ctx=(c$0.i$ || (c$0.i$={_:t$1})),i$$2=this.player.render());
-			j$$2 = c$0.j || (c$0.j = j$$2 = imba.createIndexedFragment(0,null));
+			(imba.ctx=(c$0.g$ || (c$0.g$={_:t$1})),g$$2=this.player.render());
+			h$$2 = c$0.h || (c$0.h = h$$2 = imba.createIndexedFragment(0,null));
 			k$3 = 0;
-			c$3=j$$2.$;
+			c$3=h$$2.$;
 			for (let i = 0, items = iter$$4(state.bullets), len = items.length, bullet; i < len; i++) {
 				bullet = items[i];
-				t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,j$$2,null,null,null));
-				b$4||(t$4.up$=j$$2);
-				c$4=t$4.$k || (t$4.$k={});
-				(v$4=("translate(" + (bullet.position.x) + ", " + (bullet.position.y) + ") rotate(" + (bullet.rotation) + ")"),v$4===c$4.l || (t$4.set$('transform',c$4.l=v$4)));
+				t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,h$$2,null,null,null));
+				b$4||(t$4.up$=h$$2);
+				c$4=t$4.$i || (t$4.$i={});
+				(v$4=("translate(" + (bullet.position.x) + ", " + (bullet.position.y) + ") rotate(" + (bullet.rotation) + ")"),v$4===c$4.j || (t$4.set$('transform',c$4.j=v$4)));
 				b$4 || (t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-				b$4 || (t$5.set$('width',10));
+				b$4 || (t$5.set$('width',30));
 				b$4 || (t$5.set$('height',1));
 				b$4 || (t$5.set$('fill',"yellow"));
 				k$3++;
-			}j$$2.end$(k$3);
+			}h$$2.end$(k$3);
 		}
-		(c$0.i$$2_ = t$1.insert$(i$$2,7168,c$0.i$$2_));
-		(c$0.j$$2_ = t$1.insert$(j$$2,7168,c$0.j$$2_));		t$0.close$(d$0);
+		(c$0.g$$2_ = t$1.insert$(g$$2,7168,c$0.g$$2_));
+		(c$0.h$$2_ = t$1.insert$(h$$2,7168,c$0.h$$2_));		t$0.close$(d$0);
 		return t$0;
 	}
 } AppRootComponent.init$(); imba.tags.define('app-root',AppRootComponent,{});
