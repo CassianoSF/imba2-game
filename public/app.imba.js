@@ -1110,7 +1110,8 @@ var state = {
 	mouse: {x: 0,y: 0},
 	bullets: [],
 	zombies: [],
-	camera: {}
+	camera: {},
+	sector: {}
 };
 
 function iter$$4(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }var $1 = new WeakMap(), $2 = new WeakMap();
@@ -1281,7 +1282,7 @@ class Player {
 		if (state.keys.s) { return this.position.y = this.position.y - this.speed }	}
 } Player.init$();
 
-function iter$$5(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }var $1$3 = new WeakMap(), $2$3 = new WeakMap(), $3$1 = new WeakMap(), $4$1 = new WeakMap(), $5 = new WeakMap(), $6 = new WeakMap();
+function iter$$5(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }var $1$3 = new WeakMap(), $2$3 = new WeakMap(), $3$1 = new WeakMap(), $4$1 = new WeakMap(), $5 = new WeakMap(), $6 = new WeakMap(), $7 = new WeakMap(), $8 = new WeakMap();
 
 function randomPosition(){
 	let posx = Math.random() * state.svg.width;
@@ -1316,74 +1317,100 @@ class Zombie {
 	get rotation() {
 		if (!$2$3.has(this)) { $2$3.set(this,Math.random() * 360); }		return $2$3.get(this);
 	}
-	set zombie_state(value) {
+	set sector(value) {
 		return $3$1.set(this,value);
 	}
-	get zombie_state() {
-		return $3$1.has(this) ? $3$1.get(this) : 'drift';
+	get sector() {
+		if (!$3$1.has(this)) { $3$1.set(this,("" + (~~(this.position.x / 300)) + "-" + (~~(this.position.y / 300)))); }		return $3$1.get(this);
 	}
-	set speed(value) {
+	set state(value) {
 		return $4$1.set(this,value);
 	}
-	get speed() {
-		return $4$1.has(this) ? $4$1.get(this) : 1;
+	get state() {
+		return $4$1.has(this) ? $4$1.get(this) : 'drift';
 	}
-	set max_speed(value) {
+	set speed(value) {
 		return $5.set(this,value);
 	}
-	get max_speed() {
-		return $5.has(this) ? $5.get(this) : 3;
+	get speed() {
+		return $5.has(this) ? $5.get(this) : 1;
 	}
-	set size(value) {
+	set max_speed(value) {
 		return $6.set(this,value);
 	}
+	get max_speed() {
+		return $6.has(this) ? $6.get(this) : 3;
+	}
+	set size(value) {
+		return $7.set(this,value);
+	}
 	get size() {
-		return $6.has(this) ? $6.get(this) : 20;
+		return $7.has(this) ? $7.get(this) : 20;
+	}
+	set colisions_done(value) {
+		return $8.set(this,value);
+	}
+	get colisions_done() {
+		return $8.has(this) ? $8.get(this) : false;
 	}
 	
 	takeHit(bullet){
 		// let audio = Audio.new("sounds/zombie_hit/{~~(Math.random * 4)}.wav")
 		// audio.play
-		this.position.x = this.position.x - Math.sin((bullet.rotation - 90) * 0.0174527778) * 30;
-		this.position.y = this.position.y + Math.cos((bullet.rotation - 90) * 0.0174527778) * 30;
+		this.position.x = this.position.x - Math.sin((bullet.rotation - 90) * 0.0174527778) * 10;
+		this.position.y = this.position.y + Math.cos((bullet.rotation - 90) * 0.0174527778) * 10;
 		// unless taking-hit
 		//     life -= hit.damage
 		//     taking-hit = ~~(Math.random * 5 + 1)
 		//     setTimeout(&, 50) do 
 		//         taking-hit = no
-		this.zombie_state = 'aggro';
+		this.state = 'aggro';
 		return this.speed = this.max_speed;
 	}
 	
 	update(){
+		this.updateSector();
 		this.checkColisions();
-		if (this.zombie_state == 'drift') {
+		this.checkLife();
+		if (this.state == 'drift') {
 			this.execDrift();
-		}		if (this.zombie_state == 'aggro') {
-			return this.execAggro();
+		}		if (this.state == 'aggro') {
+			this.execAggro();
+		}		if (this.state == 'attack') {
+			return this.execAttack();
 		}	}
 	
-	checkColisions(){
-		this.zombieColision();
-		return this.playerColision();
-	}
+	updateSector(){
+		var sector_, $1;
+		let temp_sector = ("" + (~~(this.position.x / 300)) + "-" + (~~(this.position.y / 300)));
+		if (temp_sector != this.sector) {
+			(sector_ = state.sector)[this.sector] || (sector_[this.sector] = []);
+			let index = state.sector[this.sector].indexOf(this);
+			if (index != -1) { state.sector[this.sector].splice(index,1); }			this.sector = temp_sector;
+			($1 = state.sector)[this.sector] || ($1[this.sector] = []);
+			return state.sector[this.sector].push(this);
+		}	}
 	
-	zombieColision(){
+	checkLife(){
+		if (this.life < 0) {
+			let index = state.zombies.indexOf(this);
+			if ((index != -1)) { return state.zombies.splice(index,1) }		}	}
+	
+	checkColisions(){
 		var position_, $1;
 		let zom_col = this.colideZombie();
 		if (zom_col) {
 			let dx = Math.sin((this.rotation - 90) * 0.0174527778) * this.speed;
 			let dy = Math.cos((this.rotation - 90) * 0.0174527778) * this.speed;
-			(position_ = zom_col.position).x = position_.x + dx * this.speed;
-			($1 = zom_col.position).y = $1.y - dy * this.speed;
+			(position_ = zom_col.position).x = position_.x + dx * 0.7;
+			($1 = zom_col.position).y = $1.y - dy * 0.7;
 			this.position.x = this.position.x - dx;
 			return this.position.y = this.position.y + dy;
 		}	}
 	
-	playerColision(){
-		if (this.distanceToPlayerX() < this.size && this.distanceToPlayerY() < this.size) {
-			this.position.x = this.position.x - Math.sin((state.player.rotation + 90) * 0.0174527778) * this.speed;
-			return this.position.y = this.position.y + Math.cos((state.player.rotation + 90) * 0.0174527778) * this.speed;
+	execAttack(){
+		if (this.distanceToPlayerX() > this.size || this.distanceToPlayerY() > this.size) {
+			return this.state = 'aggro';
 		}	}
 	
 	execDrift(){
@@ -1400,14 +1427,17 @@ class Zombie {
 	
 	execAggro(){
 		this.rotation = this.angleToPlayer();
-		return this.move();
-	}
+		this.move();
+		if (this.distanceToPlayerX() < this.size && this.distanceToPlayerY() < this.size) {
+			return this.state = 'attack';
+		}	}
 	
 	colideZombie(){
-		for (let i = 0, items = iter$$5(state.zombies), len = items.length, zombie; i < len; i++) {
+		for (let i = 0, items = iter$$5(state.sector[this.sector]), len = items.length, zombie; i < len; i++) {
 			zombie = items[i];
 			if (this.distanceToZombieX(zombie) < this.size && this.distanceToZombieY(zombie) < this.size) {
-				if (zombie != this) { return zombie }			}		}		return false;
+				return zombie;
+			}		}		return false;
 	}
 	
 	angleToPlayer(){
@@ -1466,7 +1496,7 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 			return self.render();
 		},16);
 		
-		for (let i = 0; i <= 200; i++) {
+		for (let i = 0; i <= 300; i++) {
 			state.zombies.push(new Zombie());
 		}		
 		window.addEventListener('resize',function(e) {
@@ -1567,6 +1597,7 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 					t$6 = (b$6=d$6=1,c$5.m) || (b$6=d$6=0,c$5.m=t$6=imba.createSVGElement('circle',0,t$5,null,null,null));
 					(v$6=zombie.size / 2,v$6===c$5.n || (t$6.set$('r',c$5.n=v$6)));
 					b$6 || (t$6.set$('fill',"red"));
+					b$6 || (t$6.set$('stroke','black'));
 					t$6 = (b$6=d$6=1,c$5.o) || (b$6=d$6=0,c$5.o=t$6=imba.createSVGElement('rect',0,t$5,null,null,null));
 					(v$6=zombie.size,v$6===c$5.p || (t$6.set$('width',c$5.p=v$6)));
 					b$6 || (t$6.set$('height',4));

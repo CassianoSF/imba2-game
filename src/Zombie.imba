@@ -15,49 +15,65 @@ def randomPosition
 export class Zombie
     @position = randomPosition()
     @rotation = Math.random() * 360
-    @zombie_state = 'drift'
+    @sector = "{~~(@position.x / 300)}-{~~(@position.y / 300)}"
+    @state = 'drift'
     @speed = 1
     @max_speed = 3
     @size = 20
+    @colisions_done = false
 
     def takeHit(bullet)
         # let audio = Audio.new("sounds/zombie_hit/{~~(Math.random * 4)}.wav")
         # audio.play
-        @position.x -= Math.sin((bullet.rotation - 90) * 0.0174527778) * 30
-        @position.y += Math.cos((bullet.rotation - 90) * 0.0174527778) * 30
+        @position.x -= Math.sin((bullet.rotation - 90) * 0.0174527778) * 10
+        @position.y += Math.cos((bullet.rotation - 90) * 0.0174527778) * 10
         # unless taking-hit
         #     life -= hit.damage
         #     taking-hit = ~~(Math.random * 5 + 1)
         #     setTimeout(&, 50) do 
         #         taking-hit = no
-        @zombie_state = 'aggro'
+        @state = 'aggro'
         @speed = @max_speed
 
     def update
+        @updateSector()
         @checkColisions()
-        if @zombie_state == 'drift'
+        @checkLife()
+        if @state == 'drift'
             @execDrift()
-        if @zombie_state == 'aggro'
+        if @state == 'aggro'
             @execAggro()
+        if @state == 'attack'
+            @execAttack()
+
+    def updateSector()
+        let temp_sector = "{~~(@position.x / 300)}-{~~(@position.y / 300)}"
+        if temp_sector != @sector
+            state.sector[@sector] ||= []
+            let index = state.sector[@sector].indexOf(self)
+            state.sector[@sector].splice(index, 1) if index != -1
+            @sector = temp_sector
+            state.sector[@sector] ||= []
+            state.sector[@sector].push(self)
+
+    def checkLife
+        if @life < 0
+            let index = state.zombies.indexOf(self)
+            state.zombies.splice(index, 1) if (index != -1)
 
     def checkColisions
-        @zombieColision()
-        @playerColision()
-
-    def zombieColision
         let zom_col = @colideZombie()
         if zom_col
             let dx = Math.sin((@rotation - 90) * 0.0174527778) * @speed
             let dy = Math.cos((@rotation - 90) * 0.0174527778) * @speed
-            zom_col.position.x += dx * @speed
-            zom_col.position.y -= dy * @speed
+            zom_col.position.x += dx * 0.7
+            zom_col.position.y -= dy * 0.7
             @position.x -= dx
             @position.y += dy
 
-    def playerColision
-        if @distanceToPlayerX() < @size and @distanceToPlayerY() < @size
-            @position.x -= Math.sin((state.player.rotation + 90) * 0.0174527778) * @speed
-            @position.y += Math.cos((state.player.rotation + 90) * 0.0174527778) * @speed
+    def execAttack
+        if @distanceToPlayerX() > @size or @distanceToPlayerY() > @size
+            @state = 'aggro'
 
     def execDrift
         @last_time ||= state.time
@@ -73,11 +89,13 @@ export class Zombie
     def execAggro
         @rotation = @angleToPlayer()
         @move()
+        if @distanceToPlayerX() < @size and @distanceToPlayerY() < @size
+            @state = 'attack'
 
     def colideZombie
-        for zombie in state.zombies
+        for zombie in state.sector[@sector]
             if @distanceToZombieX(zombie) < @size and @distanceToZombieY(zombie) < @size
-                return zombie if zombie != self
+                return zombie
         return no
 
     def angleToPlayer

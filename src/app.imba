@@ -14,7 +14,7 @@ tag app-root
             @update()
             @render()
 
-        for i in [0..200]
+        for i in [0..300]
             state.zombies.push(Zombie.new)
 
         window.addEventListener('resize', &) do |e|
@@ -72,7 +72,7 @@ tag app-root
                             # ZOMBIES
                             for zombie in state.zombies
                                 <g transform="translate({zombie.position.x}, {zombie.position.y}) rotate({zombie.rotation})">
-                                    <circle r=(zombie.size / 2) fill="red">
+                                    <circle r=(zombie.size / 2) fill="red" stroke='black'>
                                     <rect width=(zombie.size) height=4 x=(-20) y="7" fill="red">
                                     <rect width=(zombie.size) height=4 x=(-20) y="-10" fill="red">
 

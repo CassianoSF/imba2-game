@@ -5,4 +5,5 @@ export var state = {
     bullets: []
     zombies: []
     camera: {}
+    sector: {}
 }
