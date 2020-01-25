@@ -49,12 +49,11 @@ export class Zombie
     def updateSector()
         let temp_sector = "{~~(@position.x / 300)}-{~~(@position.y / 300)}"
         if temp_sector != @sector
-            state.sector[@sector] ||= []
-            let index = state.sector[@sector].indexOf(self)
-            state.sector[@sector].splice(index, 1) if index != -1
+            state.sector[@sector] ||= Set.new
+            state.sector[@sector].delete(self)
             @sector = temp_sector
-            state.sector[@sector] ||= []
-            state.sector[@sector].push(self)
+            state.sector[@sector] ||= Set.new
+            state.sector[@sector].add(self)
 
     def checkLife
         if @life < 0
@@ -93,7 +92,8 @@ export class Zombie
             @state = 'attack'
 
     def colideZombie
-        for zombie in state.sector[@sector]
+        state.sector[@sector] ||= Set.new
+        for zombie of state.sector[@sector]
             if @distanceToZombieX(zombie) < @size and @distanceToZombieY(zombie) < @size
                 return zombie
         return no

@@ -1384,11 +1384,11 @@ class Zombie {
 		var sector_, $1;
 		let temp_sector = ("" + (~~(this.position.x / 300)) + "-" + (~~(this.position.y / 300)));
 		if (temp_sector != this.sector) {
-			(sector_ = state.sector)[this.sector] || (sector_[this.sector] = []);
-			let index = state.sector[this.sector].indexOf(this);
-			if (index != -1) { state.sector[this.sector].splice(index,1); }			this.sector = temp_sector;
-			($1 = state.sector)[this.sector] || ($1[this.sector] = []);
-			return state.sector[this.sector].push(this);
+			(sector_ = state.sector)[this.sector] || (sector_[this.sector] = new Set());
+			state.sector[this.sector].delete(this);
+			this.sector = temp_sector;
+			($1 = state.sector)[this.sector] || ($1[this.sector] = new Set());
+			return state.sector[this.sector].add(this);
 		}	}
 	
 	checkLife(){
@@ -1433,8 +1433,9 @@ class Zombie {
 		}	}
 	
 	colideZombie(){
-		for (let i = 0, items = iter$$5(state.sector[this.sector]), len = items.length, zombie; i < len; i++) {
-			zombie = items[i];
+		var sector_;
+		(sector_ = state.sector)[this.sector] || (sector_[this.sector] = new Set());
+		for (let zombie of iter$$5(state.sector[this.sector])){
 			if (this.distanceToZombieX(zombie) < this.size && this.distanceToZombieY(zombie) < this.size) {
 				return zombie;
 			}		}		return false;
@@ -1485,19 +1486,25 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		return $1$4.get(this);
 	}
 	
+	refresh(){
+		this.update();
+		return this.render();
+	}
+	
 	mount(){
-		var self = this;
+		var self = this, sector_, $1;
+		this.svg = document.getElementById('svg');
 		state.svg = this.svg.getBoundingClientRect();
 		state.ready = true;
 		state.player = new Player();
 		setInterval(function() { return state.time++; },10);
-		setInterval(function() {
-			self.update();
-			return self.render();
-		},16);
+		setInterval(this.refresh.bind(this),16);
 		
 		for (let i = 0; i <= 300; i++) {
-			state.zombies.push(new Zombie());
+			let z = new Zombie();
+			(sector_ = state.sector)[$1 = ("" + (~~(z.position.x / 300)) + "-" + (~~(z.position.y / 300)))] || (sector_[$1] = new Set());
+			state.sector[("" + (~~(z.position.x / 300)) + "-" + (~~(z.position.y / 300)))].add(z);
+			state.zombies.push(z);
 		}		
 		window.addEventListener('resize',function(e) {
 			return state.svg = self.svg.getBoundingClientRect();
@@ -1549,78 +1556,77 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		t$0=this;
 		t$0.open$();
 		c$0 = (b$0=d$0=1,t$0.$) || (b$0=d$0=0,t$0.$={});
-		
-			t$1 = (b$1=d$1=1,c$0.b) || (b$1=d$1=0,c$0.b=this.svg = t$1=imba.createSVGElement('svg',1024,t$0,null,null,null));
-			b$1 || (t$1.set$('transform',"scale(1,-1)"));
-			b$1 || (t$1.set$('height',"100%"));
-			b$1 || (t$1.set$('width',"100%"));
-			b$1 || (t$1.set$('style',"background-color: black"));
-			if (state.ready) {
-				c$$2 = (b$3=d$3=1,c$0.c) || (b$3=d$3=0,c$0.c=c$$2=imba.createSVGElement('g',2048,null,null,null,null));
-				b$3||(c$$2.up$=t$1);
-				(v$3=("translate(" + this.cameraPosX() + ", " + this.cameraPosY() + ")"),v$3===c$0.d || (c$$2.set$('transform',c$0.d=v$3)));
-				t$4 = (b$4=d$4=1,c$0.e) || (b$4=d$4=0,c$0.e=t$4=imba.createSVGElement('g',0,c$$2,null,null,null));
-				(v$4=("translate(" + (state.player.position.x) + ", " + (state.player.position.y) + ") rotate(" + (state.player.rotation) + ")"),v$4===c$0.f || (t$4.set$('transform',c$0.f=v$4)));
-				b$4 || (t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
-				b$4 || (t$5.set$('r',10));
-				b$4 || (t$5.set$('fill',"white"));
-				b$4 || (t$5=imba.createSVGElement('g',0,t$4,null,null,null));
-				b$4 || (t$5.set$('transform','translate(5, 5)'));
-				b$4 || (t$6=imba.createSVGElement('rect',0,t$5,null,null,null));
-				b$4 || (t$6.set$('height',13));
-				b$4 || (t$6.set$('width',2));
-				b$4 || (t$6.set$('fill',"white"));
-				t$4 = c$0.g || (c$0.g = t$4 = imba.createIndexedFragment(0,c$$2));
-				k$4 = 0;
-				c$4=t$4.$;
-				for (let i = 0, items = iter$$6(state.bullets), len = items.length, bullet; i < len; i++) {
-					bullet = items[i];
-					t$5 = (b$5=d$5=1,c$4[k$4]) || (b$5=d$5=0,c$4[k$4] = t$5=imba.createSVGElement('g',0,t$4,null,null,null));
-					b$5||(t$5.up$=t$4);
-					c$5=t$5.$h || (t$5.$h={});
-					(v$5=("translate(" + (bullet.position.x) + ", " + (bullet.position.y) + ") rotate(" + (bullet.rotation) + ")"),v$5===c$5.i || (t$5.set$('transform',c$5.i=v$5)));
-					b$5 || (t$6=imba.createSVGElement('rect',0,t$5,null,null,null));
-					b$5 || (t$6.set$('width',50));
-					b$5 || (t$6.set$('height',1));
-					b$5 || (t$6.set$('fill',"yellow"));
-					k$4++;
-				}t$4.end$(k$4);
-				t$4 = c$0.j || (c$0.j = t$4 = imba.createIndexedFragment(0,c$$2));
-				k$4 = 0;
-				c$4=t$4.$;
-				for (let i = 0, items = iter$$6(state.zombies), len = items.length, zombie; i < len; i++) {
-					zombie = items[i];
-					t$5 = (b$5=d$5=1,c$4[k$4]) || (b$5=d$5=0,c$4[k$4] = t$5=imba.createSVGElement('g',0,t$4,null,null,null));
-					b$5||(t$5.up$=t$4);
-					c$5=t$5.$k || (t$5.$k={});
-					(v$5=("translate(" + (zombie.position.x) + ", " + (zombie.position.y) + ") rotate(" + (zombie.rotation) + ")"),v$5===c$5.l || (t$5.set$('transform',c$5.l=v$5)));
-					t$6 = (b$6=d$6=1,c$5.m) || (b$6=d$6=0,c$5.m=t$6=imba.createSVGElement('circle',0,t$5,null,null,null));
-					(v$6=zombie.size / 2,v$6===c$5.n || (t$6.set$('r',c$5.n=v$6)));
-					b$6 || (t$6.set$('fill',"red"));
-					b$6 || (t$6.set$('stroke','black'));
-					t$6 = (b$6=d$6=1,c$5.o) || (b$6=d$6=0,c$5.o=t$6=imba.createSVGElement('rect',0,t$5,null,null,null));
-					(v$6=zombie.size,v$6===c$5.p || (t$6.set$('width',c$5.p=v$6)));
-					b$6 || (t$6.set$('height',4));
-					b$6 || (t$6.set$('x',-20));
-					b$6 || (t$6.set$('y',"7"));
-					b$6 || (t$6.set$('fill',"red"));
-					t$6 = (b$6=d$6=1,c$5.q) || (b$6=d$6=0,c$5.q=t$6=imba.createSVGElement('rect',0,t$5,null,null,null));
-					(v$6=zombie.size,v$6===c$5.r || (t$6.set$('width',c$5.r=v$6)));
-					b$6 || (t$6.set$('height',4));
-					b$6 || (t$6.set$('x',-20));
-					b$6 || (t$6.set$('y',"-10"));
-					b$6 || (t$6.set$('fill',"red"));
-					k$4++;
-				}t$4.end$(k$4);
-				b$3 || (t$4=imba.createSVGElement('rect',0,c$$2,null,null,null));
-				b$3 || (t$4.set$('x',"0"));
-				b$3 || (t$4.set$('y',"0"));
-				b$3 || (t$4.set$('height',30));
-				b$3 || (t$4.set$('width',30));
-				b$3 || (t$4.set$('fill',"green"));
-			}
-			(c$0.c$$2_ = t$1.insert$(c$$2,1024,c$0.c$$2_));
-		t$0.close$(d$0);
+		t$1 = (b$1=d$1=1,c$0.b) || (b$1=d$1=0,c$0.b=t$1=imba.createSVGElement('svg',1024,t$0,null,null,null));
+		b$1 || (t$1.id=`svg`);
+		b$1 || (t$1.set$('transform',"scale(1,-1)"));
+		b$1 || (t$1.set$('height',"100%"));
+		b$1 || (t$1.set$('width',"100%"));
+		b$1 || (t$1.set$('style',"background-color: black"));
+		if (state.ready) {
+			c$$2 = (b$3=d$3=1,c$0.c) || (b$3=d$3=0,c$0.c=c$$2=imba.createSVGElement('g',2048,null,null,null,null));
+			b$3||(c$$2.up$=t$1);
+			(v$3=("translate(" + this.cameraPosX() + ", " + this.cameraPosY() + ")"),v$3===c$0.d || (c$$2.set$('transform',c$0.d=v$3)));
+			t$4 = (b$4=d$4=1,c$0.e) || (b$4=d$4=0,c$0.e=t$4=imba.createSVGElement('g',0,c$$2,null,null,null));
+			(v$4=("translate(" + (state.player.position.x) + ", " + (state.player.position.y) + ") rotate(" + (state.player.rotation) + ")"),v$4===c$0.f || (t$4.set$('transform',c$0.f=v$4)));
+			b$4 || (t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
+			b$4 || (t$5.set$('r',10));
+			b$4 || (t$5.set$('fill',"white"));
+			b$4 || (t$5=imba.createSVGElement('g',0,t$4,null,null,null));
+			b$4 || (t$5.set$('transform','translate(5, 5)'));
+			b$4 || (t$6=imba.createSVGElement('rect',0,t$5,null,null,null));
+			b$4 || (t$6.set$('height',13));
+			b$4 || (t$6.set$('width',2));
+			b$4 || (t$6.set$('fill',"white"));
+			t$4 = c$0.g || (c$0.g = t$4 = imba.createIndexedFragment(0,c$$2));
+			k$4 = 0;
+			c$4=t$4.$;
+			for (let i = 0, items = iter$$6(state.bullets), len = items.length, bullet; i < len; i++) {
+				bullet = items[i];
+				t$5 = (b$5=d$5=1,c$4[k$4]) || (b$5=d$5=0,c$4[k$4] = t$5=imba.createSVGElement('g',0,t$4,null,null,null));
+				b$5||(t$5.up$=t$4);
+				c$5=t$5.$h || (t$5.$h={});
+				(v$5=("translate(" + (bullet.position.x) + ", " + (bullet.position.y) + ") rotate(" + (bullet.rotation) + ")"),v$5===c$5.i || (t$5.set$('transform',c$5.i=v$5)));
+				b$5 || (t$6=imba.createSVGElement('rect',0,t$5,null,null,null));
+				b$5 || (t$6.set$('width',50));
+				b$5 || (t$6.set$('height',1));
+				b$5 || (t$6.set$('fill',"yellow"));
+				k$4++;
+			}t$4.end$(k$4);
+			t$4 = c$0.j || (c$0.j = t$4 = imba.createIndexedFragment(0,c$$2));
+			k$4 = 0;
+			c$4=t$4.$;
+			for (let i = 0, items = iter$$6(state.zombies), len = items.length, zombie; i < len; i++) {
+				zombie = items[i];
+				t$5 = (b$5=d$5=1,c$4[k$4]) || (b$5=d$5=0,c$4[k$4] = t$5=imba.createSVGElement('g',0,t$4,null,null,null));
+				b$5||(t$5.up$=t$4);
+				c$5=t$5.$k || (t$5.$k={});
+				(v$5=("translate(" + (zombie.position.x) + ", " + (zombie.position.y) + ") rotate(" + (zombie.rotation) + ")"),v$5===c$5.l || (t$5.set$('transform',c$5.l=v$5)));
+				t$6 = (b$6=d$6=1,c$5.m) || (b$6=d$6=0,c$5.m=t$6=imba.createSVGElement('circle',0,t$5,null,null,null));
+				(v$6=zombie.size / 2,v$6===c$5.n || (t$6.set$('r',c$5.n=v$6)));
+				b$6 || (t$6.set$('fill',"red"));
+				b$6 || (t$6.set$('stroke','black'));
+				t$6 = (b$6=d$6=1,c$5.o) || (b$6=d$6=0,c$5.o=t$6=imba.createSVGElement('rect',0,t$5,null,null,null));
+				(v$6=zombie.size,v$6===c$5.p || (t$6.set$('width',c$5.p=v$6)));
+				b$6 || (t$6.set$('height',4));
+				b$6 || (t$6.set$('x',-20));
+				b$6 || (t$6.set$('y',"7"));
+				b$6 || (t$6.set$('fill',"red"));
+				t$6 = (b$6=d$6=1,c$5.q) || (b$6=d$6=0,c$5.q=t$6=imba.createSVGElement('rect',0,t$5,null,null,null));
+				(v$6=zombie.size,v$6===c$5.r || (t$6.set$('width',c$5.r=v$6)));
+				b$6 || (t$6.set$('height',4));
+				b$6 || (t$6.set$('x',-20));
+				b$6 || (t$6.set$('y',"-10"));
+				b$6 || (t$6.set$('fill',"red"));
+				k$4++;
+			}t$4.end$(k$4);
+			b$3 || (t$4=imba.createSVGElement('rect',0,c$$2,null,null,null));
+			b$3 || (t$4.set$('x',"0"));
+			b$3 || (t$4.set$('y',"0"));
+			b$3 || (t$4.set$('height',30));
+			b$3 || (t$4.set$('width',30));
+			b$3 || (t$4.set$('fill',"green"));
+		}
+		(c$0.c$$2_ = t$1.insert$(c$$2,1024,c$0.c$$2_));		t$0.close$(d$0);
 		return t$0;
 	}
 } AppRootComponent.init$(); imba.tags.define('app-root',AppRootComponent,{});
