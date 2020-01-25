@@ -1,96 +1,24 @@
-var state = {
-    keys: []
-    mouse: {x: 0, y: 0}
-    bullets: []
-}
-
-class Gun
-    @rate = 5000
-    @busy
-
-    def fire
-        return if @busy
-        @busy = true
-        state.bullets.push(Bullet.new.fly())
-        setTimeout(&, 60000/@rate) do
-            @busy = false
-
-class Player
-    @position = {x: 0, y: 0}
-    @rotation = 0
-    @gun = Gun.new
-
-    def init
-        @position.x = state.boundings.width / 2
-        @position.y = state.boundings.height / 2
-
-    def update
-        @move()
-        @rotate()
-        @shoot()
-
-    def shoot()
-        return unless state.mouse.press
-        @gun.fire()
-
-    def rotate
-        @rotation = -Math.atan2(state.mouse.x - @position.x, state.mouse.y - @position.y) / 3.1415 * 180.0
-
-    def move
-        @position.x -= 2 if state.keys.a
-        @position.x += 2 if state.keys.d
-        @position.y += 2 if state.keys.w
-        @position.y -= 2 if state.keys.s
-
-    def render
-        @update()
-        <g transform="translate({@position.x}, {@position.y}) rotate({@rotation})">
-            <circle r=8 fill="white">
-            <g transform='translate(5, 5)'>
-                <rect height=10 width=2 fill="white">
-
-class Bullet
-    @position = {
-        x: state.player.position.x + Math.cos((state.player.rotation) * 3.1415 / 180) * 5
-        y: state.player.position.y + Math.sin((state.player.rotation) * 3.1415 / 180) * 5
-    }
-    @rotation = state.player.rotation + 90
-
-    def fly
-        @position.x += Math.cos((@rotation) * 3.1415 / 180) * 1
-        @position.y += Math.sin((@rotation) * 3.1415 / 180) * 1
-        if @distanceToPlayerX() > state.boundings.width or @distanceToPlayerY() > state.boundings.height
-            return @deleteBullet()
-        setTimeout(&, 16) do
-            @fly()
-        return self
-
-    def distanceToPlayerX
-        Math.abs(state.player.position.x - @position.x)
-    
-    def distanceToPlayerY
-        Math.abs(state.player.position.y - @position.y)
-
-    def deleteBullet
-        var index = state.bullets.indexOf(self)
-        state.bullets.splice(index, 1) if (index != -1)
-
-    def render
-        <g transform="translate({@position.x}, {@position.y}) rotate({@rotation})">
-            <rect height=10 width=1 fill="yellow">
-
+import {Player} from './Player'
+import {Zombie} from './Zombie'
+import {state} from './state'
 
 tag app-root
-    @container
-    @player = Player.new
+    @svg
 
     def mount
-        state.boundings = @container.getBoundingClientRect()
+        state.svg = @svg.getBoundingClientRect()
         state.ready = true
-        state.player = @player
-        @player.init()
+        state.player = Player.new
+        setInterval(&, 10) do state.time++
         setInterval(&, 16) do
-            self.render()
+            @update()
+            @render()
+
+        for i in [0..200]
+            state.zombies.push(Zombie.new)
+
+        window.addEventListener('resize', &) do |e|
+            state.svg = @svg.getBoundingClientRect()
 
         window.addEventListener('keydown', &) do |e|
             state.keys[e.key] = true
@@ -99,11 +27,8 @@ tag app-root
             state.keys[e.key] = false
 
         window.addEventListener('mousemove', &) do |e|
-            state.mouse.y = state.boundings.height - e.clientY
             state.mouse.x = e.clientX
-
-        window.addEventListener('resize', &) do |e|
-            state.boundings = @container.getBoundingClientRect()
+            state.mouse.y = state.svg.height - e.clientY
 
         window.addEventListener('mousedown', &) do |e|
             state.mouse.press = true
@@ -111,11 +36,44 @@ tag app-root
         window.addEventListener('mouseup', &) do |e|
             state.mouse.press = false
 
+
+    def cameraPosX
+        state.svg.width / 2 - state.player.position.x
+
+    def cameraPosY
+        state.svg.height / 2 - state.player.position.y
+
+    def update
+        if state.ready
+            state.player.update()
+            for zombie in state.zombies
+                zombie.update()
+
     def render
         <self>
-            @container = <svg transform="scale(1,-1)" height="100%" width="100%" style="background-color: black">
-                if state.ready
-                    @player.render()
-                    for bullet in state.bullets
-                        <g transform="translate({bullet.position.x}, {bullet.position.y}) rotate({bullet.rotation})">
-                            <rect width=30 height=1 fill="yellow">
+            @svg = 
+                <svg transform="scale(1,-1)" height="100%" width="100%" style="background-color: black">
+                    if state.ready
+                        <g transform="translate({@cameraPosX()}, {@cameraPosY()})">
+
+                            # PLAYER
+                            <g transform="translate({state.player.position.x}, {state.player.position.y}) rotate({state.player.rotation})">
+                                <circle r=10 fill="white">
+
+                                # GUN
+                                <g transform='translate(5, 5)'>
+                                    <rect height=13 width=2 fill="white">
+
+                            # BULLETS
+                            for bullet in state.bullets
+                                <g transform="translate({bullet.position.x}, {bullet.position.y}) rotate({bullet.rotation})">
+                                    <rect width=50 height=1 fill="yellow">
+
+                            # ZOMBIES
+                            for zombie in state.zombies
+                                <g transform="translate({zombie.position.x}, {zombie.position.y}) rotate({zombie.rotation})">
+                                    <circle r=(zombie.size / 2) fill="red">
+                                    <rect width=(zombie.size) height=4 x=(-20) y="7" fill="red">
+                                    <rect width=(zombie.size) height=4 x=(-20) y="-10" fill="red">
+
+                            <rect x="0" y="0" height=30 width=30 fill="green">

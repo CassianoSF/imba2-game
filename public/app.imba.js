@@ -1104,12 +1104,88 @@ imba$1.createSVGElement = function (name,bitflags,parent,flags,text,sfc){
 
 // import './intersect'
 
-function iter$$4(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }var $1 = new WeakMap(), $2 = new WeakMap(), $3 = new WeakMap(), $4 = new WeakMap(), $5 = new WeakMap(), $6 = new WeakMap(), $7 = new WeakMap(), $8 = new WeakMap(), $9 = new WeakMap();
 var state = {
+	time: 0,
 	keys: [],
 	mouse: {x: 0,y: 0},
-	bullets: []
+	bullets: [],
+	zombies: [],
+	camera: {}
 };
+
+function iter$$4(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }var $1 = new WeakMap(), $2 = new WeakMap();
+
+class Bullet {
+	static init$(){
+		
+		return this;
+	}
+	constructor(){
+		
+		
+	}
+	set position(value) {
+		return $1.set(this,value);
+	}
+	get position() {
+		if (!$1.has(this)) { $1.set(this,{
+			x: state.player.position.x + Math.cos((state.player.rotation) * 0.0174527778) * 5,
+			y: state.player.position.y + Math.sin((state.player.rotation) * 0.0174527778) * 5
+		}); }		return $1.get(this);
+	}
+	set rotation(value) {
+		return $2.set(this,value);
+	}
+	get rotation() {
+		if (!$2.has(this)) { $2.set(this,state.player.rotation + 90); }		return $2.get(this);
+	}
+	
+	fly(){
+		var self = this;
+		this.checkColision();
+		this.position.x = this.position.x + Math.cos((this.rotation) * 0.0174527778) * 20;
+		this.position.y = this.position.y + Math.sin((this.rotation) * 0.0174527778) * 20;
+		if (this.distanceToPlayerX() > state.svg.width || this.distanceToPlayerY() > state.svg.height) {
+			this.deleteBullet();
+			return;
+		}		setTimeout(function() {
+			return self.fly();
+		},5);
+		return this;
+	}
+	
+	distanceToPlayerX(){
+		return Math.abs(state.player.position.x - this.position.x);
+	}
+	
+	distanceToPlayerY(){
+		return Math.abs(state.player.position.y - this.position.y);
+	}
+	
+	distanceToZombieX(zombie){
+		return Math.abs(zombie.position.x - this.position.x);
+	}
+	
+	distanceToZombieY(zombie){
+		return Math.abs(zombie.position.y - this.position.y);
+	}
+	
+	checkColision(){
+		for (let i = 0, items = iter$$4(state.zombies), len = items.length, zombie; i < len; i++) {
+			zombie = items[i];
+			if (this.distanceToZombieX(zombie) < 10 && this.distanceToZombieY(zombie) < 10) {
+				this.deleteBullet();
+				zombie.takeHit(this);
+				return true;
+			}		}		return false;
+	}
+	
+	deleteBullet(){
+		var index = state.bullets.indexOf(this);
+		if ((index != -1)) { return state.bullets.splice(index,1) }	}
+} Bullet.init$();
+
+var $1$1 = new WeakMap(), $2$1 = new WeakMap();
 
 class Gun {
 	static init$(){
@@ -1121,16 +1197,16 @@ class Gun {
 		
 	}
 	set rate(value) {
-		return $1.set(this,value);
+		return $1$1.set(this,value);
 	}
 	get rate() {
-		return $1.has(this) ? $1.get(this) : 5000;
+		return $1$1.has(this) ? $1$1.get(this) : 800;
 	}
 	set busy(value) {
-		return $2.set(this,value);
+		return $2$1.set(this,value);
 	}
 	get busy() {
-		return $2.get(this);
+		return $2$1.get(this);
 	}
 	
 	fire(){
@@ -1142,6 +1218,9 @@ class Gun {
 		},60000 / this.rate);
 	}
 } Gun.init$();
+
+var $1$2 = new WeakMap(), $2$2 = new WeakMap(), $3 = new WeakMap(), $4 = new WeakMap();
+
 class Player {
 	static init$(){
 		
@@ -1152,27 +1231,31 @@ class Player {
 		
 	}
 	set position(value) {
-		return $3.set(this,value);
+		return $1$2.set(this,value);
 	}
 	get position() {
-		if (!$3.has(this)) { $3.set(this,{x: 0,y: 0}); }		return $3.get(this);
+		if (!$1$2.has(this)) { $1$2.set(this,{
+			x: state.svg.width / 2,
+			y: state.svg.height / 2
+		}); }		return $1$2.get(this);
 	}
 	set rotation(value) {
-		return $4.set(this,value);
+		return $2$2.set(this,value);
 	}
 	get rotation() {
-		return $4.has(this) ? $4.get(this) : 0;
+		return $2$2.has(this) ? $2$2.get(this) : 0;
 	}
 	set gun(value) {
-		return $5.set(this,value);
+		return $3.set(this,value);
 	}
 	get gun() {
-		if (!$5.has(this)) { $5.set(this,new Gun()); }		return $5.get(this);
+		if (!$3.has(this)) { $3.set(this,new Gun()); }		return $3.get(this);
 	}
-	
-	init(){
-		this.position.x = state.boundings.width / 2;
-		return this.position.y = state.boundings.height / 2;
+	set speed(value) {
+		return $4.set(this,value);
+	}
+	get speed() {
+		return $4.has(this) ? $4.get(this) : 2;
 	}
 	
 	update(){
@@ -1186,35 +1269,33 @@ class Player {
 	}
 	
 	rotate(){
-		return this.rotation = -Math.atan2(state.mouse.x - this.position.x,state.mouse.y - this.position.y) / 3.1415 * 180.0;
+		let diffX = state.mouse.x - state.svg.width / 2;
+		let diffY = state.mouse.y - state.svg.height / 2;
+		return this.rotation = -Math.atan2(diffX,diffY) / 3.1415 * 180.0;
 	}
 	
 	move(){
-		if (state.keys.a) this.position.x = this.position.x - 2;
-		if (state.keys.d) this.position.x = this.position.x + 2;
-		if (state.keys.w) this.position.y = this.position.y + 2;
-		if (state.keys.s) { return this.position.y = this.position.y - 2 }	}
-	
-	render(){
-		var t$0, b$0, d$0, c$$ = (imba.ctx||{}), c$0, v$0, t$1, t$2;
-		this.update();
-		t$0=(b$0=d$0=1,c$$.b) || (b$0=d$0=0,c$$.b=t$0=imba.createSVGElement('g',0,null,null,null,null));
-		b$0||(t$0.up$=c$$._);
-		c$0 = t$0.$b || (t$0.$b={});
-		(v$0=("translate(" + (this.position.x) + ", " + (this.position.y) + ") rotate(" + (this.rotation) + ")"),v$0===c$0.c || (t$0.set$('transform',c$0.c=v$0)));
-		b$0 || (t$1=imba.createSVGElement('circle',0,t$0,null,null,null));
-		b$0 || (t$1.set$('r',8));
-		b$0 || (t$1.set$('fill',"white"));
-		b$0 || (t$1=imba.createSVGElement('g',0,t$0,null,null,null));
-		b$0 || (t$1.set$('transform','translate(5, 5)'));
-		b$0 || (t$2=imba.createSVGElement('rect',0,t$1,null,null,null));
-		b$0 || (t$2.set$('height',10));
-		b$0 || (t$2.set$('width',2));
-		b$0 || (t$2.set$('fill',"white"));
-		return t$0;
-	}
+		if (state.keys.a) this.position.x = this.position.x - this.speed;
+		if (state.keys.d) this.position.x = this.position.x + this.speed;
+		if (state.keys.w) this.position.y = this.position.y + this.speed;
+		if (state.keys.s) { return this.position.y = this.position.y - this.speed }	}
 } Player.init$();
-class Bullet {
+
+function iter$$5(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }var $1$3 = new WeakMap(), $2$3 = new WeakMap(), $3$1 = new WeakMap(), $4$1 = new WeakMap(), $5 = new WeakMap(), $6 = new WeakMap();
+
+function randomPosition(){
+	let posx = Math.random() * state.svg.width;
+	let posy = Math.random() * state.svg.height;
+	let diffx = Math.abs(posx - state.player.position.x);
+	let diffy = Math.abs(posy - state.player.position.y);
+	if (diffx < 400 && diffy < 400) {
+		return randomPosition();
+	}	return {
+		x: posx,
+		y: posy
+	};
+}
+class Zombie {
 	static init$(){
 		
 		return this;
@@ -1224,31 +1305,115 @@ class Bullet {
 		
 	}
 	set position(value) {
-		return $6.set(this,value);
+		return $1$3.set(this,value);
 	}
 	get position() {
-		if (!$6.has(this)) { $6.set(this,{
-			x: state.player.position.x + Math.cos((state.player.rotation) * 3.1415 / 180) * 5,
-			y: state.player.position.y + Math.sin((state.player.rotation) * 3.1415 / 180) * 5
-		}); }		return $6.get(this);
+		if (!$1$3.has(this)) { $1$3.set(this,randomPosition()); }		return $1$3.get(this);
 	}
 	set rotation(value) {
-		return $7.set(this,value);
+		return $2$3.set(this,value);
 	}
 	get rotation() {
-		if (!$7.has(this)) { $7.set(this,state.player.rotation + 90); }		return $7.get(this);
+		if (!$2$3.has(this)) { $2$3.set(this,Math.random() * 360); }		return $2$3.get(this);
+	}
+	set zombie_state(value) {
+		return $3$1.set(this,value);
+	}
+	get zombie_state() {
+		return $3$1.has(this) ? $3$1.get(this) : 'drift';
+	}
+	set speed(value) {
+		return $4$1.set(this,value);
+	}
+	get speed() {
+		return $4$1.has(this) ? $4$1.get(this) : 1;
+	}
+	set max_speed(value) {
+		return $5.set(this,value);
+	}
+	get max_speed() {
+		return $5.has(this) ? $5.get(this) : 3;
+	}
+	set size(value) {
+		return $6.set(this,value);
+	}
+	get size() {
+		return $6.has(this) ? $6.get(this) : 20;
 	}
 	
-	fly(){
-		var self = this;
-		this.position.x = this.position.x + Math.cos((this.rotation) * 3.1415 / 180) * 1;
-		this.position.y = this.position.y + Math.sin((this.rotation) * 3.1415 / 180) * 1;
-		if (this.distanceToPlayerX() > state.boundings.width || this.distanceToPlayerY() > state.boundings.height) {
-			return this.deleteBullet();
-		}		setTimeout(function() {
-			return self.fly();
-		},16);
-		return this;
+	takeHit(bullet){
+		// let audio = Audio.new("sounds/zombie_hit/{~~(Math.random * 4)}.wav")
+		// audio.play
+		this.position.x = this.position.x - Math.sin((bullet.rotation - 90) * 0.0174527778) * 30;
+		this.position.y = this.position.y + Math.cos((bullet.rotation - 90) * 0.0174527778) * 30;
+		// unless taking-hit
+		//     life -= hit.damage
+		//     taking-hit = ~~(Math.random * 5 + 1)
+		//     setTimeout(&, 50) do 
+		//         taking-hit = no
+		this.zombie_state = 'aggro';
+		return this.speed = this.max_speed;
+	}
+	
+	update(){
+		this.checkColisions();
+		if (this.zombie_state == 'drift') {
+			this.execDrift();
+		}		if (this.zombie_state == 'aggro') {
+			return this.execAggro();
+		}	}
+	
+	checkColisions(){
+		this.zombieColision();
+		return this.playerColision();
+	}
+	
+	zombieColision(){
+		var position_, $1;
+		let zom_col = this.colideZombie();
+		if (zom_col) {
+			let dx = Math.sin((this.rotation - 90) * 0.0174527778) * this.speed;
+			let dy = Math.cos((this.rotation - 90) * 0.0174527778) * this.speed;
+			(position_ = zom_col.position).x = position_.x + dx * this.speed;
+			($1 = zom_col.position).y = $1.y - dy * this.speed;
+			this.position.x = this.position.x - dx;
+			return this.position.y = this.position.y + dy;
+		}	}
+	
+	playerColision(){
+		if (this.distanceToPlayerX() < this.size && this.distanceToPlayerY() < this.size) {
+			this.position.x = this.position.x - Math.sin((state.player.rotation + 90) * 0.0174527778) * this.speed;
+			return this.position.y = this.position.y + Math.cos((state.player.rotation + 90) * 0.0174527778) * this.speed;
+		}	}
+	
+	execDrift(){
+		this.last_time || (this.last_time = state.time);
+		if (state.time - this.last_time > 200) {
+			this.last_time = state.time;
+			this.turn = ['turn_left','turn_right'][~~(Math.random() * 2)];
+		}		if (this.turn == 'turn_right') {
+			this.rotation += Math.random();
+		}		if (this.turn == 'turn_left') {
+			this.rotation -= Math.random();
+		}		return this.move();
+	}
+	
+	execAggro(){
+		this.rotation = this.angleToPlayer();
+		return this.move();
+	}
+	
+	colideZombie(){
+		for (let i = 0, items = iter$$5(state.zombies), len = items.length, zombie; i < len; i++) {
+			zombie = items[i];
+			if (this.distanceToZombieX(zombie) < this.size && this.distanceToZombieY(zombie) < this.size) {
+				if (zombie != this) { return zombie }			}		}		return false;
+	}
+	
+	angleToPlayer(){
+		let dx = state.player.position.x - this.position.x;
+		let dy = state.player.position.y - this.position.y;
+		return -(Math.atan2(dx,dy) / 0.0174527778 + 90) % 360;
 	}
 	
 	distanceToPlayerX(){
@@ -1259,23 +1424,21 @@ class Bullet {
 		return Math.abs(state.player.position.y - this.position.y);
 	}
 	
-	deleteBullet(){
-		var index = state.bullets.indexOf(this);
-		if ((index != -1)) { return state.bullets.splice(index,1) }	}
-	
-	render(){
-		var t$0, b$0, d$0, c$$ = (imba.ctx||{}), c$0, v$0, t$1;
-		t$0=(b$0=d$0=1,c$$.d) || (b$0=d$0=0,c$$.d=t$0=imba.createSVGElement('g',0,null,null,null,null));
-		b$0||(t$0.up$=c$$._);
-		c$0 = t$0.$d || (t$0.$d={});
-		(v$0=("translate(" + (this.position.x) + ", " + (this.position.y) + ") rotate(" + (this.rotation) + ")"),v$0===c$0.e || (t$0.set$('transform',c$0.e=v$0)));
-		b$0 || (t$1=imba.createSVGElement('rect',0,t$0,null,null,null));
-		b$0 || (t$1.set$('height',10));
-		b$0 || (t$1.set$('width',1));
-		b$0 || (t$1.set$('fill',"yellow"));
-		return t$0;
+	distanceToZombieX(zombie){
+		return Math.abs(zombie.position.x - this.position.x);
 	}
-} Bullet.init$();
+	
+	distanceToZombieY(zombie){
+		return Math.abs(zombie.position.y - this.position.y);
+	}
+	
+	move(){
+		this.position.x = this.position.x - Math.sin((this.rotation + 90) * 0.0174527778) * this.speed;
+		return this.position.y = this.position.y + Math.cos((this.rotation + 90) * 0.0174527778) * this.speed;
+	}
+} Zombie.init$();
+
+function iter$$6(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }var $1$4 = new WeakMap();
 
 class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 	static init$(){
@@ -1285,28 +1448,30 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 	init$(){
 		super.init$();return undefined;
 	}
-	set container(value) {
-		return $8.set(this,value);
+	set svg(value) {
+		return $1$4.set(this,value);
 	}
-	get container() {
-		return $8.get(this);
-	}
-	set player(value) {
-		return $9.set(this,value);
-	}
-	get player() {
-		if (!$9.has(this)) { $9.set(this,new Player()); }		return $9.get(this);
+	get svg() {
+		return $1$4.get(this);
 	}
 	
 	mount(){
 		var self = this;
-		state.boundings = this.container.getBoundingClientRect();
+		state.svg = this.svg.getBoundingClientRect();
 		state.ready = true;
-		state.player = this.player;
-		this.player.init();
+		state.player = new Player();
+		setInterval(function() { return state.time++; },10);
 		setInterval(function() {
+			self.update();
 			return self.render();
 		},16);
+		
+		for (let i = 0; i <= 200; i++) {
+			state.zombies.push(new Zombie());
+		}		
+		window.addEventListener('resize',function(e) {
+			return state.svg = self.svg.getBoundingClientRect();
+		});
 		
 		window.addEventListener('keydown',function(e) {
 			return state.keys[e.key] = true;
@@ -1317,12 +1482,8 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		});
 		
 		window.addEventListener('mousemove',function(e) {
-			state.mouse.y = state.boundings.height - e.clientY;
-			return state.mouse.x = e.clientX;
-		});
-		
-		window.addEventListener('resize',function(e) {
-			return state.boundings = self.container.getBoundingClientRect();
+			state.mouse.x = e.clientX;
+			return state.mouse.y = state.svg.height - e.clientY;
 		});
 		
 		window.addEventListener('mousedown',function(e) {
@@ -1334,36 +1495,101 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		});
 	}
 	
+	
+	cameraPosX(){
+		return state.svg.width / 2 - state.player.position.x;
+	}
+	
+	cameraPosY(){
+		return state.svg.height / 2 - state.player.position.y;
+	}
+	
+	update(){
+		if (state.ready) {
+			state.player.update();
+			let res = [];
+			for (let i = 0, items = iter$$6(state.zombies), len = items.length, zombie; i < len; i++) {
+				zombie = items[i];
+				res.push(zombie.update());
+			}			return res;
+		}	}
+	
 	render(){
-		var t$0, c$0, b$0, d$0, t$1, b$1, d$1, g$$2, h$$2, k$3, c$3, t$4, b$4, d$4, c$4, v$4, t$5;
+		var t$0, c$0, b$0, d$0, t$1, b$1, d$1, c$$2, b$3, d$3, v$3, t$4, b$4, d$4, v$4, t$5, t$6, k$4, c$4, b$5, d$5, c$5, v$5, b$6, d$6, v$6;
 		t$0=this;
 		t$0.open$();
 		c$0 = (b$0=d$0=1,t$0.$) || (b$0=d$0=0,t$0.$={});
-		t$1 = (b$1=d$1=1,c$0.f) || (b$1=d$1=0,c$0.f=this.container = t$1=imba.createSVGElement('svg',1024,t$0,null,null,null));
-		b$1 || (t$1.set$('transform',"scale(1,-1)"));
-		b$1 || (t$1.set$('height',"100%"));
-		b$1 || (t$1.set$('width',"100%"));
-		b$1 || (t$1.set$('style',"background-color: black"));
-		if (state.ready) {
-			(imba.ctx=(c$0.g$ || (c$0.g$={_:t$1})),g$$2=this.player.render());
-			h$$2 = c$0.h || (c$0.h = h$$2 = imba.createIndexedFragment(0,null));
-			k$3 = 0;
-			c$3=h$$2.$;
-			for (let i = 0, items = iter$$4(state.bullets), len = items.length, bullet; i < len; i++) {
-				bullet = items[i];
-				t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,h$$2,null,null,null));
-				b$4||(t$4.up$=h$$2);
-				c$4=t$4.$i || (t$4.$i={});
-				(v$4=("translate(" + (bullet.position.x) + ", " + (bullet.position.y) + ") rotate(" + (bullet.rotation) + ")"),v$4===c$4.j || (t$4.set$('transform',c$4.j=v$4)));
-				b$4 || (t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-				b$4 || (t$5.set$('width',30));
-				b$4 || (t$5.set$('height',1));
-				b$4 || (t$5.set$('fill',"yellow"));
-				k$3++;
-			}h$$2.end$(k$3);
-		}
-		(c$0.g$$2_ = t$1.insert$(g$$2,7168,c$0.g$$2_));
-		(c$0.h$$2_ = t$1.insert$(h$$2,7168,c$0.h$$2_));		t$0.close$(d$0);
+		
+			t$1 = (b$1=d$1=1,c$0.b) || (b$1=d$1=0,c$0.b=this.svg = t$1=imba.createSVGElement('svg',1024,t$0,null,null,null));
+			b$1 || (t$1.set$('transform',"scale(1,-1)"));
+			b$1 || (t$1.set$('height',"100%"));
+			b$1 || (t$1.set$('width',"100%"));
+			b$1 || (t$1.set$('style',"background-color: black"));
+			if (state.ready) {
+				c$$2 = (b$3=d$3=1,c$0.c) || (b$3=d$3=0,c$0.c=c$$2=imba.createSVGElement('g',2048,null,null,null,null));
+				b$3||(c$$2.up$=t$1);
+				(v$3=("translate(" + this.cameraPosX() + ", " + this.cameraPosY() + ")"),v$3===c$0.d || (c$$2.set$('transform',c$0.d=v$3)));
+				t$4 = (b$4=d$4=1,c$0.e) || (b$4=d$4=0,c$0.e=t$4=imba.createSVGElement('g',0,c$$2,null,null,null));
+				(v$4=("translate(" + (state.player.position.x) + ", " + (state.player.position.y) + ") rotate(" + (state.player.rotation) + ")"),v$4===c$0.f || (t$4.set$('transform',c$0.f=v$4)));
+				b$4 || (t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
+				b$4 || (t$5.set$('r',10));
+				b$4 || (t$5.set$('fill',"white"));
+				b$4 || (t$5=imba.createSVGElement('g',0,t$4,null,null,null));
+				b$4 || (t$5.set$('transform','translate(5, 5)'));
+				b$4 || (t$6=imba.createSVGElement('rect',0,t$5,null,null,null));
+				b$4 || (t$6.set$('height',13));
+				b$4 || (t$6.set$('width',2));
+				b$4 || (t$6.set$('fill',"white"));
+				t$4 = c$0.g || (c$0.g = t$4 = imba.createIndexedFragment(0,c$$2));
+				k$4 = 0;
+				c$4=t$4.$;
+				for (let i = 0, items = iter$$6(state.bullets), len = items.length, bullet; i < len; i++) {
+					bullet = items[i];
+					t$5 = (b$5=d$5=1,c$4[k$4]) || (b$5=d$5=0,c$4[k$4] = t$5=imba.createSVGElement('g',0,t$4,null,null,null));
+					b$5||(t$5.up$=t$4);
+					c$5=t$5.$h || (t$5.$h={});
+					(v$5=("translate(" + (bullet.position.x) + ", " + (bullet.position.y) + ") rotate(" + (bullet.rotation) + ")"),v$5===c$5.i || (t$5.set$('transform',c$5.i=v$5)));
+					b$5 || (t$6=imba.createSVGElement('rect',0,t$5,null,null,null));
+					b$5 || (t$6.set$('width',50));
+					b$5 || (t$6.set$('height',1));
+					b$5 || (t$6.set$('fill',"yellow"));
+					k$4++;
+				}t$4.end$(k$4);
+				t$4 = c$0.j || (c$0.j = t$4 = imba.createIndexedFragment(0,c$$2));
+				k$4 = 0;
+				c$4=t$4.$;
+				for (let i = 0, items = iter$$6(state.zombies), len = items.length, zombie; i < len; i++) {
+					zombie = items[i];
+					t$5 = (b$5=d$5=1,c$4[k$4]) || (b$5=d$5=0,c$4[k$4] = t$5=imba.createSVGElement('g',0,t$4,null,null,null));
+					b$5||(t$5.up$=t$4);
+					c$5=t$5.$k || (t$5.$k={});
+					(v$5=("translate(" + (zombie.position.x) + ", " + (zombie.position.y) + ") rotate(" + (zombie.rotation) + ")"),v$5===c$5.l || (t$5.set$('transform',c$5.l=v$5)));
+					t$6 = (b$6=d$6=1,c$5.m) || (b$6=d$6=0,c$5.m=t$6=imba.createSVGElement('circle',0,t$5,null,null,null));
+					(v$6=zombie.size / 2,v$6===c$5.n || (t$6.set$('r',c$5.n=v$6)));
+					b$6 || (t$6.set$('fill',"red"));
+					t$6 = (b$6=d$6=1,c$5.o) || (b$6=d$6=0,c$5.o=t$6=imba.createSVGElement('rect',0,t$5,null,null,null));
+					(v$6=zombie.size,v$6===c$5.p || (t$6.set$('width',c$5.p=v$6)));
+					b$6 || (t$6.set$('height',4));
+					b$6 || (t$6.set$('x',-20));
+					b$6 || (t$6.set$('y',"7"));
+					b$6 || (t$6.set$('fill',"red"));
+					t$6 = (b$6=d$6=1,c$5.q) || (b$6=d$6=0,c$5.q=t$6=imba.createSVGElement('rect',0,t$5,null,null,null));
+					(v$6=zombie.size,v$6===c$5.r || (t$6.set$('width',c$5.r=v$6)));
+					b$6 || (t$6.set$('height',4));
+					b$6 || (t$6.set$('x',-20));
+					b$6 || (t$6.set$('y',"-10"));
+					b$6 || (t$6.set$('fill',"red"));
+					k$4++;
+				}t$4.end$(k$4);
+				b$3 || (t$4=imba.createSVGElement('rect',0,c$$2,null,null,null));
+				b$3 || (t$4.set$('x',"0"));
+				b$3 || (t$4.set$('y',"0"));
+				b$3 || (t$4.set$('height',30));
+				b$3 || (t$4.set$('width',30));
+				b$3 || (t$4.set$('fill',"green"));
+			}
+			(c$0.c$$2_ = t$1.insert$(c$$2,1024,c$0.c$$2_));
+		t$0.close$(d$0);
 		return t$0;
 	}
 } AppRootComponent.init$(); imba.tags.define('app-root',AppRootComponent,{});
