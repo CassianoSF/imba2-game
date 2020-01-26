@@ -1,14 +1,10 @@
-import {Gun} from './Gun'
 import {state} from './state'
 
 export class Player
-    @position = {
-        x: state.svg.width / 2
-        y: state.svg.height / 2
-    }
+    @position = {x:0,y:0}
     @rotation = 0
-    @gun = Gun.new
-    @speed = 2
+    @gun = state.guns.rifle
+    @speed = .5
 
     def update
         @move()
@@ -16,8 +12,7 @@ export class Player
         @shoot()
 
     def shoot
-        return unless state.mouse.press
-        @gun.fire()
+        @gun.fire() if state.mouse.press
 
     def rotate
         let diffX = state.mouse.x - state.svg.width/2
@@ -25,7 +20,13 @@ export class Player
         @rotation = -Math.atan2(diffX, diffY) / 3.1415 * 180.0
 
     def move
-        @position.x -= @speed if state.keys.a
-        @position.x += @speed if state.keys.d
-        @position.y += @speed if state.keys.w
-        @position.y -= @speed if state.keys.s
+        let slower
+        if state.keys.a + state.keys.d + state.keys.w + state.keys.s > 1
+            slower = 0.7
+        else
+            slower = 1
+
+        @position.x -= @speed * slower * (state.keys.shift ? 2 : 1) if state.keys.a
+        @position.x += @speed * slower * (state.keys.shift ? 2 : 1) if state.keys.d
+        @position.y += @speed * slower * (state.keys.shift ? 2 : 1) if state.keys.w
+        @position.y -= @speed * slower * (state.keys.shift ? 2 : 1) if state.keys.s

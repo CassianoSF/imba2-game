@@ -1,47 +1,59 @@
-import {Player} from './Player'
 import {Zombie} from './Zombie'
 import {state} from './state'
 
+
 tag app-root
-    @svg
 
     def refresh
-        @update()
+        state.time++
+        # console.time()
         @render()
+        # console.timeEnd()
+        # console.time()
+        @update()
+        # console.timeEnd()
 
     def mount
-        @svg = document.getElementById('svg')
-        state.svg = @svg.getBoundingClientRect()
-        state.ready = true
-        state.player = Player.new
-        setInterval(&, 10) do state.time++
-        setInterval(@refresh.bind(this), 16)
+        state.svg = document.getElementById('svg').getBoundingClientRect()
+        window.addEventListener('resize', @resizeEvent)
+        window.addEventListener('keydown', @keydownEvent)
+        window.addEventListener('keyup', @keyupEvent)
+        window.addEventListener('mousemove', @mousemoveEvent)
+        window.addEventListener('mousedown', @mousedownEvent)
+        window.addEventListener('mouseup', @mouseupEvent)
+        setInterval(@refresh.bind(this), 1)
 
-        for i in [0..300]
+        for i in [0..200]
             let z = Zombie.new
-            state.sector["{~~(z.position.x / 300)}-{~~(z.position.y / 300)}"] ||= Set.new
-            state.sector["{~~(z.position.x / 300)}-{~~(z.position.y / 300)}"].add(z)
-            state.zombies.push(z)
+            state.sector["{~~(z.position.x / 100)}-{~~(z.position.y / 100)}"] ||= Set.new
+            state.sector["{~~(z.position.x / 100)}-{~~(z.position.y / 100)}"].add(z)
+            state.zombies.add(z)
 
-        window.addEventListener('resize', &) do |e|
-            state.svg = @svg.getBoundingClientRect()
+    def resizeEvent e
+        state.svg = @svg.getBoundingClientRect()
 
-        window.addEventListener('keydown', &) do |e|
-            state.keys[e.key] = true
+    def keydownEvent e
+        state.keys[e.key.toLowerCase()] = true
 
-        window.addEventListener('keyup', &) do |e|
-            state.keys[e.key] = false
+    def keyupEvent e
+        state.keys[e.key.toLowerCase()] = false
 
-        window.addEventListener('mousemove', &) do |e|
-            state.mouse.x = e.clientX
-            state.mouse.y = state.svg.height - e.clientY
+    def mousemoveEvent e
+        state.mouse.x = e.clientX
+        state.mouse.y = state.svg.height - e.clientY
 
-        window.addEventListener('mousedown', &) do |e|
-            state.mouse.press = true
+    def mousedownEvent e
+        state.mouse.press = true
 
-        window.addEventListener('mouseup', &) do |e|
-            state.mouse.press = false
+    def mouseupEvent e
+        state.mouse.press = false
 
+    def update
+        state.player.update()
+        for zombie of state.zombies
+            zombie.update() if zombie
+        for bullet of state.bullets
+            bullet.update() if bullet
 
     def cameraPosX
         state.svg.width / 2 - state.player.position.x
@@ -49,36 +61,29 @@ tag app-root
     def cameraPosY
         state.svg.height / 2 - state.player.position.y
 
-    def update
-        if state.ready
-            state.player.update()
-            for zombie in state.zombies
-                zombie.update()
-
-    def render
+    def render test
         <self>
             <svg #svg transform="scale(1,-1)" height="100%" width="100%" style="background-color: black">
-                if state.ready
-                    <g transform="translate({@cameraPosX()}, {@cameraPosY()})">
+                <g transform="translate({@cameraPosX()}, {@cameraPosY()})">
 
-                        # PLAYER
-                        <g transform="translate({state.player.position.x}, {state.player.position.y}) rotate({state.player.rotation})">
-                            <circle r=10 fill="white">
+                    # PLAYER
+                    <g transform="translate({state.player.position.x}, {state.player.position.y}) rotate({state.player.rotation})">
+                        <circle r=10 fill="white">
 
-                            # GUN
-                            <g transform='translate(5, 5)'>
-                                <rect height=13 width=2 fill="white">
+                        # GUN
+                        <g transform='translate(5, 5)'>
+                            <rect height=13 width=2 fill="white">
 
-                        # BULLETS
-                        for bullet in state.bullets
-                            <g transform="translate({bullet.position.x}, {bullet.position.y}) rotate({bullet.rotation})">
-                                <rect width=50 height=1 fill="yellow">
+                    # BULLETS
+                    for bullet of state.bullets
+                        <g transform="translate({bullet.position.x}, {bullet.position.y}) rotate({bullet.rotation})">
+                            <rect width=50 height=1 fill="yellow">
 
-                        # ZOMBIES
-                        for zombie in state.zombies
-                            <g transform="translate({zombie.position.x}, {zombie.position.y}) rotate({zombie.rotation})">
-                                <circle r=(zombie.size / 2) fill="red" stroke='black'>
-                                <rect width=(zombie.size) height=4 x=(-20) y="7" fill="red">
-                                <rect width=(zombie.size) height=4 x=(-20) y="-10" fill="red">
+                    # ZOMBIES
+                    for zombie of state.zombies
+                        <g transform="translate({zombie.position.x}, {zombie.position.y}) rotate({zombie.rotation})">
+                            <circle r=(zombie.size / 2) fill="red" stroke='black'>
+                            <rect width=(zombie.size) height=4 y="6" fill="red">
+                            <rect width=(zombie.size) height=4 y="-10" fill="red">
 
-                        <rect x="0" y="0" height=30 width=30 fill="green">
+                    <rect x="0" y="0" height=30 width=30 fill="green">

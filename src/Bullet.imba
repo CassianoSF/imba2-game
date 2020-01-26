@@ -7,16 +7,12 @@ export class Bullet
     }
     @rotation = state.player.rotation + 90
 
-    def fly
+    def update
         @checkColision()
-        @position.x += Math.cos((@rotation) * 0.0174527778) * 20
-        @position.y += Math.sin((@rotation) * 0.0174527778) * 20
+        @position.x += Math.cos((@rotation) * 0.0174527778) * 10
+        @position.y += Math.sin((@rotation) * 0.0174527778) * 10
         if @distanceToPlayerX() > state.svg.width or @distanceToPlayerY() > state.svg.height
-            @deleteBullet()
-            return 
-        setTimeout(&, 5) do
-            @fly()
-        return self
+            state.bullets.delete(self)
 
     def distanceToPlayerX
         Math.abs(state.player.position.x - @position.x)
@@ -31,13 +27,7 @@ export class Bullet
         Math.abs(zombie.position.y - @position.y)
 
     def checkColision
-        for zombie in state.zombies
-            if @distanceToZombieX(zombie) < 10 && @distanceToZombieY(zombie) < 10
-                @deleteBullet()
+        for zombie of state.sector["{~~(@position.x / 100)}-{~~(@position.y / 100)}"]
+            if @distanceToZombieX(zombie) < 10 and @distanceToZombieY(zombie) < 10
+                state.bullets.delete(self)
                 zombie.takeHit(self)
-                return true
-        return false
-
-    def deleteBullet
-        var index = state.bullets.indexOf(self)
-        state.bullets.splice(index, 1) if (index != -1)

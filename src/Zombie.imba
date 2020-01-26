@@ -1,8 +1,12 @@
 import {state} from './state'
 
+let DRIFT = 0
+let AGGRO = 1
+let ATTACK = 2
+
 def randomPosition
-    let posx = Math.random() * state.svg.width
-    let posy = Math.random() * state.svg.height
+    let posx = Math.random() * state.svg.width * 1 - (state.svg.width * .5)
+    let posy = Math.random() * state.svg.height * 1 - (state.svg.height * .5)
     let diffx = Math.abs(posx - state.player.position.x)
     let diffy = Math.abs(posy - state.player.position.y)
     if diffx < 400 and diffy < 400
@@ -15,39 +19,33 @@ def randomPosition
 export class Zombie
     @position = randomPosition()
     @rotation = Math.random() * 360
-    @sector = "{~~(@position.x / 300)}-{~~(@position.y / 300)}"
-    @state = 'drift'
-    @speed = 1
-    @max_speed = 3
+    @sector = "{~~(@position.x / 100)}-{~~(@position.y / 100)}"
+    @state = DRIFT
+    @speed = .2
+    @max_speed = .6
     @size = 20
     @colisions_done = false
+    @turn = 0
 
     def takeHit(bullet)
-        # let audio = Audio.new("sounds/zombie_hit/{~~(Math.random * 4)}.wav")
-        # audio.play
         @position.x -= Math.sin((bullet.rotation - 90) * 0.0174527778) * 10
         @position.y += Math.cos((bullet.rotation - 90) * 0.0174527778) * 10
-        # unless taking-hit
-        #     life -= hit.damage
-        #     taking-hit = ~~(Math.random * 5 + 1)
-        #     setTimeout(&, 50) do 
-        #         taking-hit = no
-        @state = 'aggro'
+        @state = AGGRO
         @speed = @max_speed
 
     def update
         @updateSector()
         @checkColisions()
         @checkLife()
-        if @state == 'drift'
+        if @state == DRIFT
             @execDrift()
-        if @state == 'aggro'
+        if @state == AGGRO
             @execAggro()
-        if @state == 'attack'
+        if @state == ATTACK
             @execAttack()
 
     def updateSector()
-        let temp_sector = "{~~(@position.x / 300)}-{~~(@position.y / 300)}"
+        let temp_sector = "{~~(@position.x / 100)}-{~~(@position.y / 100)}"
         if temp_sector != @sector
             state.sector[@sector] ||= Set.new
             state.sector[@sector].delete(self)
@@ -63,8 +61,8 @@ export class Zombie
     def checkColisions
         let zom_col = @colideZombie()
         if zom_col
-            let dx = Math.sin((@rotation - 90) * 0.0174527778) * @speed
-            let dy = Math.cos((@rotation - 90) * 0.0174527778) * @speed
+            let dx = Math.sin((@rotation + 90) * 0.0174527778) * @speed
+            let dy = Math.cos((@rotation + 90) * 0.0174527778) * @speed
             zom_col.position.x += dx * 0.7
             zom_col.position.y -= dy * 0.7
             @position.x -= dx
@@ -72,24 +70,24 @@ export class Zombie
 
     def execAttack
         if @distanceToPlayerX() > @size or @distanceToPlayerY() > @size
-            @state = 'aggro'
+            @state = AGGRO
 
     def execDrift
-        @last_time ||= state.time
-        if state.time - @last_time > 200
-            @last_time = state.time
-            @turn = ['turn_left', 'turn_right'][~~(Math.random() * 2)]
-        if @turn == 'turn_right'
-            @rotation += Math.random()
-        if @turn == 'turn_left'
-            @rotation -= Math.random()
+        if state.time % 200 == 0
+            @turn = Math.floor(Math.random() * 2)
+            @speed = Math.random() * 0.4
+        if state.time % 3 == 0
+            if @turn == 0
+                @rotation += Math.random() * 3
+            elif @turn == 1
+                @rotation -= Math.random() * 3
         @move()
 
     def execAggro
         @rotation = @angleToPlayer()
         @move()
         if @distanceToPlayerX() < @size and @distanceToPlayerY() < @size
-            @state = 'attack'
+            @state = ATTACK
 
     def colideZombie
         state.sector[@sector] ||= Set.new
@@ -101,7 +99,7 @@ export class Zombie
     def angleToPlayer
         let dx = state.player.position.x - @position.x
         let dy = state.player.position.y - @position.y
-        -(Math.atan2(dx, dy)/0.0174527778 + 90) % 360
+        -(Math.atan2(dx, dy)/0.0174527778 - 90) % 360
 
     def distanceToPlayerX
         Math.abs(state.player.position.x - @position.x)
@@ -116,5 +114,5 @@ export class Zombie
         Math.abs(zombie.position.y - @position.y)
 
     def move
-        @position.x -= Math.sin((@rotation + 90 ) * 0.0174527778) * @speed
-        @position.y += Math.cos((@rotation + 90 ) * 0.0174527778) * @speed
+        @position.x -= Math.sin((@rotation - 90 ) * 0.0174527778) * @speed
+        @position.y += Math.cos((@rotation - 90 ) * 0.0174527778) * @speed
