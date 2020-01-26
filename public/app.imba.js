@@ -1485,7 +1485,7 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		window.addEventListener('mousedown',this.mousedownEvent);
 		window.addEventListener('mouseup',this.mouseupEvent);
 		
-		for (let i = 0; i < 300; i++) {
+		for (let i = 0; i < 500; i++) {
 			state.zombies.add(new Zombie());
 		}		
 		return setInterval(this.refresh.bind(this),1);

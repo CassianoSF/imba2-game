@@ -25,7 +25,7 @@ tag app-root
         window.addEventListener('mousedown', @mousedownEvent)
         window.addEventListener('mouseup', @mouseupEvent)
 
-        for i in [0...300]
+        for i in [0...500]
             state.zombies.add(Zombie.new)
 
         setInterval(@refresh.bind(this), 1)
