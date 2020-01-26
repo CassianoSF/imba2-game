@@ -2,7 +2,7 @@ import {Gun} from './Gun'
 import {Player} from './Player'
 import {Zombie} from './Zombie'
 
-var initial_state = {
+export var state = 
     time: 0
     keys: []
     mouse: {x: 0, y: 0}
@@ -11,13 +11,8 @@ var initial_state = {
     zombies: Set.new
     camera: {}
     sector: {}
-    guns: {
+    guns:
         rifle: Gun.new
-    }
-    svg: {
+    svg: 
         height: 1
         width: 1
-    }
-}
-
-export var state = initial_state

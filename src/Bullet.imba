@@ -9,9 +9,9 @@ export class Bullet
 
     def update
         @checkColision()
-        @position.x += Math.cos((@rotation) * 0.0174527778) * 10
-        @position.y += Math.sin((@rotation) * 0.0174527778) * 10
-        if @distanceToPlayerX() > state.svg.width or @distanceToPlayerY() > state.svg.height
+        @position.x += Math.cos((@rotation) * 0.0174527778) * 15
+        @position.y += Math.sin((@rotation) * 0.0174527778) * 15
+        if @distanceToPlayerX() > window.innerWidth or @distanceToPlayerY() > window.innerHeight
             state.bullets.delete(self)
 
     def distanceToPlayerX

@@ -1133,9 +1133,9 @@ class Bullet {
 	
 	update(){
 		this.checkColision();
-		this.position.x = this.position.x + Math.cos((this.rotation) * 0.0174527778) * 10;
-		this.position.y = this.position.y + Math.sin((this.rotation) * 0.0174527778) * 10;
-		if (this.distanceToPlayerX() > state.svg.width || this.distanceToPlayerY() > state.svg.height) {
+		this.position.x = this.position.x + Math.cos((this.rotation) * 0.0174527778) * 15;
+		this.position.y = this.position.y + Math.sin((this.rotation) * 0.0174527778) * 15;
+		if (this.distanceToPlayerX() > window.innerWidth || this.distanceToPlayerY() > window.innerHeight) {
 			return state.bullets.delete(this);
 		}	}
 	
@@ -1223,7 +1223,7 @@ class Player {
 		return $4.set(this,value);
 	}
 	get speed() {
-		return $4.has(this) ? $4.get(this) : .5;
+		return $4.has(this) ? $4.get(this) : .3;
 	}
 	
 	update(){
@@ -1236,24 +1236,24 @@ class Player {
 		if (state.mouse.press) { return this.gun.fire() }	}
 	
 	rotate(){
-		let diffX = state.mouse.x - state.svg.width / 2;
-		let diffY = state.mouse.y - state.svg.height / 2;
+		let diffX = state.mouse.x - window.innerWidth / 2;
+		let diffY = state.mouse.y - window.innerHeight / 2;
 		return this.rotation = -Math.atan2(diffX,diffY) / 3.1415 * 180.0;
 	}
 	
 	move(){
-		let slower;		if (state.keys.a + state.keys.d + state.keys.w + state.keys.s > 1) {
-			slower = 0.7;
+		let slower;		if (((state.keys.A || 0) + (state.keys.D || 0) + (state.keys.W || 0) + (state.keys.S || 0)) > 1) {
+			slower = 0.707;
 		} else {
 			slower = 1;
 		}		
-		if (state.keys.a) this.position.x = this.position.x - this.speed * slower * (state.keys.shift ? 2 : 1);
-		if (state.keys.d) this.position.x = this.position.x + this.speed * slower * (state.keys.shift ? 2 : 1);
-		if (state.keys.w) this.position.y = this.position.y + this.speed * slower * (state.keys.shift ? 2 : 1);
-		if (state.keys.s) { return this.position.y = this.position.y - this.speed * slower * (state.keys.shift ? 2 : 1) }	}
+		if (state.keys.A) this.position.x = this.position.x - this.speed * slower * (state.keys.SHIFT ? 2 : 1);
+		if (state.keys.D) this.position.x = this.position.x + this.speed * slower * (state.keys.SHIFT ? 2 : 1);
+		if (state.keys.W) this.position.y = this.position.y + this.speed * slower * (state.keys.SHIFT ? 2 : 1);
+		if (state.keys.S) { return this.position.y = this.position.y - this.speed * slower * (state.keys.SHIFT ? 2 : 1) }	}
 } Player.init$();
 
-var initial_state = {
+var state = {
 	time: 0,
 	keys: [],
 	mouse: {x: 0,y: 0},
@@ -1271,8 +1271,6 @@ var initial_state = {
 	}
 };
 
-var state = initial_state;
-
 function iter$$5(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }var $1$3 = new WeakMap(), $2$2 = new WeakMap(), $3$1 = new WeakMap(), $4$1 = new WeakMap(), $5 = new WeakMap(), $6 = new WeakMap(), $7 = new WeakMap(), $8 = new WeakMap(), $9 = new WeakMap();
 
 let DRIFT = 0;
@@ -1280,8 +1278,8 @@ let AGGRO = 1;
 let ATTACK = 2;
 
 function randomPosition(){
-	let posx = Math.random() * state.svg.width * 1 - (state.svg.width * .5);
-	let posy = Math.random() * state.svg.height * 1 - (state.svg.height * .5);
+	let posx = Math.random() * window.innerWidth * 1 - (window.innerWidth * .5);
+	let posy = Math.random() * window.innerHeight * 1 - (window.innerHeight * .5);
 	let diffx = Math.abs(posx - state.player.position.x);
 	let diffy = Math.abs(posy - state.player.position.y);
 	if (diffx < 400 && diffy < 400) {
@@ -1464,54 +1462,47 @@ class Zombie {
 } Zombie.init$();
 
 function iter$$6(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
-
 class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 	
 	refresh(){
 		state.time++;
 		// console.time()
+		let date = new Date();
 		this.render();
-		// console.timeEnd()
-		// console.time()
-		return this.update();
-		// console.timeEnd()
+		let diff = new Date() - date;
+		if (diff > 5) { console.log('slow render',diff); }		// console.timeEnd()
+		date = new Date();
+		this.update();
+		diff = new Date() - date;
+		if (diff > 5) { return console.log('slow update',diff) }		// console.timeEnd()
 	}
 	
 	mount(){
-		var sector_, $1;
-		state.svg = document.getElementById('svg').getBoundingClientRect();
 		window.addEventListener('resize',this.resizeEvent);
 		window.addEventListener('keydown',this.keydownEvent);
 		window.addEventListener('keyup',this.keyupEvent);
 		window.addEventListener('mousemove',this.mousemoveEvent);
 		window.addEventListener('mousedown',this.mousedownEvent);
 		window.addEventListener('mouseup',this.mouseupEvent);
-		setInterval(this.refresh.bind(this),1);
 		
-		let res = [];
-		for (let i = 0; i <= 200; i++) {
-			let z = new Zombie();
-			(sector_ = state.sector)[$1 = ("" + (~~(z.position.x / 100)) + "-" + (~~(z.position.y / 100)))] || (sector_[$1] = new Set());
-			state.sector[("" + (~~(z.position.x / 100)) + "-" + (~~(z.position.y / 100)))].add(z);
-			res.push(state.zombies.add(z));
-		}		return res;
+		for (let i = 0; i < 300; i++) {
+			state.zombies.add(new Zombie());
+		}		
+		return setInterval(this.refresh.bind(this),1);
 	}
 	
-	resizeEvent(e){
-		return state.svg = this.svg.getBoundingClientRect();
-	}
 	
 	keydownEvent(e){
-		return state.keys[e.key.toLowerCase()] = true;
+		return state.keys[e.key.toUpperCase()] = true;
 	}
 	
 	keyupEvent(e){
-		return state.keys[e.key.toLowerCase()] = false;
+		return state.keys[e.key.toUpperCase()] = false;
 	}
 	
 	mousemoveEvent(e){
 		state.mouse.x = e.clientX;
-		return state.mouse.y = state.svg.height - e.clientY;
+		return state.mouse.y = window.innerHeight - e.clientY;
 	}
 	
 	mousedownEvent(e){
@@ -1532,20 +1523,19 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 	}
 	
 	cameraPosX(){
-		return state.svg.width / 2 - state.player.position.x;
+		return window.innerWidth / 2 - state.player.position.x;
 	}
 	
 	cameraPosY(){
-		return state.svg.height / 2 - state.player.position.y;
+		return window.innerHeight / 2 - state.player.position.y;
 	}
 	
-	render(test){
+	render(){
 		var t$0, c$0, b$0, d$0, t$1, t$2, b$2, d$2, v$2, t$3, b$3, d$3, v$3, t$4, t$5, k$3, c$3, b$4, d$4, c$4, v$4, b$5, d$5, v$5;
 		t$0=this;
 		t$0.open$();
 		c$0 = (b$0=d$0=1,t$0.$) || (b$0=d$0=0,t$0.$={});
 		b$0 || (t$1=imba.createSVGElement('svg',0,t$0,null,null,null));
-		b$0 || (t$1.id=`svg`);
 		b$0 || (t$1.set$('transform',"scale(1,-1)"));
 		b$0 || (t$1.set$('height',"100%"));
 		b$0 || (t$1.set$('width',"100%"));
@@ -1555,13 +1545,13 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		t$3 = (b$3=d$3=1,c$0.d) || (b$3=d$3=0,c$0.d=t$3=imba.createSVGElement('g',0,t$2,null,null,null));
 		(v$3=("translate(" + (state.player.position.x) + ", " + (state.player.position.y) + ") rotate(" + (state.player.rotation) + ")"),v$3===c$0.e || (t$3.set$('transform',c$0.e=v$3)));
 		b$3 || (t$4=imba.createSVGElement('circle',0,t$3,null,null,null));
-		b$3 || (t$4.set$('r',10));
+		b$3 || (t$4.set$('r',"10"));
 		b$3 || (t$4.set$('fill',"white"));
 		b$3 || (t$4=imba.createSVGElement('g',0,t$3,null,null,null));
 		b$3 || (t$4.set$('transform','translate(5, 5)'));
 		b$3 || (t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-		b$3 || (t$5.set$('height',13));
-		b$3 || (t$5.set$('width',2));
+		b$3 || (t$5.set$('height',"13"));
+		b$3 || (t$5.set$('width',"2"));
 		b$3 || (t$5.set$('fill',"white"));
 		t$3 = c$0.f || (c$0.f = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
@@ -1572,8 +1562,8 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 			c$4=t$4.$g || (t$4.$g={});
 			(v$4=("translate(" + (bullet.position.x) + ", " + (bullet.position.y) + ") rotate(" + (bullet.rotation) + ")"),v$4===c$4.h || (t$4.set$('transform',c$4.h=v$4)));
 			b$4 || (t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-			b$4 || (t$5.set$('width',50));
-			b$4 || (t$5.set$('height',1));
+			b$4 || (t$5.set$('width',"50"));
+			b$4 || (t$5.set$('height',"1"));
 			b$4 || (t$5.set$('fill',"yellow"));
 			k$3++;
 		}t$3.end$(k$3);
@@ -1591,12 +1581,12 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 			b$5 || (t$5.set$('stroke','black'));
 			t$5 = (b$5=d$5=1,c$4.n) || (b$5=d$5=0,c$4.n=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
 			(v$5=zombie.size,v$5===c$4.o || (t$5.set$('width',c$4.o=v$5)));
-			b$5 || (t$5.set$('height',4));
+			b$5 || (t$5.set$('height',"4"));
 			b$5 || (t$5.set$('y',"6"));
 			b$5 || (t$5.set$('fill',"red"));
 			t$5 = (b$5=d$5=1,c$4.p) || (b$5=d$5=0,c$4.p=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
 			(v$5=zombie.size,v$5===c$4.q || (t$5.set$('width',c$4.q=v$5)));
-			b$5 || (t$5.set$('height',4));
+			b$5 || (t$5.set$('height',"4"));
 			b$5 || (t$5.set$('y',"-10"));
 			b$5 || (t$5.set$('fill',"red"));
 			k$3++;
@@ -1604,8 +1594,8 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		b$2 || (t$3=imba.createSVGElement('rect',0,t$2,null,null,null));
 		b$2 || (t$3.set$('x',"0"));
 		b$2 || (t$3.set$('y',"0"));
-		b$2 || (t$3.set$('height',30));
-		b$2 || (t$3.set$('width',30));
+		b$2 || (t$3.set$('height',"30"));
+		b$2 || (t$3.set$('width',"30"));
 		b$2 || (t$3.set$('fill',"green"));
 		t$0.close$(d$0);
 		return t$0;

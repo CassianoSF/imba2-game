@@ -5,8 +5,8 @@ let AGGRO = 1
 let ATTACK = 2
 
 def randomPosition
-    let posx = Math.random() * state.svg.width * 1 - (state.svg.width * .5)
-    let posy = Math.random() * state.svg.height * 1 - (state.svg.height * .5)
+    let posx = Math.random() * window.innerWidth * 1 - (window.innerWidth * .5)
+    let posy = Math.random() * window.innerHeight * 1 - (window.innerHeight * .5)
     let diffx = Math.abs(posx - state.player.position.x)
     let diffy = Math.abs(posy - state.player.position.y)
     if diffx < 400 and diffy < 400
