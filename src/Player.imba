@@ -1,39 +1,40 @@
 import {state} from './state'
+import {Gun} from './Gun'
 
 export class Player
-    @position = {x:0,y:0}
-    @rotation = 0
-    @gun = state.guns.rifle
-    @speed = .4
+    def constructor
+        @position = {x:0,y:0}
+        @rotation = 0
+        @gun = Gun.new
+        @speed = .4
+        @nearZombies = Set.new
 
     def update
         @move()
         @rotate()
         @shoot()
-
-    def nearZombies
         let x = ~~((@position.x + 1000) / 2000)
         let y = ~~((@position.y + 1000) / 2000)
-        let near = Set.new
+
+        @nearZombies = Set.new
         for val of (state.sector["{x + 0}|{y + 0}"] or Set.new)
-            near.add(val)
+            @nearZombies.add(val)
         for val of (state.sector["{x + 0}|{y + 1}"] or Set.new)
-            near.add(val)
+            @nearZombies.add(val)
         for val of (state.sector["{x + 0}|{y - 1}"] or Set.new)
-            near.add(val)
+            @nearZombies.add(val)
         for val of (state.sector["{x + 1}|{y + 0}"] or Set.new)
-            near.add(val)
+            @nearZombies.add(val)
         for val of (state.sector["{x - 1}|{y + 0}"] or Set.new)
-            near.add(val)
+            @nearZombies.add(val)
         for val of (state.sector["{x + 1}|{y + 1}"] or Set.new)
-            near.add(val)
+            @nearZombies.add(val)
         for val of (state.sector["{x + 1}|{y - 1}"] or Set.new)
-            near.add(val)
+            @nearZombies.add(val)
         for val of (state.sector["{x - 1}|{y + 1}"] or Set.new)
-            near.add(val)
+            @nearZombies.add(val)
         for val of (state.sector["{x - 1}|{y - 1}"] or Set.new)
-            near.add(val)
-        return near
+            @nearZombies.add(val)
 
     def shoot
         @gun.fire() if state.mouse.press

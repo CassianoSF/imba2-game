@@ -19,7 +19,6 @@ tag app-root
 
     def mount
         state.first_date = Date.new
-        window.addEventListener('resize', @resizeEvent)
         window.addEventListener('keydown', @keydownEvent)
         window.addEventListener('keyup', @keyupEvent)
         window.addEventListener('mousemove', @mousemoveEvent)
@@ -30,7 +29,6 @@ tag app-root
             state.zombies.add(zombie)
             zombie.update()
             state.sector[zombie.currentSector()].add(zombie)
-
         setInterval(@refresh.bind(this), 1)
 
     def keydownEvent e
@@ -51,7 +49,7 @@ tag app-root
 
     def update
         state.player.update()
-        for zombie of state.player.nearZombies()
+        for zombie of state.player.nearZombies
             zombie.update() if zombie
         for bullet of state.bullets
             bullet.update() if bullet
@@ -62,13 +60,25 @@ tag app-root
     def cameraPosY
         window.innerHeight / 2 - state.player.position.y
 
+    def transformCamera
+        "translate({window.innerWidth / 2 - state.player.position.x.toFixed(1)}, {window.innerHeight / 2 - state.player.position.y.toFixed(1)})"
+
+    def transformPlayer
+        "translate({state.player.position.x.toFixed(1)}, {state.player.position.y.toFixed(1)}) rotate({state.player.rotation.toFixed(1)})"
+
+    def transformBullet bullet
+        "translate({bullet.position.x.toFixed(1)}, {bullet.position.y.toFixed(1)}) rotate({bullet.rotation.toFixed(1)})"
+
+    def transformZombie zombie
+        "translate({zombie.position.x.toFixed(1)}, {zombie.position.y.toFixed(1)}) rotate({zombie.rotation.toFixed(1)})"
+
     def render
         <self>
             <svg transform="scale(1,-1)" height="100%" width="100%" style="background-color: black">
-                <g transform="translate({@cameraPosX()}, {@cameraPosY()})">
+                <g transform=@transformCamera()>
 
                     # PLAYER
-                    <g transform="translate({state.player.position.x.toFixed(1)}, {state.player.position.y.toFixed(1)}) rotate({state.player.rotation.toFixed(1)})">
+                    <g transform=@transformPlayer()>
                         <circle r="10" fill="white">
 
                         # GUN
@@ -77,12 +87,12 @@ tag app-root
 
                     # BULLETS
                     for bullet of state.bullets
-                        <g transform="translate({bullet.position.x.toFixed(1)}, {bullet.position.y.toFixed(1)}) rotate({bullet.rotation.toFixed(1)})">
+                        <g transform=@transformBullet(bullet)>
                             <rect width="50" height="1" fill="yellow">
 
                     # ZOMBIES
-                    for zombie of state.player.nearZombies()
-                        <g transform="translate({zombie.position.x.toFixed(1)}, {zombie.position.y.toFixed(1)}) rotate({zombie.rotation.toFixed(1)})">
+                    for zombie of state.player.nearZombies
+                        <g transform=@transformZombie(zombie)>
                             <circle r=(zombie.size / 2) fill="red" stroke='black'>
                             <rect width=(zombie.size) height="4" y="6" fill="red">
                             <rect width=(zombie.size) height="4" y="-10" fill="red">
