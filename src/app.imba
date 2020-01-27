@@ -8,7 +8,7 @@ tag app-root
         state.delta = (current_date - (state.last_date or Date.new)) / 5
         state.time = current_date - state.first_date
         console.log state.delta if state.delta > 10
-        if current_date - state.last_date > 16
+        if current_date - state.last_date > 8
             @render()
         @update()
         state.last_date = current_date

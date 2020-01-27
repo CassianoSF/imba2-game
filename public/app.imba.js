@@ -1509,7 +1509,7 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		let current_date = new Date();
 		state.delta = (current_date - (state.last_date || new Date())) / 5;
 		state.time = current_date - state.first_date;
-		if (state.delta > 10) { console.log(state.delta); }		if (current_date - state.last_date > 16) {
+		if (state.delta > 10) { console.log(state.delta); }		if (current_date - state.last_date > 8) {
 			this.render();
 		}		this.update();
 		return state.last_date = current_date;
