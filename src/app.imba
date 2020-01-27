@@ -7,10 +7,14 @@ tag app-root
         let current_date = Date.new
         state.delta = (current_date - (state.last_date or Date.new)) / 5
         state.time = current_date - state.first_date
-        console.log state.delta if state.delta > 10
+        console.log state.delta if state.delta > 16
         if current_date - state.last_date > 8
+            console.time()
             @render()
+            console.timeEnd()
+        console.time()
         @update()
+        console.timeEnd()
         state.last_date = current_date
 
     def mount
@@ -73,7 +77,7 @@ tag app-root
 
                     # BULLETS
                     for bullet of state.bullets
-                        <g transform="translate({bullet.position.x}, {bullet.position.y}) rotate({bullet.rotation})">
+                        <g transform="translate({bullet.position.x.toFixed(1)}, {bullet.position.y.toFixed(1)}) rotate({bullet.rotation.toFixed(1)})">
                             <rect width="50" height="1" fill="yellow">
 
                     # ZOMBIES

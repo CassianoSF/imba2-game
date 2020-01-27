@@ -18,15 +18,16 @@ def randomPosition
     }
 
 export class Zombie
-    @position = randomPosition() 
-    @rotation = Math.random() * 360
-    @sector = "{~~((@position.x + 1000) / 2000)}|{~~((@position.y + 1000) / 2000)}"
-    @state = DRIFT
-    @speed = .2
-    @max_speed = .6
-    @size = 20
-    @colisions_done = false
-    @turn = 0
+    def constructor
+        @position = randomPosition() 
+        @rotation = Math.random() * 360
+        @sector = "{~~((@position.x + 1000) / 2000)}|{~~((@position.y + 1000) / 2000)}"
+        @state = DRIFT
+        @speed = .2
+        @max_speed = .6
+        @size = 20
+        @colisions_done = false
+        @turn = 0
 
     def takeHit(bullet)
         @position.x -= Math.sin((bullet.rotation - 90) * 0.01745) * 10

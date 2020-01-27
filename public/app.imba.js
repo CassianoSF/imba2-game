@@ -1308,8 +1308,7 @@ var state = {
 	}
 };
 
-function iter$$6(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }var $1$3 = new WeakMap(), $2$3 = new WeakMap(), $3$1 = new WeakMap(), $4$1 = new WeakMap(), $5 = new WeakMap(), $6 = new WeakMap(), $7 = new WeakMap(), $8 = new WeakMap(), $9 = new WeakMap();
-
+function iter$$6(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
 let DRIFT = 0;
 let AGGRO = 1;
 let ATTACK = 2;
@@ -1328,67 +1327,16 @@ function randomPosition(){
 	};
 }
 class Zombie {
-	static init$(){
-		
-		return this;
-	}
 	constructor(){
-		
-		
-	}
-	set position(value) {
-		return $1$3.set(this,value);
-	}
-	get position() {
-		if (!$1$3.has(this)) { $1$3.set(this,randomPosition()); }		return $1$3.get(this);
-	}
-	set rotation(value) {
-		return $2$3.set(this,value);
-	}
-	get rotation() {
-		if (!$2$3.has(this)) { $2$3.set(this,Math.random() * 360); }		return $2$3.get(this);
-	}
-	set sector(value) {
-		return $3$1.set(this,value);
-	}
-	get sector() {
-		if (!$3$1.has(this)) { $3$1.set(this,("" + (~~((this.position.x + 1000) / 2000)) + "|" + (~~((this.position.y + 1000) / 2000)))); }		return $3$1.get(this);
-	}
-	set state(value) {
-		return $4$1.set(this,value);
-	}
-	get state() {
-		if (!$4$1.has(this)) { $4$1.set(this,DRIFT); }		return $4$1.get(this);
-	}
-	set speed(value) {
-		return $5.set(this,value);
-	}
-	get speed() {
-		return $5.has(this) ? $5.get(this) : .2;
-	}
-	set max_speed(value) {
-		return $6.set(this,value);
-	}
-	get max_speed() {
-		return $6.has(this) ? $6.get(this) : .6;
-	}
-	set size(value) {
-		return $7.set(this,value);
-	}
-	get size() {
-		return $7.has(this) ? $7.get(this) : 20;
-	}
-	set colisions_done(value) {
-		return $8.set(this,value);
-	}
-	get colisions_done() {
-		return $8.has(this) ? $8.get(this) : false;
-	}
-	set turn(value) {
-		return $9.set(this,value);
-	}
-	get turn() {
-		return $9.has(this) ? $9.get(this) : 0;
+		this.position = randomPosition();
+		this.rotation = Math.random() * 360;
+		this.sector = ("" + (~~((this.position.x + 1000) / 2000)) + "|" + (~~((this.position.y + 1000) / 2000)));
+		this.state = DRIFT;
+		this.speed = .2;
+		this.max_speed = .6;
+		this.size = 20;
+		this.colisions_done = false;
+		this.turn = 0;
 	}
 	
 	takeHit(bullet){
@@ -1500,7 +1448,7 @@ class Zombie {
 		this.position.x = this.position.x - Math.sin((this.rotation - 90) * 0.01745) * state.delta * this.speed;
 		return this.position.y = this.position.y + Math.cos((this.rotation - 90) * 0.01745) * state.delta * this.speed;
 	}
-} Zombie.init$();
+}
 
 function iter$$7(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
 class AppRootComponent extends imba.tags.get('component','ImbaElement') {
@@ -1509,9 +1457,13 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		let current_date = new Date();
 		state.delta = (current_date - (state.last_date || new Date())) / 5;
 		state.time = current_date - state.first_date;
-		if (state.delta > 10) { console.log(state.delta); }		if (current_date - state.last_date > 8) {
+		if (state.delta > 16) { console.log(state.delta); }		if (current_date - state.last_date > 8) {
+			console.time();
 			this.render();
-		}		this.update();
+			console.timeEnd();
+		}		console.time();
+		this.update();
+		console.timeEnd();
 		return state.last_date = current_date;
 	}
 	
@@ -1600,7 +1552,7 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,null,null,null));
 			b$4||(t$4.up$=t$3);
 			c$4=t$4.$g || (t$4.$g={});
-			(v$4=("translate(" + (bullet.position.x) + ", " + (bullet.position.y) + ") rotate(" + (bullet.rotation) + ")"),v$4===c$4.h || (t$4.set$('transform',c$4.h=v$4)));
+			(v$4=("translate(" + bullet.position.x.toFixed(1) + ", " + bullet.position.y.toFixed(1) + ") rotate(" + bullet.rotation.toFixed(1) + ")"),v$4===c$4.h || (t$4.set$('transform',c$4.h=v$4)));
 			b$4 || (t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
 			b$4 || (t$5.set$('width',"50"));
 			b$4 || (t$5.set$('height',"1"));
