@@ -9,8 +9,8 @@ export class Bullet
 
     def update
         @checkColision()
-        @position.x += Math.cos((@rotation) * 0.0174527778) * 15
-        @position.y += Math.sin((@rotation) * 0.0174527778) * 15
+        @position.x += Math.cos((@rotation) * 0.0174527778) * 5 * state.delta
+        @position.y += Math.sin((@rotation) * 0.0174527778) * 5 * state.delta
         if @distanceToPlayerX() > window.innerWidth or @distanceToPlayerY() > window.innerHeight
             state.bullets.delete(self)
 
@@ -26,8 +26,11 @@ export class Bullet
     def distanceToZombieY(zombie)
         Math.abs(zombie.position.y - @position.y)
 
+    def currentSector
+        "{~~((@position.x + 1000) / 2000)}|{~~((@position.y + 1000) / 2000)}"
+
     def checkColision
-        for zombie of state.sector["{~~(@position.x / 100)}-{~~(@position.y / 100)}"]
+        for zombie of state.sector[@currentSector()]
             if @distanceToZombieX(zombie) < 10 and @distanceToZombieY(zombie) < 10
                 state.bullets.delete(self)
                 zombie.takeHit(self)

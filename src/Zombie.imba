@@ -5,24 +5,25 @@ let AGGRO = 1
 let ATTACK = 2
 
 def randomPosition
-    let posx = Math.random() * window.innerWidth * 1 - (window.innerWidth * .5)
-    let posy = Math.random() * window.innerHeight * 1 - (window.innerHeight * .5)
+    let posx = Math.random() * window.innerWidth * 14 - (window.innerWidth * 7)
+    let posy = Math.random() * window.innerHeight * 14 - (window.innerHeight * 7)
     let diffx = Math.abs(posx - state.player.position.x)
     let diffy = Math.abs(posy - state.player.position.y)
     if diffx < 400 and diffy < 400
         return randomPosition()
+
     return {
         x: posx
         y: posy
     }
 
 export class Zombie
-    @position = randomPosition()
+    @position = randomPosition() 
     @rotation = Math.random() * 360
-    @sector = "{~~(@position.x / 100)}-{~~(@position.y / 100)}"
+    @sector = "{~~((@position.x + 1000) / 2000)}|{~~((@position.y + 1000) / 2000)}"
     @state = DRIFT
-    @speed = .2
-    @max_speed = .6
+    @speed = .1
+    @max_speed = .3
     @size = 20
     @colisions_done = false
     @turn = 0
@@ -44,8 +45,11 @@ export class Zombie
         if @state == ATTACK
             @execAttack()
 
+    def currentSector
+        "{~~((@position.x + 1000) / 2000)}|{~~((@position.y + 1000) / 2000)}"
+
     def updateSector()
-        let temp_sector = "{~~(@position.x / 100)}-{~~(@position.y / 100)}"
+        let temp_sector = @currentSector()
         if temp_sector != @sector
             state.sector[@sector] ||= Set.new
             state.sector[@sector].delete(self)
@@ -59,10 +63,10 @@ export class Zombie
             state.zombies.splice(index, 1) if (index != -1)
 
     def checkColisions
-        let zom_col = @colideZombie()
+        let zom_col = @zombieColide()
         if zom_col
-            let dx = Math.sin((@rotation + 90) * 0.0174527778) * @speed
-            let dy = Math.cos((@rotation + 90) * 0.0174527778) * @speed
+            let dx = Math.sin((@rotation + 90) * 0.0174527778) * @speed * state.delta
+            let dy = Math.cos((@rotation + 90) * 0.0174527778) * @speed * state.delta
             zom_col.position.x += dx * 0.7
             zom_col.position.y -= dy * 0.7
             @position.x -= dx
@@ -75,7 +79,7 @@ export class Zombie
     def execDrift
         if state.time % 200 == 0
             @turn = Math.floor(Math.random() * 2)
-            @speed = Math.random() * 0.4
+            # @speed = Math.random() * 0.4
         if state.time % 3 == 0
             if @turn == 0
                 @rotation += Math.random() * 3
@@ -89,11 +93,11 @@ export class Zombie
         if @distanceToPlayerX() < @size and @distanceToPlayerY() < @size
             @state = ATTACK
 
-    def colideZombie
+    def zombieColide
         state.sector[@sector] ||= Set.new
         for zombie of state.sector[@sector]
             if @distanceToZombieX(zombie) < @size and @distanceToZombieY(zombie) < @size
-                return zombie
+                return zombie if zombie isnt self
         return no
 
     def angleToPlayer
@@ -114,5 +118,5 @@ export class Zombie
         Math.abs(zombie.position.y - @position.y)
 
     def move
-        @position.x -= Math.sin((@rotation - 90 ) * 0.0174527778) * @speed
-        @position.y += Math.cos((@rotation - 90 ) * 0.0174527778) * @speed
+        @position.x -= Math.sin((@rotation - 90 ) * 0.0174527778) * state.delta * @speed
+        @position.y += Math.cos((@rotation - 90 ) * 0.0174527778) * state.delta * @speed

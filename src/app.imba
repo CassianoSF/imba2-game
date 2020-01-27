@@ -4,32 +4,29 @@ import {state} from './state'
 tag app-root
 
     def refresh
-        state.time++
-        # console.time()
-        let date = Date.new
+        let current_date = Date.new
+        state.delta = (current_date - (state.last_date or Date.new)) / 5
+        state.time = current_date - state.first_date
+        console.log state.delta if state.delta > 10
         @render()
-        let diff = Date.new - date
-        console.log('slow render',diff) if diff > 5
-        # console.timeEnd()
-        date = Date.new
         @update()
-        diff = Date.new - date
-        console.log('slow update',diff) if diff > 5
-        # console.timeEnd()
+        state.last_date = current_date
 
     def mount
+        state.first_date = Date.new
         window.addEventListener('resize', @resizeEvent)
         window.addEventListener('keydown', @keydownEvent)
         window.addEventListener('keyup', @keyupEvent)
         window.addEventListener('mousemove', @mousemoveEvent)
         window.addEventListener('mousedown', @mousedownEvent)
         window.addEventListener('mouseup', @mouseupEvent)
-
-        for i in [0...500]
-            state.zombies.add(Zombie.new)
+        for i in [0...5000]
+            let zombie = Zombie.new
+            state.zombies.add(zombie)
+            zombie.update()
+            state.sector[zombie.currentSector()].add(zombie)
 
         setInterval(@refresh.bind(this), 1)
-
 
     def keydownEvent e
         state.keys[e.key.toUpperCase()] = true
@@ -49,7 +46,7 @@ tag app-root
 
     def update
         state.player.update()
-        for zombie of state.zombies
+        for zombie of state.player.nearZombies()
             zombie.update() if zombie
         for bullet of state.bullets
             bullet.update() if bullet
@@ -79,10 +76,10 @@ tag app-root
                             <rect width="50" height="1" fill="yellow">
 
                     # ZOMBIES
-                    for zombie of state.zombies
+                    for zombie of state.player.nearZombies()
                         <g transform="translate({zombie.position.x}, {zombie.position.y}) rotate({zombie.rotation})">
                             <circle r=(zombie.size / 2) fill="red" stroke='black'>
                             <rect width=(zombie.size) height="4" y="6" fill="red">
                             <rect width=(zombie.size) height="4" y="-10" fill="red">
 
-                    <rect x="0" y="0" height="30" width="30" fill="green">
+                    <circle x="0" y="0" r=10 stroke="green" fill="rgba(0,0,0,0)">

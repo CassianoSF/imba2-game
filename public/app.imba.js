@@ -1133,8 +1133,8 @@ class Bullet {
 	
 	update(){
 		this.checkColision();
-		this.position.x = this.position.x + Math.cos((this.rotation) * 0.0174527778) * 15;
-		this.position.y = this.position.y + Math.sin((this.rotation) * 0.0174527778) * 15;
+		this.position.x = this.position.x + Math.cos((this.rotation) * 0.0174527778) * 5 * state.delta;
+		this.position.y = this.position.y + Math.sin((this.rotation) * 0.0174527778) * 5 * state.delta;
 		if (this.distanceToPlayerX() > window.innerWidth || this.distanceToPlayerY() > window.innerHeight) {
 			return state.bullets.delete(this);
 		}	}
@@ -1155,9 +1155,13 @@ class Bullet {
 		return Math.abs(zombie.position.y - this.position.y);
 	}
 	
+	currentSector(){
+		return ("" + (~~((this.position.x + 1000) / 2000)) + "|" + (~~((this.position.y + 1000) / 2000)));
+	}
+	
 	checkColision(){
 		let res = [];
-		for (let zombie of iter$$4(state.sector[("" + (~~(this.position.x / 100)) + "-" + (~~(this.position.y / 100)))])){
+		for (let zombie of iter$$4(state.sector[this.currentSector()])){
 			res.push((this.distanceToZombieX(zombie) < 10 && this.distanceToZombieY(zombie) < 10) && (
 				state.bullets.delete(this),
 				zombie.takeHit(this)
@@ -1166,7 +1170,7 @@ class Bullet {
 	}
 } Bullet.init$();
 
-var $1$1 = new WeakMap();
+var $1$1 = new WeakMap(), $2$1 = new WeakMap();
 
 class Gun {
 	static init$(){
@@ -1181,16 +1185,23 @@ class Gun {
 		return $1$1.set(this,value);
 	}
 	get rate() {
-		return $1$1.has(this) ? $1$1.get(this) : 950;
+		return $1$1.has(this) ? $1$1.get(this) : 600;
+	}
+	set last_shot(value) {
+		return $2$1.set(this,value);
+	}
+	get last_shot() {
+		return $2$1.has(this) ? $2$1.get(this) : 0;
 	}
 	
 	fire(){
-		if (state.time % ~~(10000 / this.rate) == 0) {
+		if (state.time - this.last_shot > 60000 / this.rate) {
+			this.last_shot = state.time;
 			return state.bullets.add(new Bullet());
 		}	}
 } Gun.init$();
 
-var $1$2 = new WeakMap(), $2$1 = new WeakMap(), $3 = new WeakMap(), $4 = new WeakMap();
+function iter$$5(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }var $1$2 = new WeakMap(), $2$2 = new WeakMap(), $3 = new WeakMap(), $4 = new WeakMap();
 
 class Player {
 	static init$(){
@@ -1208,10 +1219,10 @@ class Player {
 		if (!$1$2.has(this)) { $1$2.set(this,{x: 0,y: 0}); }		return $1$2.get(this);
 	}
 	set rotation(value) {
-		return $2$1.set(this,value);
+		return $2$2.set(this,value);
 	}
 	get rotation() {
-		return $2$1.has(this) ? $2$1.get(this) : 0;
+		return $2$2.has(this) ? $2$2.get(this) : 0;
 	}
 	set gun(value) {
 		return $3.set(this,value);
@@ -1223,13 +1234,38 @@ class Player {
 		return $4.set(this,value);
 	}
 	get speed() {
-		return $4.has(this) ? $4.get(this) : .3;
+		return $4.has(this) ? $4.get(this) : .2;
 	}
 	
 	update(){
 		this.move();
 		this.rotate();
 		return this.shoot();
+	}
+	
+	nearZombies(){
+		let x = ~~((this.position.x + 1000) / 2000);
+		let y = ~~((this.position.y + 1000) / 2000);
+		let near = new Set();
+		for (let val of iter$$5((state.sector[("" + (x + 0) + "|" + (y + 0))] || new Set()))){
+			near.add(val);
+		}		for (let val of iter$$5((state.sector[("" + (x + 0) + "|" + (y + 1))] || new Set()))){
+			near.add(val);
+		}		for (let val of iter$$5((state.sector[("" + (x + 0) + "|" + (y - 1))] || new Set()))){
+			near.add(val);
+		}		for (let val of iter$$5((state.sector[("" + (x + 1) + "|" + (y + 0))] || new Set()))){
+			near.add(val);
+		}		for (let val of iter$$5((state.sector[("" + (x - 1) + "|" + (y + 0))] || new Set()))){
+			near.add(val);
+		}		for (let val of iter$$5((state.sector[("" + (x + 1) + "|" + (y + 1))] || new Set()))){
+			near.add(val);
+		}		for (let val of iter$$5((state.sector[("" + (x + 1) + "|" + (y - 1))] || new Set()))){
+			near.add(val);
+		}		for (let val of iter$$5((state.sector[("" + (x - 1) + "|" + (y + 1))] || new Set()))){
+			near.add(val);
+		}		for (let val of iter$$5((state.sector[("" + (x - 1) + "|" + (y - 1))] || new Set()))){
+			near.add(val);
+		}		return near;
 	}
 	
 	shoot(){
@@ -1247,10 +1283,10 @@ class Player {
 		} else {
 			slower = 1;
 		}		
-		if (state.keys.A) this.position.x = this.position.x - this.speed * slower * (state.keys.SHIFT ? 2 : 1);
-		if (state.keys.D) this.position.x = this.position.x + this.speed * slower * (state.keys.SHIFT ? 2 : 1);
-		if (state.keys.W) this.position.y = this.position.y + this.speed * slower * (state.keys.SHIFT ? 2 : 1);
-		if (state.keys.S) { return this.position.y = this.position.y - this.speed * slower * (state.keys.SHIFT ? 2 : 1) }	}
+		if (state.keys.A) this.position.x = this.position.x - this.speed * state.delta * slower * (state.keys.SHIFT ? 2 : 1);
+		if (state.keys.D) this.position.x = this.position.x + this.speed * state.delta * slower * (state.keys.SHIFT ? 2 : 1);
+		if (state.keys.W) this.position.y = this.position.y + this.speed * state.delta * slower * (state.keys.SHIFT ? 2 : 1);
+		if (state.keys.S) { return this.position.y = this.position.y - this.speed * state.delta * slower * (state.keys.SHIFT ? 2 : 1) }	}
 } Player.init$();
 
 var state = {
@@ -1262,6 +1298,7 @@ var state = {
 	zombies: new Set(),
 	camera: {},
 	sector: {},
+	delta: 2,
 	guns: {
 		rifle: new Gun()
 	},
@@ -1271,20 +1308,21 @@ var state = {
 	}
 };
 
-function iter$$5(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }var $1$3 = new WeakMap(), $2$2 = new WeakMap(), $3$1 = new WeakMap(), $4$1 = new WeakMap(), $5 = new WeakMap(), $6 = new WeakMap(), $7 = new WeakMap(), $8 = new WeakMap(), $9 = new WeakMap();
+function iter$$6(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }var $1$3 = new WeakMap(), $2$3 = new WeakMap(), $3$1 = new WeakMap(), $4$1 = new WeakMap(), $5 = new WeakMap(), $6 = new WeakMap(), $7 = new WeakMap(), $8 = new WeakMap(), $9 = new WeakMap();
 
 let DRIFT = 0;
 let AGGRO = 1;
 let ATTACK = 2;
 
 function randomPosition(){
-	let posx = Math.random() * window.innerWidth * 1 - (window.innerWidth * .5);
-	let posy = Math.random() * window.innerHeight * 1 - (window.innerHeight * .5);
+	let posx = Math.random() * window.innerWidth * 14 - (window.innerWidth * 7);
+	let posy = Math.random() * window.innerHeight * 14 - (window.innerHeight * 7);
 	let diffx = Math.abs(posx - state.player.position.x);
 	let diffy = Math.abs(posy - state.player.position.y);
 	if (diffx < 400 && diffy < 400) {
 		return randomPosition();
-	}	return {
+	}	
+	return {
 		x: posx,
 		y: posy
 	};
@@ -1305,16 +1343,16 @@ class Zombie {
 		if (!$1$3.has(this)) { $1$3.set(this,randomPosition()); }		return $1$3.get(this);
 	}
 	set rotation(value) {
-		return $2$2.set(this,value);
+		return $2$3.set(this,value);
 	}
 	get rotation() {
-		if (!$2$2.has(this)) { $2$2.set(this,Math.random() * 360); }		return $2$2.get(this);
+		if (!$2$3.has(this)) { $2$3.set(this,Math.random() * 360); }		return $2$3.get(this);
 	}
 	set sector(value) {
 		return $3$1.set(this,value);
 	}
 	get sector() {
-		if (!$3$1.has(this)) { $3$1.set(this,("" + (~~(this.position.x / 100)) + "-" + (~~(this.position.y / 100)))); }		return $3$1.get(this);
+		if (!$3$1.has(this)) { $3$1.set(this,("" + (~~((this.position.x + 1000) / 2000)) + "|" + (~~((this.position.y + 1000) / 2000)))); }		return $3$1.get(this);
 	}
 	set state(value) {
 		return $4$1.set(this,value);
@@ -1326,13 +1364,13 @@ class Zombie {
 		return $5.set(this,value);
 	}
 	get speed() {
-		return $5.has(this) ? $5.get(this) : .2;
+		return $5.has(this) ? $5.get(this) : .1;
 	}
 	set max_speed(value) {
 		return $6.set(this,value);
 	}
 	get max_speed() {
-		return $6.has(this) ? $6.get(this) : .6;
+		return $6.has(this) ? $6.get(this) : .3;
 	}
 	set size(value) {
 		return $7.set(this,value);
@@ -1372,9 +1410,13 @@ class Zombie {
 			return this.execAttack();
 		}	}
 	
+	currentSector(){
+		return ("" + (~~((this.position.x + 1000) / 2000)) + "|" + (~~((this.position.y + 1000) / 2000)));
+	}
+	
 	updateSector(){
 		var sector_, $1;
-		let temp_sector = ("" + (~~(this.position.x / 100)) + "-" + (~~(this.position.y / 100)));
+		let temp_sector = this.currentSector();
 		if (temp_sector != this.sector) {
 			(sector_ = state.sector)[this.sector] || (sector_[this.sector] = new Set());
 			state.sector[this.sector].delete(this);
@@ -1390,10 +1432,10 @@ class Zombie {
 	
 	checkColisions(){
 		var position_, $1;
-		let zom_col = this.colideZombie();
+		let zom_col = this.zombieColide();
 		if (zom_col) {
-			let dx = Math.sin((this.rotation + 90) * 0.0174527778) * this.speed;
-			let dy = Math.cos((this.rotation + 90) * 0.0174527778) * this.speed;
+			let dx = Math.sin((this.rotation + 90) * 0.0174527778) * this.speed * state.delta;
+			let dy = Math.cos((this.rotation + 90) * 0.0174527778) * this.speed * state.delta;
 			(position_ = zom_col.position).x = position_.x + dx * 0.7;
 			($1 = zom_col.position).y = $1.y - dy * 0.7;
 			this.position.x = this.position.x - dx;
@@ -1408,7 +1450,7 @@ class Zombie {
 	execDrift(){
 		if (state.time % 200 == 0) {
 			this.turn = Math.floor(Math.random() * 2);
-			this.speed = Math.random() * 0.4;
+			// @speed = Math.random() * 0.4
 		}		if (state.time % 3 == 0) {
 			if (this.turn == 0) {
 				this.rotation += Math.random() * 3;
@@ -1424,13 +1466,12 @@ class Zombie {
 			return this.state = ATTACK;
 		}	}
 	
-	colideZombie(){
+	zombieColide(){
 		var sector_;
 		(sector_ = state.sector)[this.sector] || (sector_[this.sector] = new Set());
-		for (let zombie of iter$$5(state.sector[this.sector])){
+		for (let zombie of iter$$6(state.sector[this.sector])){
 			if (this.distanceToZombieX(zombie) < this.size && this.distanceToZombieY(zombie) < this.size) {
-				return zombie;
-			}		}		return false;
+				if (zombie !== this) { return zombie }			}		}		return false;
 	}
 	
 	angleToPlayer(){
@@ -1456,41 +1497,39 @@ class Zombie {
 	}
 	
 	move(){
-		this.position.x = this.position.x - Math.sin((this.rotation - 90) * 0.0174527778) * this.speed;
-		return this.position.y = this.position.y + Math.cos((this.rotation - 90) * 0.0174527778) * this.speed;
+		this.position.x = this.position.x - Math.sin((this.rotation - 90) * 0.0174527778) * state.delta * this.speed;
+		return this.position.y = this.position.y + Math.cos((this.rotation - 90) * 0.0174527778) * state.delta * this.speed;
 	}
 } Zombie.init$();
 
-function iter$$6(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
+function iter$$7(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
 class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 	
 	refresh(){
-		state.time++;
-		// console.time()
-		let date = new Date();
-		this.render();
-		let diff = new Date() - date;
-		if (diff > 5) { console.log('slow render',diff); }		// console.timeEnd()
-		date = new Date();
+		let current_date = new Date();
+		state.delta = (current_date - (state.last_date || new Date())) / 5;
+		state.time = current_date - state.first_date;
+		if (state.delta > 10) { console.log(state.delta); }		this.render();
 		this.update();
-		diff = new Date() - date;
-		if (diff > 5) { return console.log('slow update',diff) }		// console.timeEnd()
+		return state.last_date = current_date;
 	}
 	
 	mount(){
+		state.first_date = new Date();
 		window.addEventListener('resize',this.resizeEvent);
 		window.addEventListener('keydown',this.keydownEvent);
 		window.addEventListener('keyup',this.keyupEvent);
 		window.addEventListener('mousemove',this.mousemoveEvent);
 		window.addEventListener('mousedown',this.mousedownEvent);
 		window.addEventListener('mouseup',this.mouseupEvent);
-		
-		for (let i = 0; i < 500; i++) {
-			state.zombies.add(new Zombie());
+		for (let i = 0; i < 5000; i++) {
+			let zombie = new Zombie();
+			state.zombies.add(zombie);
+			zombie.update();
+			state.sector[zombie.currentSector()].add(zombie);
 		}		
 		return setInterval(this.refresh.bind(this),1);
 	}
-	
 	
 	keydownEvent(e){
 		return state.keys[e.key.toUpperCase()] = true;
@@ -1515,9 +1554,9 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 	
 	update(){
 		state.player.update();
-		for (let zombie of iter$$6(state.zombies)){
+		for (let zombie of iter$$7(state.player.nearZombies())){
 			if (zombie) { zombie.update(); }		}		let res = [];
-		for (let bullet of iter$$6(state.bullets)){
+		for (let bullet of iter$$7(state.bullets)){
 			res.push(bullet && bullet.update());
 		}		return res;
 	}
@@ -1556,7 +1595,7 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		t$3 = c$0.f || (c$0.f = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
-		for (let bullet of iter$$6(state.bullets)){
+		for (let bullet of iter$$7(state.bullets)){
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,null,null,null));
 			b$4||(t$4.up$=t$3);
 			c$4=t$4.$g || (t$4.$g={});
@@ -1570,7 +1609,7 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		t$3 = c$0.i || (c$0.i = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
-		for (let zombie of iter$$6(state.zombies)){
+		for (let zombie of iter$$7(state.player.nearZombies())){
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,null,null,null));
 			b$4||(t$4.up$=t$3);
 			c$4=t$4.$j || (t$4.$j={});
@@ -1591,12 +1630,12 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 			b$5 || (t$5.set$('fill',"red"));
 			k$3++;
 		}t$3.end$(k$3);
-		b$2 || (t$3=imba.createSVGElement('rect',0,t$2,null,null,null));
+		b$2 || (t$3=imba.createSVGElement('circle',0,t$2,null,null,null));
 		b$2 || (t$3.set$('x',"0"));
 		b$2 || (t$3.set$('y',"0"));
-		b$2 || (t$3.set$('height',"30"));
-		b$2 || (t$3.set$('width',"30"));
-		b$2 || (t$3.set$('fill',"green"));
+		b$2 || (t$3.set$('r',10));
+		b$2 || (t$3.set$('stroke',"green"));
+		b$2 || (t$3.set$('fill',"rgba(0,0,0,0)"));
 		t$0.close$(d$0);
 		return t$0;
 	}

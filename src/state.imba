@@ -11,6 +11,7 @@ export var state =
     zombies: Set.new
     camera: {}
     sector: {}
+    delta: 2
     guns:
         rifle: Gun.new
     svg: 
