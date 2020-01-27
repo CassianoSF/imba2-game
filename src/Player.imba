@@ -4,7 +4,7 @@ export class Player
     @position = {x:0,y:0}
     @rotation = 0
     @gun = state.guns.rifle
-    @speed = .2
+    @speed = .4
 
     def update
         @move()

@@ -22,15 +22,15 @@ export class Zombie
     @rotation = Math.random() * 360
     @sector = "{~~((@position.x + 1000) / 2000)}|{~~((@position.y + 1000) / 2000)}"
     @state = DRIFT
-    @speed = .1
-    @max_speed = .3
+    @speed = .2
+    @max_speed = .6
     @size = 20
     @colisions_done = false
     @turn = 0
 
     def takeHit(bullet)
-        @position.x -= Math.sin((bullet.rotation - 90) * 0.0174527778) * 10
-        @position.y += Math.cos((bullet.rotation - 90) * 0.0174527778) * 10
+        @position.x -= Math.sin((bullet.rotation - 90) * 0.01745) * 10
+        @position.y += Math.cos((bullet.rotation - 90) * 0.01745) * 10
         @state = AGGRO
         @speed = @max_speed
 
@@ -65,8 +65,8 @@ export class Zombie
     def checkColisions
         let zom_col = @zombieColide()
         if zom_col
-            let dx = Math.sin((@rotation + 90) * 0.0174527778) * @speed * state.delta
-            let dy = Math.cos((@rotation + 90) * 0.0174527778) * @speed * state.delta
+            let dx = Math.sin((@rotation + 90) * 0.01745) * @speed * state.delta
+            let dy = Math.cos((@rotation + 90) * 0.01745) * @speed * state.delta
             zom_col.position.x += dx * 0.7
             zom_col.position.y -= dy * 0.7
             @position.x -= dx
@@ -103,7 +103,7 @@ export class Zombie
     def angleToPlayer
         let dx = state.player.position.x - @position.x
         let dy = state.player.position.y - @position.y
-        -(Math.atan2(dx, dy)/0.0174527778 - 90) % 360
+        -(Math.atan2(dx, dy)/0.01745 - 90) % 360
 
     def distanceToPlayerX
         Math.abs(state.player.position.x - @position.x)
@@ -118,5 +118,5 @@ export class Zombie
         Math.abs(zombie.position.y - @position.y)
 
     def move
-        @position.x -= Math.sin((@rotation - 90 ) * 0.0174527778) * state.delta * @speed
-        @position.y += Math.cos((@rotation - 90 ) * 0.0174527778) * state.delta * @speed
+        @position.x -= Math.sin((@rotation - 90 ) * 0.01745) * state.delta * @speed
+        @position.y += Math.cos((@rotation - 90 ) * 0.01745) * state.delta * @speed

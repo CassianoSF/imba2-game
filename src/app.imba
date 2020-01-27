@@ -8,7 +8,8 @@ tag app-root
         state.delta = (current_date - (state.last_date or Date.new)) / 5
         state.time = current_date - state.first_date
         console.log state.delta if state.delta > 10
-        @render()
+        if current_date - state.last_date > 16
+            @render()
         @update()
         state.last_date = current_date
 
@@ -63,7 +64,7 @@ tag app-root
                 <g transform="translate({@cameraPosX()}, {@cameraPosY()})">
 
                     # PLAYER
-                    <g transform="translate({state.player.position.x}, {state.player.position.y}) rotate({state.player.rotation})">
+                    <g transform="translate({state.player.position.x.toFixed(1)}, {state.player.position.y.toFixed(1)}) rotate({state.player.rotation.toFixed(1)})">
                         <circle r="10" fill="white">
 
                         # GUN
@@ -77,7 +78,7 @@ tag app-root
 
                     # ZOMBIES
                     for zombie of state.player.nearZombies()
-                        <g transform="translate({zombie.position.x}, {zombie.position.y}) rotate({zombie.rotation})">
+                        <g transform="translate({zombie.position.x.toFixed(1)}, {zombie.position.y.toFixed(1)}) rotate({zombie.rotation.toFixed(1)})">
                             <circle r=(zombie.size / 2) fill="red" stroke='black'>
                             <rect width=(zombie.size) height="4" y="6" fill="red">
                             <rect width=(zombie.size) height="4" y="-10" fill="red">

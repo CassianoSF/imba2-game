@@ -1120,8 +1120,8 @@ class Bullet {
 	}
 	get position() {
 		if (!$1.has(this)) { $1.set(this,{
-			x: state.player.position.x + Math.cos((state.player.rotation) * 0.0174527778) * 5,
-			y: state.player.position.y + Math.sin((state.player.rotation) * 0.0174527778) * 5
+			x: state.player.position.x + Math.cos((state.player.rotation) * 0.01745) * 5,
+			y: state.player.position.y + Math.sin((state.player.rotation) * 0.01745) * 5
 		}); }		return $1.get(this);
 	}
 	set rotation(value) {
@@ -1133,8 +1133,8 @@ class Bullet {
 	
 	update(){
 		this.checkColision();
-		this.position.x = this.position.x + Math.cos((this.rotation) * 0.0174527778) * 5 * state.delta;
-		this.position.y = this.position.y + Math.sin((this.rotation) * 0.0174527778) * 5 * state.delta;
+		this.position.x = this.position.x + Math.cos((this.rotation) * 0.01745) * 5 * state.delta;
+		this.position.y = this.position.y + Math.sin((this.rotation) * 0.01745) * 5 * state.delta;
 		if (this.distanceToPlayerX() > window.innerWidth || this.distanceToPlayerY() > window.innerHeight) {
 			return state.bullets.delete(this);
 		}	}
@@ -1234,7 +1234,7 @@ class Player {
 		return $4.set(this,value);
 	}
 	get speed() {
-		return $4.has(this) ? $4.get(this) : .2;
+		return $4.has(this) ? $4.get(this) : .4;
 	}
 	
 	update(){
@@ -1364,13 +1364,13 @@ class Zombie {
 		return $5.set(this,value);
 	}
 	get speed() {
-		return $5.has(this) ? $5.get(this) : .1;
+		return $5.has(this) ? $5.get(this) : .2;
 	}
 	set max_speed(value) {
 		return $6.set(this,value);
 	}
 	get max_speed() {
-		return $6.has(this) ? $6.get(this) : .3;
+		return $6.has(this) ? $6.get(this) : .6;
 	}
 	set size(value) {
 		return $7.set(this,value);
@@ -1392,8 +1392,8 @@ class Zombie {
 	}
 	
 	takeHit(bullet){
-		this.position.x = this.position.x - Math.sin((bullet.rotation - 90) * 0.0174527778) * 10;
-		this.position.y = this.position.y + Math.cos((bullet.rotation - 90) * 0.0174527778) * 10;
+		this.position.x = this.position.x - Math.sin((bullet.rotation - 90) * 0.01745) * 10;
+		this.position.y = this.position.y + Math.cos((bullet.rotation - 90) * 0.01745) * 10;
 		this.state = AGGRO;
 		return this.speed = this.max_speed;
 	}
@@ -1434,8 +1434,8 @@ class Zombie {
 		var position_, $1;
 		let zom_col = this.zombieColide();
 		if (zom_col) {
-			let dx = Math.sin((this.rotation + 90) * 0.0174527778) * this.speed * state.delta;
-			let dy = Math.cos((this.rotation + 90) * 0.0174527778) * this.speed * state.delta;
+			let dx = Math.sin((this.rotation + 90) * 0.01745) * this.speed * state.delta;
+			let dy = Math.cos((this.rotation + 90) * 0.01745) * this.speed * state.delta;
 			(position_ = zom_col.position).x = position_.x + dx * 0.7;
 			($1 = zom_col.position).y = $1.y - dy * 0.7;
 			this.position.x = this.position.x - dx;
@@ -1477,7 +1477,7 @@ class Zombie {
 	angleToPlayer(){
 		let dx = state.player.position.x - this.position.x;
 		let dy = state.player.position.y - this.position.y;
-		return -(Math.atan2(dx,dy) / 0.0174527778 - 90) % 360;
+		return -(Math.atan2(dx,dy) / 0.01745 - 90) % 360;
 	}
 	
 	distanceToPlayerX(){
@@ -1497,8 +1497,8 @@ class Zombie {
 	}
 	
 	move(){
-		this.position.x = this.position.x - Math.sin((this.rotation - 90) * 0.0174527778) * state.delta * this.speed;
-		return this.position.y = this.position.y + Math.cos((this.rotation - 90) * 0.0174527778) * state.delta * this.speed;
+		this.position.x = this.position.x - Math.sin((this.rotation - 90) * 0.01745) * state.delta * this.speed;
+		return this.position.y = this.position.y + Math.cos((this.rotation - 90) * 0.01745) * state.delta * this.speed;
 	}
 } Zombie.init$();
 
@@ -1509,8 +1509,9 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		let current_date = new Date();
 		state.delta = (current_date - (state.last_date || new Date())) / 5;
 		state.time = current_date - state.first_date;
-		if (state.delta > 10) { console.log(state.delta); }		this.render();
-		this.update();
+		if (state.delta > 10) { console.log(state.delta); }		if (current_date - state.last_date > 16) {
+			this.render();
+		}		this.update();
 		return state.last_date = current_date;
 	}
 	
@@ -1582,7 +1583,7 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		t$2 = (b$2=d$2=1,c$0.b) || (b$2=d$2=0,c$0.b=t$2=imba.createSVGElement('g',2048,t$1,null,null,null));
 		(v$2=("translate(" + this.cameraPosX() + ", " + this.cameraPosY() + ")"),v$2===c$0.c || (t$2.set$('transform',c$0.c=v$2)));
 		t$3 = (b$3=d$3=1,c$0.d) || (b$3=d$3=0,c$0.d=t$3=imba.createSVGElement('g',0,t$2,null,null,null));
-		(v$3=("translate(" + (state.player.position.x) + ", " + (state.player.position.y) + ") rotate(" + (state.player.rotation) + ")"),v$3===c$0.e || (t$3.set$('transform',c$0.e=v$3)));
+		(v$3=("translate(" + state.player.position.x.toFixed(1) + ", " + state.player.position.y.toFixed(1) + ") rotate(" + state.player.rotation.toFixed(1) + ")"),v$3===c$0.e || (t$3.set$('transform',c$0.e=v$3)));
 		b$3 || (t$4=imba.createSVGElement('circle',0,t$3,null,null,null));
 		b$3 || (t$4.set$('r',"10"));
 		b$3 || (t$4.set$('fill',"white"));
@@ -1613,7 +1614,7 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,null,null,null));
 			b$4||(t$4.up$=t$3);
 			c$4=t$4.$j || (t$4.$j={});
-			(v$4=("translate(" + (zombie.position.x) + ", " + (zombie.position.y) + ") rotate(" + (zombie.rotation) + ")"),v$4===c$4.k || (t$4.set$('transform',c$4.k=v$4)));
+			(v$4=("translate(" + zombie.position.x.toFixed(1) + ", " + zombie.position.y.toFixed(1) + ") rotate(" + zombie.rotation.toFixed(1) + ")"),v$4===c$4.k || (t$4.set$('transform',c$4.k=v$4)));
 			t$5 = (b$5=d$5=1,c$4.l) || (b$5=d$5=0,c$4.l=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
 			(v$5=zombie.size / 2,v$5===c$4.m || (t$5.set$('r',c$4.m=v$5)));
 			b$5 || (t$5.set$('fill',"red"));
