@@ -8,10 +8,9 @@ tag app-root
         state.delta = (current_date - (state.last_date or Date.new)) / 5
         state.time = current_date - state.first_date
         console.log state.delta if state.delta > 16
-        if current_date - state.last_date > 8
-            console.time()
-            @render()
-            console.timeEnd()
+        console.time()
+        @render()
+        console.timeEnd()
         console.time()
         @update()
         console.timeEnd()
@@ -29,7 +28,9 @@ tag app-root
             state.zombies.add(zombie)
             zombie.update()
             state.sector[zombie.currentSector()].add(zombie)
-        setInterval(@refresh.bind(this), 1)
+        @update()
+        @update()
+        setInterval(@refresh.bind(this), 10)
 
     def keydownEvent e
         state.keys[e.key.toUpperCase()] = true

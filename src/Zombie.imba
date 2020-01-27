@@ -26,7 +26,6 @@ export class Zombie
         @speed = .2
         @max_speed = .6
         @size = 20
-        @colisions_done = false
         @turn = 0
 
     def takeHit(bullet)
@@ -38,7 +37,7 @@ export class Zombie
     def update
         @updateSector()
         @checkColisions()
-        @checkLife()
+        # @checkLife()
         if @state == DRIFT
             @execDrift()
         if @state == AGGRO

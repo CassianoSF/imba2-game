@@ -16,7 +16,7 @@ export class Player
         let x = ~~((@position.x + 1000) / 2000)
         let y = ~~((@position.y + 1000) / 2000)
 
-        @nearZombies = Set.new
+        @nearZombies.clear()
         for val of (state.sector["{x + 0}|{y + 0}"] or Set.new)
             @nearZombies.add(val)
         for val of (state.sector["{x + 0}|{y + 1}"] or Set.new)

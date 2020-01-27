@@ -1218,7 +1218,7 @@ class Player {
 		let x = ~~((this.position.x + 1000) / 2000);
 		let y = ~~((this.position.y + 1000) / 2000);
 		
-		this.nearZombies = new Set();
+		this.nearZombies.clear();
 		for (let val of iter$$5((state.sector[("" + (x + 0) + "|" + (y + 0))] || new Set()))){
 			this.nearZombies.add(val);
 		}		for (let val of iter$$5((state.sector[("" + (x + 0) + "|" + (y + 1))] || new Set()))){
@@ -1308,7 +1308,6 @@ class Zombie {
 		this.speed = .2;
 		this.max_speed = .6;
 		this.size = 20;
-		this.colisions_done = false;
 		this.turn = 0;
 	}
 	
@@ -1322,7 +1321,7 @@ class Zombie {
 	update(){
 		this.updateSector();
 		this.checkColisions();
-		this.checkLife();
+		// @checkLife()
 		if (this.state == DRIFT) {
 			this.execDrift();
 		}		if (this.state == AGGRO) {
@@ -1430,11 +1429,10 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		let current_date = new Date();
 		state.delta = (current_date - (state.last_date || new Date())) / 5;
 		state.time = current_date - state.first_date;
-		if (state.delta > 16) { console.log(state.delta); }		if (current_date - state.last_date > 8) {
-			console.time();
-			this.render();
-			console.timeEnd();
-		}		console.time();
+		if (state.delta > 16) { console.log(state.delta); }		console.time();
+		this.render();
+		console.timeEnd();
+		console.time();
 		this.update();
 		console.timeEnd();
 		return state.last_date = current_date;
@@ -1452,7 +1450,9 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 			state.zombies.add(zombie);
 			zombie.update();
 			state.sector[zombie.currentSector()].add(zombie);
-		}		return setInterval(this.refresh.bind(this),1);
+		}		this.update();
+		this.update();
+		return setInterval(this.refresh.bind(this),10);
 	}
 	
 	keydownEvent(e){
