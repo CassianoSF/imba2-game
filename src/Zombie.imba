@@ -21,7 +21,7 @@ export class Zombie
     def constructor
         @position = randomPosition() 
         @rotation = Math.random() * 360
-        @sector = "{~~((@position.x + 1000) / 2000)}|{~~((@position.y + 1000) / 2000)}"
+        @sector = "{~~(@position.x / 2000)}|{~~(@position.y / 2000)}"
         @state = DRIFT
         @speed = .2
         @max_speed = .6
@@ -46,15 +46,13 @@ export class Zombie
             @execAttack()
 
     def currentSector
-        "{~~((@position.x + 1000) / 2000)}|{~~((@position.y + 1000) / 2000)}"
+        "{~~(@position.x / 2000)}|{~~(@position.y / 2000)}"
 
     def updateSector()
         let temp_sector = @currentSector()
         if temp_sector != @sector
-            state.sector[@sector] ||= Set.new
             state.sector[@sector].delete(self)
             @sector = temp_sector
-            state.sector[@sector] ||= Set.new
             state.sector[@sector].add(self)
 
     def checkLife
@@ -94,7 +92,6 @@ export class Zombie
             @state = ATTACK
 
     def zombieColide
-        state.sector[@sector] ||= Set.new
         for zombie of state.sector[@sector]
             if @distanceToZombieX(zombie) < @size and @distanceToZombieY(zombie) < @size
                 return zombie if zombie isnt self
@@ -118,5 +115,5 @@ export class Zombie
         Math.abs(zombie.position.y - @position.y)
 
     def move
-        @position.x -= Math.sin((@rotation - 90 ) * 0.01745) * state.delta * @speed
-        @position.y += Math.cos((@rotation - 90 ) * 0.01745) * state.delta * @speed
+        @position.x -= Math.sin((@rotation - 90) * 0.01745) * state.delta * @speed
+        @position.y += Math.cos((@rotation - 90) * 0.01745) * state.delta * @speed

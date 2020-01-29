@@ -2,18 +2,16 @@ import {Zombie} from './Zombie'
 import {state} from './state'
 
 tag app-root
+    @zombies
+    @circles = []
 
     def refresh
+        @render()
+        @update()
         let current_date = Date.new
         state.delta = (current_date - (state.last_date or Date.new)) / 5
         state.time = current_date - state.first_date
         console.log state.delta if state.delta > 16
-        console.time()
-        @render()
-        console.timeEnd()
-        console.time()
-        @update()
-        console.timeEnd()
         state.last_date = current_date
 
     def mount
@@ -23,14 +21,43 @@ tag app-root
         window.addEventListener('mousemove', @mousemoveEvent)
         window.addEventListener('mousedown', @mousedownEvent)
         window.addEventListener('mouseup', @mouseupEvent)
+
+        for x in [-100..+100]
+            for y in [-100..+100]
+                state.sector["{x}|{y}"] = Set.new
+
         for i in [0...5000]
             let zombie = Zombie.new
             state.zombies.add(zombie)
             zombie.update()
             state.sector[zombie.currentSector()].add(zombie)
+
         @update()
         @update()
-        setInterval(@refresh.bind(this), 10)
+        setInterval(@refresh.bind(this), 1)
+
+    def update
+        let circ
+        state.player.update()
+        for zombie of state.player.nearZombies
+            zombie.update() if zombie
+        for bullet of state.bullets
+            bullet.update() if bullet
+        for zombie, index in Array.from(state.player.nearZombies)
+            if @circles[index]
+                @circles[index].transform.baseVal.getItem(0).setTranslate(zombie.position.x,zombie.position.y)
+            else
+                @circles[index] ||= document.createElementNS("http://www.w3.org/2000/svg", "circle")
+                @circles[index].setAttribute('transform', "translate(0,0)")
+                @circles[index].setAttribute('fill', 'red')
+                @circles[index].setAttribute('r', '10')
+                @zombies.appendChild(@circles[index])
+        let zombies_size = state.player.nearZombies.size
+        let circles_size = @circles.length
+
+        if circles_size > zombies_size
+            for i in [zombies_size...circles_size]
+                @zombies.removeChild(@circles.pop())
 
     def keydownEvent e
         state.keys[e.key.toUpperCase()] = true
@@ -47,13 +74,6 @@ tag app-root
 
     def mouseupEvent e
         state.mouse.press = false
-
-    def update
-        state.player.update()
-        for zombie of state.player.nearZombies
-            zombie.update() if zombie
-        for bullet of state.bullets
-            bullet.update() if bullet
 
     def cameraPosX
         window.innerWidth / 2 - state.player.position.x
@@ -73,6 +93,7 @@ tag app-root
     def transformZombie zombie
         "translate({zombie.position.x.toFixed(1)}, {zombie.position.y.toFixed(1)}) rotate({zombie.rotation.toFixed(1)})"
 
+
     def render
         <self>
             <svg transform="scale(1,-1)" height="100%" width="100%" style="background-color: black">
@@ -91,11 +112,7 @@ tag app-root
                         <g transform=@transformBullet(bullet)>
                             <rect width="50" height="1" fill="yellow">
 
-                    # ZOMBIES
-                    for zombie of state.player.nearZombies
-                        <g transform=@transformZombie(zombie)>
-                            <circle r=(zombie.size / 2) fill="red" stroke='black'>
-                            <rect width=(zombie.size) height="4" y="6" fill="red">
-                            <rect width=(zombie.size) height="4" y="-10" fill="red">
+                    @zombies = <g>
+
 
                     <circle x="0" y="0" r=10 stroke="green" fill="rgba(0,0,0,0)">
