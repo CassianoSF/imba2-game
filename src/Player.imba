@@ -2,22 +2,17 @@ import {state} from './state'
 import {Gun} from './Gun'
 
 export class Player
-    def constructor
+    def constructor inventory
         @position = {x:0,y:0}
         @rotation = 0
-        @inventory = {
-                            # rate, spread, damage, power, projectiles, speed
-            pistol:  Gun.new(150,   15,     25,     10,    1,           7)
-            smg:     Gun.new(1000,  15,     9,      5,     1,           7)
-            ak:      Gun.new(600,   20,     40,     15,    1,           12)
-            shotgun: Gun.new(60,    25,     15,     30,    10,          6)
-            sniper:  Gun.new(45,     5,     100,    20,    1,           14)
-        }
-        @gun = @inventory.pistol
+        @inventory = inventory
+        @reputation = 0
+        @gun = @inventory[0]
         @speed = .5
         @nearZombies = Set.new
 
     def update
+        @gun.update()
         @move()
         @rotate()
         @shoot()
@@ -57,10 +52,11 @@ export class Player
 
     def checkAction key
         let actions = {
-            '1': do @gun = @inventory.pistol
-            '2': do @gun = @inventory.smg
-            '3': do @gun = @inventory.ak
-            '4': do @gun = @inventory.shotgun
-            '5': do @gun = @inventory.sniper
+            '1': do @gun = @inventory[0] if @inventory[0]
+            '2': do @gun = @inventory[1] if @inventory[1]
+            '3': do @gun = @inventory[2] if @inventory[2]
+            '4': do @gun = @inventory[3] if @inventory[3]
+            '5': do @gun = @inventory[4] if @inventory[4]
+            'R': do @gun.reload()
         }
         actions[key] and actions[key]()

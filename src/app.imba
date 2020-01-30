@@ -77,7 +77,7 @@ tag app-root
     def render
         <self>
             <div style="position: fixed;color: red;font-size: 30px; z-index: 1;">
-                'TEST'
+                "Reputation: {state.player.reputation}"
             <svg transform="scale(1,-1)" height="100%" width="100%" style="background-color: black">
                 <g transform=@transformCamera()>
 

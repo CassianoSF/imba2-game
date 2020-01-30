@@ -1158,7 +1158,7 @@ class Bullet {
 }
 
 class Gun {
-	constructor(rate,spread,damage,power,projectiles,speed){
+	constructor(cap,rate,spread,damage,power,projectiles,speed,reload_time){
 		this.rate = rate;
 		this.spread = spread;
 		this.damage = damage;
@@ -1166,38 +1166,49 @@ class Gun {
 		this.last_shot = 0;
 		this.projectiles = projectiles;
 		this.speed = speed;
+		this.reload_time = reload_time;
+		this.cap = cap;
+		this.ammo = this.cap;
+		this.reloading = false;
 	}
 	
 	fire(){
-		if (state.time - this.last_shot > 60000 / this.rate) {
+		console.log(!this.reloading);
+		if (state.time - this.last_shot > 60000 / this.rate && this.ammo > 0 && !this.reloading) {
+			this.ammo--;
 			this.last_shot = state.time;
 			let res = [];
 			for (let len = this.projectiles, i = 0, rd = len - i; (rd > 0) ? (i < len) : (i > len); (rd > 0) ? (i++) : (i--)) {
 				res.push(state.bullets.add(new Bullet(this.spread,this.damage,this.power,this.speed)));
 			}			return res;
 		}	}
+	
+	reload(){
+		if (this.ammo != this.cap) {
+			return this.reloading = state.time;
+		}	}
+	
+	update(){
+		if (this.reloading && (state.time - this.reloading) > this.reload_time) {
+			this.reloading = false;
+			return this.ammo = this.cap;
+		}	}
 }
 
 function iter$$5(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
 class Player {
-	constructor(){
+	constructor(inventory){
 		this.position = {x: 0,y: 0};
 		this.rotation = 0;
-		this.inventory = {
-			// rate, spread, damage, power, projectiles, speed
-			
-			pistol: new Gun(150,15,25,10,1,7),
-			smg: new Gun(1000,15,9,5,1,7),
-			ak: new Gun(600,20,40,15,1,12),
-			shotgun: new Gun(60,25,15,30,10,6),
-			sniper: new Gun(45,5,100,20,1,14)
-		};
-		this.gun = this.inventory.pistol;
+		this.inventory = inventory;
+		this.reputation = 0;
+		this.gun = this.inventory[0];
 		this.speed = .5;
 		this.nearZombies = new Set();
 	}
 	
 	update(){
+		this.gun.update();
 		this.move();
 		this.rotate();
 		this.shoot();
@@ -1241,33 +1252,46 @@ class Player {
 	checkAction(key){
 		var self = this;
 		let actions = {
-			'1': function() { return self.gun = self.inventory.pistol; },
-			'2': function() { return self.gun = self.inventory.smg; },
-			'3': function() { return self.gun = self.inventory.ak; },
-			'4': function() { return self.gun = self.inventory.shotgun; },
-			'5': function() { return self.gun = self.inventory.sniper; }
+			'1': function() { if (self.inventory[0]) { return self.gun = self.inventory[0] } },
+			'2': function() { if (self.inventory[1]) { return self.gun = self.inventory[1] } },
+			'3': function() { if (self.inventory[2]) { return self.gun = self.inventory[2] } },
+			'4': function() { if (self.inventory[3]) { return self.gun = self.inventory[3] } },
+			'5': function() { if (self.inventory[4]) { return self.gun = self.inventory[4] } },
+			'R': function() { return self.gun.reload(); }
 		};
 		return actions[key] && actions[key]();
 	}
 }
 
+var guns = {
+	//                      cap,   rate,  spread, damage, power, projectiles, speed, reload_time
+	revolver: new Gun(6,150,15,30,15,1,8,2000),
+	pistol: new Gun(10,150,15,25,10,1,8,2000),
+	mp5: new Gun(30,1000,15,9,5,1,8,2000),
+	ump: new Gun(25,800,17,13,8,1,7,2000),
+	ak: new Gun(20,600,20,40,20,1,12,2000),
+	m4: new Gun(25,800,15,30,15,1,13,2000),
+	pump_shotgun: new Gun(5,60,25,15,30,10,6,2000),
+	double_barrel: new Gun(2,300,25,30,40,10,7,2000),
+	sniper: new Gun(6,45,5,100,20,1,14,2000)
+};
+
+
 var state = {
 	time: 0,
 	keys: [],
 	mouse: {x: 0,y: 0},
-	player: new Player(),
+	player: new Player([guns.pistol,guns.m4]),
 	bullets: new Set(),
 	camera: {},
 	sector: {},
 	killed: new Set(),
 	delta: 2,
-	guns: {
-		rifle: new Gun()
-	},
 	svg: {
 		height: 1,
 		width: 1
-	}
+	},
+	guns: guns
 };
 
 function iter$$6(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
@@ -1417,6 +1441,7 @@ class Zombie {
 		}	}
 	
 	takeHit(bullet){
+		var player_;
 		this.position.x = this.position.x - Math.sin((bullet.rotation - 90) * 0.01745) * bullet.power;
 		this.position.y = this.position.y + Math.cos((bullet.rotation - 90) * 0.01745) * bullet.power;
 		this.state = AGGRO;
@@ -1426,6 +1451,7 @@ class Zombie {
 			state.sector[this.sector].delete(this);
 			state.killed.add(this);
 			this.state = DEAD;
+			(player_ = state.player).reputation = player_.reputation + 10;
 			return this.death = state.time;
 		}	}
 }
@@ -1520,21 +1546,22 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 	}
 	
 	render(){
-		var t$0, c$0, b$0, d$0, t$1, t$2, b$2, d$2, v$2, t$3, b$3, d$3, v$3, t$4, t$5, k$3, c$3, b$4, d$4, c$4, v$4, b$5, d$5, v$5;
+		var t$0, c$0, b$0, d$0, t$1, b$1, d$1, v$1, t$2, b$2, d$2, v$2, t$3, b$3, d$3, v$3, t$4, t$5, k$3, c$3, b$4, d$4, c$4, v$4, b$5, d$5, v$5;
 		t$0=this;
 		t$0.open$();
 		c$0 = (b$0=d$0=1,t$0.$) || (b$0=d$0=0,t$0.$={});
-		b$0 || (t$1=imba.createElement('div',0,t$0,null,'TEST',null));
-		b$0 || (t$1.style="position: fixed;color: red;font-size: 30px; z-index: 1;");
+		t$1 = (b$1=d$1=1,c$0.b) || (b$1=d$1=0,c$0.b=t$1=imba.createElement('div',4096,t$0,null,null,null));
+		b$1 || (t$1.style="position: fixed;color: red;font-size: 30px; z-index: 1;");
+		(v$1=("Reputation: " + (state.player.reputation)),v$1===c$0.c || (c$0.c_ = t$1.insert$(c$0.c=v$1,0,c$0.c_)));
 		b$0 || (t$1=imba.createSVGElement('svg',0,t$0,null,null,null));
 		b$0 || (t$1.set$('transform',"scale(1,-1)"));
 		b$0 || (t$1.set$('height',"100%"));
 		b$0 || (t$1.set$('width',"100%"));
 		b$0 || (t$1.set$('style',"background-color: black"));
-		t$2 = (b$2=d$2=1,c$0.b) || (b$2=d$2=0,c$0.b=t$2=imba.createSVGElement('g',2048,t$1,null,null,null));
-		(v$2=this.transformCamera(),v$2===c$0.c || (t$2.set$('transform',c$0.c=v$2)));
-		t$3 = (b$3=d$3=1,c$0.d) || (b$3=d$3=0,c$0.d=t$3=imba.createSVGElement('g',0,t$2,null,null,null));
-		(v$3=this.transformPlayer(),v$3===c$0.e || (t$3.set$('transform',c$0.e=v$3)));
+		t$2 = (b$2=d$2=1,c$0.d) || (b$2=d$2=0,c$0.d=t$2=imba.createSVGElement('g',2048,t$1,null,null,null));
+		(v$2=this.transformCamera(),v$2===c$0.e || (t$2.set$('transform',c$0.e=v$2)));
+		t$3 = (b$3=d$3=1,c$0.f) || (b$3=d$3=0,c$0.f=t$3=imba.createSVGElement('g',0,t$2,null,null,null));
+		(v$3=this.transformPlayer(),v$3===c$0.g || (t$3.set$('transform',c$0.g=v$3)));
 		b$3 || (t$4=imba.createSVGElement('circle',0,t$3,null,null,null));
 		b$3 || (t$4.set$('r',"10"));
 		b$3 || (t$4.set$('fill',"white"));
@@ -1544,63 +1571,63 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		b$3 || (t$5.set$('height',"13"));
 		b$3 || (t$5.set$('width',"2"));
 		b$3 || (t$5.set$('fill',"white"));
-		t$3 = c$0.f || (c$0.f = t$3 = imba.createIndexedFragment(0,t$2));
+		t$3 = c$0.h || (c$0.h = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
 		for (let bullet of iter$$7(state.bullets)){
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,null,null,null));
 			b$4||(t$4.up$=t$3);
-			c$4=t$4.$g || (t$4.$g={});
-			(v$4=this.transformBullet(bullet),v$4===c$4.h || (t$4.set$('transform',c$4.h=v$4)));
+			c$4=t$4.$i || (t$4.$i={});
+			(v$4=this.transformBullet(bullet),v$4===c$4.j || (t$4.set$('transform',c$4.j=v$4)));
 			b$4 || (t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
 			b$4 || (t$5.set$('width',"50"));
 			b$4 || (t$5.set$('height',"1"));
 			b$4 || (t$5.set$('fill',"yellow"));
 			k$3++;
 		}t$3.end$(k$3);
-		t$3 = c$0.i || (c$0.i = t$3 = imba.createIndexedFragment(0,t$2));
+		t$3 = c$0.k || (c$0.k = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
 		for (let zombie of iter$$7(state.player.nearZombies)){
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,null,null,null));
 			b$4||(t$4.up$=t$3);
-			c$4=t$4.$j || (t$4.$j={});
-			(v$4=this.transformZombie(zombie),v$4===c$4.k || (t$4.set$('transform',c$4.k=v$4)));
-			t$5 = (b$5=d$5=1,c$4.l) || (b$5=d$5=0,c$4.l=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
-			(v$5=zombie.size / 2,v$5===c$4.m || (t$5.set$('r',c$4.m=v$5)));
+			c$4=t$4.$l || (t$4.$l={});
+			(v$4=this.transformZombie(zombie),v$4===c$4.m || (t$4.set$('transform',c$4.m=v$4)));
+			t$5 = (b$5=d$5=1,c$4.n) || (b$5=d$5=0,c$4.n=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
+			(v$5=zombie.size / 2,v$5===c$4.o || (t$5.set$('r',c$4.o=v$5)));
 			b$5 || (t$5.set$('fill',"red"));
 			b$5 || (t$5.set$('stroke','black'));
-			t$5 = (b$5=d$5=1,c$4.n) || (b$5=d$5=0,c$4.n=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-			(v$5=zombie.size,v$5===c$4.o || (t$5.set$('width',c$4.o=v$5)));
+			t$5 = (b$5=d$5=1,c$4.p) || (b$5=d$5=0,c$4.p=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
+			(v$5=zombie.size,v$5===c$4.q || (t$5.set$('width',c$4.q=v$5)));
 			b$5 || (t$5.set$('height',"4"));
 			b$5 || (t$5.set$('y',"6"));
 			b$5 || (t$5.set$('fill',"red"));
-			t$5 = (b$5=d$5=1,c$4.p) || (b$5=d$5=0,c$4.p=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-			(v$5=zombie.size,v$5===c$4.q || (t$5.set$('width',c$4.q=v$5)));
+			t$5 = (b$5=d$5=1,c$4.r) || (b$5=d$5=0,c$4.r=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
+			(v$5=zombie.size,v$5===c$4.s || (t$5.set$('width',c$4.s=v$5)));
 			b$5 || (t$5.set$('height',"4"));
 			b$5 || (t$5.set$('y',"-10"));
 			b$5 || (t$5.set$('fill',"red"));
 			k$3++;
 		}t$3.end$(k$3);
-		t$3 = c$0.r || (c$0.r = t$3 = imba.createIndexedFragment(0,t$2));
+		t$3 = c$0.t || (c$0.t = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
 		for (let zombie of iter$$7(state.killed)){
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,'fadeOut',null,null));
 			b$4||(t$4.up$=t$3);
-			c$4=t$4.$s || (t$4.$s={});
-			(v$4=this.transformZombie(zombie),v$4===c$4.t || (t$4.set$('transform',c$4.t=v$4)));
-			t$5 = (b$5=d$5=1,c$4.u) || (b$5=d$5=0,c$4.u=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
-			(v$5=zombie.size / 2,v$5===c$4.v || (t$5.set$('r',c$4.v=v$5)));
+			c$4=t$4.$u || (t$4.$u={});
+			(v$4=this.transformZombie(zombie),v$4===c$4.v || (t$4.set$('transform',c$4.v=v$4)));
+			t$5 = (b$5=d$5=1,c$4.w) || (b$5=d$5=0,c$4.w=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
+			(v$5=zombie.size / 2,v$5===c$4.x || (t$5.set$('r',c$4.x=v$5)));
 			b$5 || (t$5.set$('fill',"grey"));
 			b$5 || (t$5.set$('stroke','black'));
-			t$5 = (b$5=d$5=1,c$4.w) || (b$5=d$5=0,c$4.w=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-			(v$5=zombie.size,v$5===c$4.x || (t$5.set$('width',c$4.x=v$5)));
+			t$5 = (b$5=d$5=1,c$4.y) || (b$5=d$5=0,c$4.y=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
+			(v$5=zombie.size,v$5===c$4.z || (t$5.set$('width',c$4.z=v$5)));
 			b$5 || (t$5.set$('height',"4"));
 			b$5 || (t$5.set$('y',"6"));
 			b$5 || (t$5.set$('fill',"grey"));
-			t$5 = (b$5=d$5=1,c$4.y) || (b$5=d$5=0,c$4.y=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-			(v$5=zombie.size,v$5===c$4.z || (t$5.set$('width',c$4.z=v$5)));
+			t$5 = (b$5=d$5=1,c$4.aa) || (b$5=d$5=0,c$4.aa=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
+			(v$5=zombie.size,v$5===c$4.ab || (t$5.set$('width',c$4.ab=v$5)));
 			b$5 || (t$5.set$('height',"4"));
 			b$5 || (t$5.set$('y',"-10"));
 			b$5 || (t$5.set$('fill',"grey"));

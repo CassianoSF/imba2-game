@@ -137,4 +137,5 @@ export class Zombie
             state.sector[@sector].delete(self)
             state.killed.add(self)
             @state = DEAD
+            state.player.reputation += 10
             @death = state.time
