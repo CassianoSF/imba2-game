@@ -8,9 +8,9 @@ export var state =
     mouse: {x: 0, y: 0}
     player: Player.new
     bullets: Set.new
-    zombies: Set.new
     camera: {}
     sector: {}
+    killed: Set.new
     delta: 2
     guns:
         rifle: Gun.new

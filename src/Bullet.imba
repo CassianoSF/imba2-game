@@ -1,16 +1,21 @@
 import {state} from './state'
 
 export class Bullet
-    @position = {
-        x: state.player.position.x + Math.cos((state.player.rotation) * 0.01745) * 5
-        y: state.player.position.y + Math.sin((state.player.rotation) * 0.01745) * 5
-    }
-    @rotation = state.player.rotation + 90
+    def constructor spread, damage, power, speed
+        @spread = spread
+        @damage = damage
+        @power = power
+        @speed = speed
+        @position = {
+            x: state.player.position.x + Math.cos((state.player.rotation) * 0.01745) * 5
+            y: state.player.position.y + Math.sin((state.player.rotation) * 0.01745) * 5
+        }
+        @rotation = state.player.rotation + 90 + (Math.random() * spread - (spread/2))
 
     def update
         @checkColision()
-        @position.x += Math.cos((@rotation) * 0.01745) * 5 * state.delta
-        @position.y += Math.sin((@rotation) * 0.01745) * 5 * state.delta
+        @position.x += Math.cos((@rotation) * 0.01745) * @speed * state.delta
+        @position.y += Math.sin((@rotation) * 0.01745) * @speed * state.delta
         if @distanceToPlayerX() > window.innerWidth or @distanceToPlayerY() > window.innerHeight
             state.bullets.delete(self)
 
@@ -27,10 +32,10 @@ export class Bullet
         Math.abs(zombie.position.y - @position.y)
 
     def currentSector
-        "{~~((@position.x + 1000) / 2000)}|{~~((@position.y + 1000) / 2000)}"
+        "{~~(@position.x / 1800)}|{~~(@position.y / 1800)}"
 
     def checkColision
         for zombie of state.sector[@currentSector()]
-            if @distanceToZombieX(zombie) < 10 and @distanceToZombieY(zombie) < 10
+            if @distanceToZombieX(zombie) < zombie.size and @distanceToZombieY(zombie) < zombie.size
                 state.bullets.delete(self)
                 zombie.takeHit(self)

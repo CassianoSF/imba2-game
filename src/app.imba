@@ -4,16 +4,12 @@ import {state} from './state'
 tag app-root
 
     def refresh
+        @frames++
         let current_date = Date.new
         state.delta = (current_date - (state.last_date or Date.new)) / 5
         state.time = current_date - state.first_date
-        console.log state.delta if state.delta > 16
-        console.time()
         @render()
-        console.timeEnd()
-        console.time()
         @update()
-        console.timeEnd()
         state.last_date = current_date
 
     def mount
@@ -23,16 +19,17 @@ tag app-root
         window.addEventListener('mousemove', @mousemoveEvent)
         window.addEventListener('mousedown', @mousedownEvent)
         window.addEventListener('mouseup', @mouseupEvent)
-        for i in [0...5000]
+        for i in [0..30000]
             let zombie = Zombie.new
-            state.zombies.add(zombie)
             zombie.update()
+            state.sector[zombie.currentSector()] ||= Set.new
             state.sector[zombie.currentSector()].add(zombie)
         @update()
         @update()
-        setInterval(@refresh.bind(this), 10)
+        setInterval(@refresh.bind(this), 16)
 
     def keydownEvent e
+        state.player.checkAction(e.key.toUpperCase())
         state.keys[e.key.toUpperCase()] = true
 
     def keyupEvent e
@@ -50,10 +47,14 @@ tag app-root
 
     def update
         state.player.update()
-        for zombie of state.player.nearZombies
-            zombie.update() if zombie
+        if state.delta < 16
+            for zombie of state.player.nearZombies
+                zombie.update() if zombie
         for bullet of state.bullets
             bullet.update() if bullet
+
+        for zombie of state.killed
+            zombie.update() if zombie
 
     def cameraPosX
         window.innerWidth / 2 - state.player.position.x
@@ -62,19 +63,21 @@ tag app-root
         window.innerHeight / 2 - state.player.position.y
 
     def transformCamera
-        "translate({window.innerWidth / 2 - state.player.position.x.toFixed(1)}, {window.innerHeight / 2 - state.player.position.y.toFixed(1)})"
+        "translate({window.innerWidth / 2 - state.player.position.x}, {window.innerHeight / 2 - state.player.position.y})"
 
     def transformPlayer
-        "translate({state.player.position.x.toFixed(1)}, {state.player.position.y.toFixed(1)}) rotate({state.player.rotation.toFixed(1)})"
+        "translate({state.player.position.x}, {state.player.position.y}) rotate({state.player.rotation})"
 
     def transformBullet bullet
-        "translate({bullet.position.x.toFixed(1)}, {bullet.position.y.toFixed(1)}) rotate({bullet.rotation.toFixed(1)})"
+        "translate({bullet.position.x}, {bullet.position.y}) rotate({bullet.rotation})"
 
     def transformZombie zombie
-        "translate({zombie.position.x.toFixed(1)}, {zombie.position.y.toFixed(1)}) rotate({zombie.rotation.toFixed(1)})"
+        "translate({zombie.position.x}, {zombie.position.y}) rotate({zombie.rotation})"
 
     def render
         <self>
+            <div style="position: fixed;color: red;font-size: 30px; z-index: 1;">
+                'TEST'
             <svg transform="scale(1,-1)" height="100%" width="100%" style="background-color: black">
                 <g transform=@transformCamera()>
 
@@ -98,4 +101,9 @@ tag app-root
                             <rect width=(zombie.size) height="4" y="6" fill="red">
                             <rect width=(zombie.size) height="4" y="-10" fill="red">
 
+                    for zombie of state.killed
+                        <g transform=@transformZombie(zombie) .fadeOut>
+                            <circle r=(zombie.size / 2) fill="grey" stroke='black'>
+                            <rect width=(zombie.size) height="4" y="6" fill="grey">
+                            <rect width=(zombie.size) height="4" y="-10" fill="grey">
                     <circle x="0" y="0" r=10 stroke="green" fill="rgba(0,0,0,0)">
