@@ -1158,7 +1158,7 @@ class Bullet {
 }
 
 class Gun {
-	constructor(cap,rate,spread,damage,power,projectiles,speed,reload_time){
+	constructor(cap,rate,spread,damage,power,projectiles,speed,reload_time,name,price,penetration = 1){
 		this.rate = rate;
 		this.spread = spread;
 		this.damage = damage;
@@ -1170,11 +1170,15 @@ class Gun {
 		this.cap = cap;
 		this.ammo = this.cap;
 		this.reloading = false;
+		this.name = name;
+		this.price = price;
+		// @penetration = penetration
 	}
 	
 	fire(){
-		console.log(!this.reloading);
-		if (state.time - this.last_shot > 60000 / this.rate && this.ammo > 0 && !this.reloading) {
+		if (this.reloading) { return }		if (this.ammo == 0) {
+			return this.reload();
+		} else if (state.time - this.last_shot > 60000 / this.rate && this.ammo > 0) {
 			this.ammo--;
 			this.last_shot = state.time;
 			let res = [];
@@ -1185,14 +1189,16 @@ class Gun {
 	
 	reload(){
 		if (this.ammo != this.cap) {
-			return this.reloading = state.time;
+			return this.reloading = this.reload_time;
 		}	}
 	
 	update(){
-		if (this.reloading && (state.time - this.reloading) > this.reload_time) {
-			this.reloading = false;
-			return this.ammo = this.cap;
-		}	}
+		if (this.reloading) {
+			this.reloading -= state.delta * 5;
+			if (this.reloading <= 0) {
+				this.reloading = false;
+				return this.ammo = this.cap;
+			}		}	}
 }
 
 function iter$$5(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
@@ -1201,14 +1207,17 @@ class Player {
 		this.position = {x: 0,y: 0};
 		this.rotation = 0;
 		this.inventory = inventory;
-		this.reputation = 0;
+		this.score = 100000;
 		this.gun = this.inventory[0];
-		this.speed = .5;
+		this.holsters = [this.gun];
+		this.speed = .3;
 		this.nearZombies = new Set();
+		this.life = 100;
+		this.slots = 2;
 	}
 	
 	update(){
-		this.gun.update();
+		if (this.dead) { return }		this.gun.update();
 		this.move();
 		this.rotate();
 		this.shoot();
@@ -1229,7 +1238,7 @@ class Player {
 	}
 	
 	shoot(){
-		if (state.mouse.press) { return this.gun.fire() }	}
+		if (this.isInSafeZone()) { return }		if (state.mouse.press) { return this.gun.fire() }	}
 	
 	rotate(){
 		let diffX = state.mouse.x - window.innerWidth / 2;
@@ -1238,60 +1247,79 @@ class Player {
 	}
 	
 	move(){
-		let slower;		if (((state.keys.A || 0) + (state.keys.D || 0) + (state.keys.W || 0) + (state.keys.S || 0)) > 1) {
+		let slower;		if (((state.keys.KeyA || 0) + (state.keys.KeyD || 0) + (state.keys.KeyW || 0) + (state.keys.KeyS || 0)) > 1) {
 			slower = 0.707;
 		} else {
 			slower = 1;
 		}		
-		if (state.keys.A) this.position.x = this.position.x - this.speed * state.delta * slower * (state.keys.SHIFT ? 2 : 1);
-		if (state.keys.D) this.position.x = this.position.x + this.speed * state.delta * slower * (state.keys.SHIFT ? 2 : 1);
-		if (state.keys.W) this.position.y = this.position.y + this.speed * state.delta * slower * (state.keys.SHIFT ? 2 : 1);
-		if (state.keys.S) { return this.position.y = this.position.y - this.speed * state.delta * slower * (state.keys.SHIFT ? 2 : 1) }	}
+		if (state.keys.KeyA) this.position.x = this.position.x - this.speed * state.delta * slower * (state.keys.ShiftLeft ? 2 : 1);
+		if (state.keys.KeyD) this.position.x = this.position.x + this.speed * state.delta * slower * (state.keys.ShiftLeft ? 2 : 1);
+		if (state.keys.KeyW) this.position.y = this.position.y + this.speed * state.delta * slower * (state.keys.ShiftLeft ? 2 : 1);
+		if (state.keys.KeyS) { return this.position.y = this.position.y - this.speed * state.delta * slower * (state.keys.ShiftLeft ? 2 : 1) }	}
 	
 	
-	checkAction(key){
+	changeGun(slot){
+		if (this.holsters[slot]) {
+			this.gun.reloading = false;
+			return this.gun = this.holsters[slot];
+		}	}
+	
+	onKeyEvent(key){
 		var self = this;
+		console.log(key);
 		let actions = {
-			'1': function() { if (self.inventory[0]) { return self.gun = self.inventory[0] } },
-			'2': function() { if (self.inventory[1]) { return self.gun = self.inventory[1] } },
-			'3': function() { if (self.inventory[2]) { return self.gun = self.inventory[2] } },
-			'4': function() { if (self.inventory[3]) { return self.gun = self.inventory[3] } },
-			'5': function() { if (self.inventory[4]) { return self.gun = self.inventory[4] } },
-			'R': function() { return self.gun.reload(); }
+			'Digit1': function() { return self.changeGun(0); },
+			'Digit2': function() { return self.changeGun(1); },
+			'Digit3': function() { return self.changeGun(2); },
+			'Digit4': function() { return self.changeGun(3); },
+			'Digit5': function() { return self.changeGun(4); },
+			'KeyR': function() { return self.gun.reload(); }
 		};
 		return actions[key] && actions[key]();
 	}
+	
+	takeHit(damage){
+		if (this.dead) { return }		this.life -= damage;
+		if (this.life <= 0) {
+			return this.dead = true;
+		}	}
+	
+	isInSafeZone(){
+		return Math.abs(this.position.x) < 50 && Math.abs(this.position.y) < 50;
+	}
 }
 
-var guns = {
-	//                      cap,   rate,  spread, damage, power, projectiles, speed, reload_time
-	revolver: new Gun(6,150,15,30,15,1,8,2000),
-	pistol: new Gun(10,150,15,25,10,1,8,2000),
-	mp5: new Gun(30,1000,15,9,5,1,8,2000),
-	ump: new Gun(25,800,17,13,8,1,7,2000),
-	ak: new Gun(20,600,20,40,20,1,12,2000),
-	m4: new Gun(25,800,15,30,15,1,13,2000),
-	pump_shotgun: new Gun(5,60,25,15,30,10,6,2000),
-	double_barrel: new Gun(2,300,25,30,40,10,7,2000),
-	sniper: new Gun(6,45,5,100,20,1,14,2000)
-};
+var guns = [
+	//       cap,   rate,  spread, damage, power, projectiles, speed, reload_time,  name,               price
+	new Gun(6,150,15,30,15,1,8,2000,'revolver',0),
+	new Gun(12,170,10,13,15,1,7,1000,'usp45',2000),
+	new Gun(7,100,20,50,30,1,8,1400,'desert eagle',5000),
+	new Gun(30,1000,15,13,5,1,8,1000,'mp5',10000),
+	new Gun(25,800,17,17,8,1,7,1000,'ump',15000),
+	new Gun(5,60,25,12,30,6,6,2200,'pump shotgun',20000),
+	new Gun(2,300,25,20,40,6,7,1800,'double barrel',22000),
+	new Gun(15,600,20,40,20,1,12,1500,'ak47',30000),
+	new Gun(25,800,15,30,15,1,13,1200,'m4a1',33000),
+	new Gun(10,220,6,50,15,1,14,1500,'dragunov',15000),
+	new Gun(5,60,4,100,20,1,15,1600,'m95',18000)
+];
 
 
 var state = {
 	time: 0,
 	keys: [],
 	mouse: {x: 0,y: 0},
-	player: new Player([guns.pistol,guns.m4]),
+	player: new Player([guns[0]]),
 	bullets: new Set(),
 	camera: {},
 	sector: {},
 	killed: new Set(),
-	delta: 2,
+	delta: 1,
 	svg: {
 		height: 1,
 		width: 1
 	},
-	guns: guns
+	store: guns.slice(1,-1)
 };
 
 function iter$$6(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
@@ -1320,7 +1348,8 @@ class Zombie {
 		this.sector = ("" + (~~(this.position.x / 1800)) + "|" + (~~(this.position.y / 1800)));
 		this.state = DRIFT;
 		this.speed = .2;
-		this.max_speed = .7;
+		this.base_speed = .2;
+		this.max_speed = .6;
 		this.size = 20;
 		this.turn = 0;
 		this.life = 100;
@@ -1330,7 +1359,7 @@ class Zombie {
 	update(){
 		this.updateSector();
 		this.checkColisions();
-		if (this.state == DEAD) { return this.execDead() }		if (this.state == DRIFT) { return this.execDrift() }		if (this.state == AGGRO) { return this.execAggro() }		if (this.state == ATTACK) { return this.execAttack() }	}
+		if (this.state === DEAD) { return this.execDead() }		if (this.state === DRIFT) { return this.execDrift() }		if (this.state === AGGRO) { return this.execAggro() }		if (this.state === ATTACK) { return this.execAttack() }	}
 	
 	execDead(){
 		var v_;
@@ -1340,15 +1369,23 @@ class Zombie {
 		}	}
 	
 	execAttack(){
-		if (this.distanceToPlayerX() > this.size || this.distanceToPlayerY() > this.size) {
+		if (!this.start_attack) {
+			this.start_attack = state.time;
+		}		if (state.time - this.start_attack > 100 && this.playerIsClose(this.size * 1.5) && !this.player_beaten) {
+			this.player_beaten = true;
+			state.player.takeHit(10);
+		}		if (state.time - this.start_attack > 500) {
+			this.start_attack = false;
+			this.player_beaten = false;
 			return this.state = AGGRO;
 		}	}
 	
 	execDrift(){
-		this.checkFollowPlayer();
-		if (state.time % 200 == 0) {
+		if (this.playerDetected()) {
+			this.state = AGGRO;
+		}		if (state.time % 200 == 0) {
 			this.turn = Math.floor(Math.random() * 2);
-			// @speed = Math.random() * 0.4
+			this.speed = Math.random() * this.base_speed;
 		}		if (state.time % 3 == 0) {
 			if (this.turn == 0) {
 				this.rotation += Math.random() * 3;
@@ -1358,9 +1395,11 @@ class Zombie {
 	}
 	
 	execAggro(){
-		if (this.playerIsClose(this.size * 3)) {
+		if (state.player.isInSafeZone()) {
+			this.state = DRIFT;
+		}		if (this.playerIsClose(this.size * 1.5)) {
 			this.state = ATTACK;
-		}		this.rotation = this.angleToPlayer();
+		}		if (this.speed < this.max_speed) { this.speed += 0.01; }		this.rotation = this.angleToPlayer();
 		return this.move();
 	}
 	
@@ -1369,7 +1408,7 @@ class Zombie {
 		(sector_ = state.sector)[this.sector] || (sector_[this.sector] = new Set());
 		for (let zombie of iter$$6(state.sector[this.sector])){
 			if (this.distanceToZombieX(zombie) < this.size && this.distanceToZombieY(zombie) < this.size) {
-				if (zombie !== this) { return zombie }			}		}		return false;
+				if (!(zombie === this)) { return zombie }			}		}		return false;
 	}
 	
 	angleToPlayer(){
@@ -1407,11 +1446,9 @@ class Zombie {
 		return this.distanceToPlayerX() < distance && this.distanceToPlayerY() < distance;
 	}
 	
-	checkFollowPlayer(){
-		if (this.playerOnSight() && this.playerIsClose(250) || this.playerIsClose(40)) {
-			this.speed = this.max_speed;
-			return this.state = AGGRO;
-		}	}
+	playerDetected(){
+		return (this.playerOnSight() && this.playerIsClose(750) || this.playerIsClose(40)) && !state.player.isInSafeZone();
+	}
 	
 	currentSector(){
 		return ("" + (~~(this.position.x / 1800)) + "|" + (~~(this.position.y / 1800)));
@@ -1445,18 +1482,219 @@ class Zombie {
 		this.position.x = this.position.x - Math.sin((bullet.rotation - 90) * 0.01745) * bullet.power;
 		this.position.y = this.position.y + Math.cos((bullet.rotation - 90) * 0.01745) * bullet.power;
 		this.state = AGGRO;
-		this.speed = this.max_speed;
 		this.life -= bullet.damage;
 		if (this.life <= 0) {
 			state.sector[this.sector].delete(this);
 			state.killed.add(this);
 			this.state = DEAD;
-			(player_ = state.player).reputation = player_.reputation + 10;
+			(player_ = state.player).score = player_.score + 10;
 			return this.death = state.time;
 		}	}
 }
 
+imba.inlineStyles(".you-died{left:33%;top:20%;font-size:15vw;color:#900;position:fixed;z-index:1;font-family:MenofNihilist;}.store{left:2%;top:2%;font-size:15px;margin:3%;}.row{width:40%;display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;}.buy-row{width:40%;display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;}.guns{width:50vw;}.prices{text-align:right;-webkit-box-flex:2;-webkit-flex-grow:2;-ms-flex-positive:2;flex-grow:2;}.action{text-align:right;-webkit-box-flex:3;-webkit-flex-grow:3;-ms-flex-positive:3;flex-grow:3;margin-left:10%;}.action:hover,.buy-row:hover{color:#5F5;font-size:20;}.ui{position:fixed;z-index:1;font-family:MenofNihilist;color:white;}.score{top:2%;right:2%;font-size:30px;}.life{bottom:2%;right:2%;font-size:30px;}.slots{left:2%;bottom:10%;font-size:16px;}.select-slot{color:green;}.ammo{bottom:2%;left:2%;font-size:30px;}.onHand{color:yellow;}\n");
 function iter$$7(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
+class PlayerHudComponent extends imba.tags.get('component','ImbaElement') {
+	
+	buyGun(gun){
+		var player_;
+		if (gun.price <= state.player.score) {
+			(player_ = state.player).score = player_.score - gun.price;
+			var index = state.store.indexOf(gun);
+			if ((index != -1)) { state.store.splice(index,1); }			return state.player.inventory.push(gun);
+		}	}
+	
+	upgradeGun(gun){
+		return;
+	}
+	
+	useGun(gun){
+		console.log(state.player.holsters.map(function(g) { return g.name; }));
+		if (state.player.holsters.find(function(g) { return g == gun; })) { return }		if (state.player.holsters[state.player.slots - 1]) {
+			state.player.holsters.pop();
+		}		return state.player.holsters.unshift(gun);
+	}
+	
+	render(){
+		var t$0, c$0, b$0, d$0, t$1, b$1, d$1, v$1, t$2, v$2, t$3, b$3, d$3, v$3, m$$2, t$4, t$5, k$5, c$5, t$6, b$6, d$6, c$6, v$6, t$7, v$7, b$7, d$7, b$2, d$2, k$3, c$3, b$4, d$4, c$4, v$4, ap$$1;
+		t$0=this;
+		t$0.open$();
+		c$0 = (b$0=d$0=1,t$0.$) || (b$0=d$0=0,t$0.$={});
+		t$1 = (b$1=d$1=1,c$0.b) || (b$1=d$1=0,c$0.b=t$1=imba.createElement('div',1536,t$0,null,null,null));
+		(v$1=(state.player.dead||undefined),v$1===c$0.d||(d$1|=2,c$0.d=v$1));
+		(d$1&2 && t$1.flag$((c$0.d ? `fadeOut` : '')));
+		t$2 = c$0.e || (c$0.e = t$2=imba.createElement('div',0,t$1,'ui score',null,null));
+		(v$2="score ",v$2===c$0.f || (c$0.f_ = t$2.insert$(c$0.f=v$2,0,c$0.f_)));
+		t$3 = (b$3=d$3=1,c$0.g) || (b$3=d$3=0,c$0.g=t$3=imba.createElement('b',4096,t$2,null,null,null));
+		b$3 || (t$3.css$('font-size',"50px"));
+		(v$3=state.player.score,v$3===c$0.h || (c$0.h_ = t$3.insert$(c$0.h=v$3,0,c$0.h_)));
+		t$2 = c$0.i || (c$0.i = t$2=imba.createElement('div',0,t$1,'ui life',null,null));
+		(v$2="Life ",v$2===c$0.j || (c$0.j_ = t$2.insert$(c$0.j=v$2,0,c$0.j_)));
+		t$3 = (b$3=d$3=1,c$0.k) || (b$3=d$3=0,c$0.k=t$3=imba.createElement('b',4096,t$2,null,null,null));
+		b$3 || (t$3.css$('font-size',"50px"));
+		(v$3=state.player.life,v$3===c$0.l || (c$0.l_ = t$3.insert$(c$0.l=v$3,0,c$0.l_)));
+		if (state.player.isInSafeZone()) {
+			m$$2 = (b$3=d$3=1,c$0.m) || (b$3=d$3=0,c$0.m=m$$2=imba.createElement('div',0,null,'ui',null,null));
+			b$3||(m$$2.up$=t$1);
+			t$4 = c$0.n || (c$0.n = t$4=imba.createElement('div',2048,m$$2,'store',null,null));
+			t$5 = c$0.o || (c$0.o = t$5 = imba.createIndexedFragment(0,t$4));
+			k$5 = 0;
+			c$5=t$5.$;
+			for (let i = 0, items = iter$$7(state.store), len = items.length, gun; i < len; i++) {
+				gun = items[i];
+				t$6 = (b$6=d$6=1,c$5[k$5]) || (b$6=d$6=0,c$5[k$5] = t$6=imba.createElement('div',0,t$5,'buy-row',null,null));
+				b$6||(t$6.up$=t$5);
+				c$6=t$6.$p || (t$6.$p={});
+				v$6 = c$6.q || (c$6.q={buyGun: [null]});
+				v$6.buyGun[0]=gun;
+				b$6 || t$6.on$(`click`,v$6,this);
+				t$7 = c$6.r || (c$6.r = t$7=imba.createElement('div',4096,t$6,'guns',null,null));
+				(v$7=("buy " + (gun.name)),v$7===c$6.s || (c$6.s_ = t$7.insert$(c$6.s=v$7,0,c$6.s_)));
+				t$7 = c$6.t || (c$6.t = t$7=imba.createElement('div',4096,t$6,'prices',null,null));
+				(v$7=gun.price,v$7===c$6.u || (c$6.u_ = t$7.insert$(c$6.u=v$7,0,c$6.u_)));
+				k$5++;
+			}t$5.end$(k$5);
+			b$3 || (t$5=imba.createElement('div',0,t$4,'row',null,null));
+			b$3 || (t$5.css$('margin-top',"5%"));
+			t$5 = c$0.v || (c$0.v = t$5 = imba.createIndexedFragment(0,t$4));
+			k$5 = 0;
+			c$5=t$5.$;
+			for (let i = 0, items = iter$$7(state.player.inventory), len = items.length, gun; i < len; i++) {
+				gun = items[i];
+				t$6 = (b$6=d$6=1,c$5[k$5]) || (b$6=d$6=0,c$5[k$5] = t$6=imba.createElement('div',0,t$5,'row',null,null));
+				b$6||(t$6.up$=t$5);
+				c$6=t$6.$w || (t$6.$w={});
+				t$7 = c$6.x || (c$6.x = t$7=imba.createElement('div',4096,t$6,'guns',null,null));
+				(v$7=gun.name,v$7===c$6.y || (c$6.y_ = t$7.insert$(c$6.y=v$7,0,c$6.y_)));
+				t$7 = (b$7=d$7=1,c$6.z) || (b$7=d$7=0,c$6.z=t$7=imba.createElement('div',0,t$6,'action',"Use",null));
+				v$7 = c$6.aa || (c$6.aa={useGun: [null]});
+				v$7.useGun[0]=gun;
+				b$7 || t$7.on$(`click`,v$7,this);
+				t$7 = (b$7=d$7=1,c$6.ab) || (b$7=d$7=0,c$6.ab=t$7=imba.createElement('div',0,t$6,'action',"Upgrade",null));
+				v$7 = c$6.ac || (c$6.ac={upgradeGun: [null]});
+				v$7.upgradeGun[0]=gun;
+				b$7 || t$7.on$(`click`,v$7,this);
+				k$5++;
+			}t$5.end$(k$5);
+		}
+		(c$0.m$$2_ = t$1.insert$(m$$2,1024,c$0.m$$2_));		t$2 = (b$2=d$2=1,c$0.ad) || (b$2=d$2=0,c$0.ad=t$2=imba.createElement('div',2560,t$1,'ui slots',null,null));
+		(v$2=(this.selected_gun||undefined),v$2===c$0.af||(d$2|=2,c$0.af=v$2));
+		(d$2&2 && t$2.flag$('ui slots'+' '+(c$0.af ? `select-slot` : '')));
+		t$3 = c$0.ag || (c$0.ag = t$3 = imba.createIndexedFragment(0,t$2));
+		k$3 = 0;
+		c$3=t$3.$;
+		for (let len = state.player.slots, i = 0, rd = len - i; (rd > 0) ? (i < len) : (i > len); (rd > 0) ? (i++) : (i--)) {
+			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createElement('div',4608,t$3,null,null,null));
+			b$4||(t$4.up$=t$3);
+			c$4=t$4.$ah || (t$4.$ah={});
+			(v$4=(state.player.gun == state.player.holsters[i]||undefined),v$4===c$4.aj||(d$4|=2,c$4.aj=v$4));
+			(d$4&2 && t$4.flag$((c$4.aj ? `onHand` : '')));
+			(v$4=("" + (i + 1) + ". " + ((state.player.holsters[i] || {}).name || '')),v$4===c$4.ak || (c$4.ak_ = t$4.insert$(c$4.ak=v$4,0,c$4.ak_)));
+			k$3++;
+		}t$3.end$(k$3);
+		t$2 = c$0.al || (c$0.al = t$2=imba.createElement('div',0,t$1,'ui ammo',null,null));
+		t$3 = (b$3=d$3=1,c$0.am) || (b$3=d$3=0,c$0.am=t$3=imba.createElement('b',4096,t$2,null,null,null));
+		b$3 || (t$3.css$('font-size',"50px"));
+		(v$3=state.player.gun.ammo,v$3===c$0.an || (c$0.an_ = t$3.insert$(c$0.an=v$3,0,c$0.an_)));
+		(v$2=" Ammo",v$2===c$0.ao || (c$0.ao_ = t$2.insert$(c$0.ao=v$2,0,c$0.ao_)));
+		if (state.player.dead) {
+			ap$$1 = (b$2=d$2=1,c$0.ap) || (b$2=d$2=0,c$0.ap=ap$$1=imba.createElement('div',0,null,'you-died fadeIn',"you died",null));
+			b$2||(ap$$1.up$=t$0);
+		}
+		(c$0.ap$$1_ = t$0.insert$(ap$$1,1024,c$0.ap$$1_));		t$0.close$(d$0);
+		return t$0;
+	}
+} imba.tags.define('player-hud',PlayerHudComponent,{});
+
+/* css
+    .you-died {
+        left: 33%
+        top: 20%
+        font-size: 15vw;
+        color: #900;
+        position: fixed;
+        z-index: 1;
+        font-family: MenofNihilist;
+    }
+    .store {
+        left: 2%;
+        top: 2%;
+        font-size: 15px;
+        margin: 3%;
+    }
+
+
+    .row {
+        width: 40%;
+        display: flex;
+    }
+
+    .buy-row {
+        width: 40%;
+        display: flex;
+    }
+
+    .guns{
+        width: 50vw;
+    }
+
+    .prices {
+        text-align: right;
+        flex-grow: 2;
+    }
+
+    .action{
+        text-align: right;
+        flex-grow: 3;
+        margin-left: 10%
+    }
+
+    .action:hover, .buy-row:hover{
+        color: #5F5;
+        font-size: 20;
+    }
+
+    .ui {
+        position: fixed;
+        z-index: 1;
+        font-family: MenofNihilist;
+        color: white;
+    }
+
+    .score {
+        top: 2%;
+        right: 2%;
+        font-size: 30px;
+    }
+
+    .life {
+        bottom: 2%;
+        right: 2%;
+        font-size: 30px;
+    }
+    .slots {
+        left: 2%;
+        bottom: 10%;
+        font-size: 16px;
+    }
+
+    .select-slot {
+        color: green
+    }
+
+    .ammo {
+        bottom: 2%;
+        left: 2%;
+        font-size: 30px;
+    }
+
+    .onHand { 
+        color: yellow
+    }
+*/
+
+imba.inlineStyles("body{margin:0px;-webkit-touch-callout:none;-webkit-user-select:none;-khtml-user-select:none;-moz-user-select:none;-ms-user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}app-root{display:block;position:relative;background-color:black;cursor:none;}@font-face{font-family:MenofNihilist;src:url(/fonts/MenofNihilist-Regular.otf) format(\"opentype\");}@-webkit-keyframes fadeOut{0%{opacity:1;}to{opacity:0;}}@keyframes fadeOut{0%{opacity:1;}to{opacity:0;}}@-webkit-keyframes fadeIn{0%{opacity:0;}to{opacity:1;}}@keyframes fadeIn{0%{opacity:0;}to{opacity:1;}}.fadeOut{-webkit-animation-duration:2.5s;-webkit-animation-duration:2.5s;animation-duration:2.5s;-webkit-animation-fill-mode:both;-webkit-animation-fill-mode:both;animation-fill-mode:both;-webkit-animation-name:fadeOut;-webkit-animation-name:fadeOut;animation-name:fadeOut;}.fadeIn{-webkit-animation-duration:2.5s;-webkit-animation-duration:2.5s;animation-duration:2.5s;-webkit-animation-fill-mode:both;-webkit-animation-fill-mode:both;animation-fill-mode:both;-webkit-animation-name:fadeIn;-webkit-animation-name:fadeIn;animation-name:fadeIn;}\n");
+function iter$$8(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
 class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 	
 	refresh(){
@@ -1488,12 +1726,12 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 	}
 	
 	keydownEvent(e){
-		state.player.checkAction(e.key.toUpperCase());
-		return state.keys[e.key.toUpperCase()] = true;
+		state.player.onKeyEvent(e.code);
+		return state.keys[e.code] = true;
 	}
 	
 	keyupEvent(e){
-		return state.keys[e.key.toUpperCase()] = false;
+		return state.keys[e.code] = false;
 	}
 	
 	mousemoveEvent(e){
@@ -1512,11 +1750,11 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 	update(){
 		state.player.update();
 		if (state.delta < 16) {
-			for (let zombie of iter$$7(state.player.nearZombies)){
-				if (zombie) { zombie.update(); }			}		}		for (let bullet of iter$$7(state.bullets)){
+			for (let zombie of iter$$8(state.player.nearZombies)){
+				if (zombie) { zombie.update(); }			}		}		for (let bullet of iter$$8(state.bullets)){
 			if (bullet) { bullet.update(); }		}		
 		let res = [];
-		for (let zombie of iter$$7(state.killed)){
+		for (let zombie of iter$$8(state.killed)){
 			res.push(zombie && zombie.update());
 		}		return res;
 	}
@@ -1530,8 +1768,14 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 	}
 	
 	transformCamera(){
-		return ("translate(" + (window.innerWidth / 2 - state.player.position.x) + ", " + (window.innerHeight / 2 - state.player.position.y) + ")");
-	}
+		if (state.time - state.player.gun.last_shot < 30) {
+			let power = state.player.gun.power / 2;
+			let x = window.innerWidth / 2 - state.player.position.x + Math.random() * power - power / 2;
+			let y = window.innerHeight / 2 - state.player.position.y + Math.random() * power - power / 2;
+			return ("translate(" + x + ", " + y + ")");
+		} else {
+			return ("translate(" + (window.innerWidth / 2 - state.player.position.x) + ", " + (window.innerHeight / 2 - state.player.position.y) + ")");
+		}	}
 	
 	transformPlayer(){
 		return ("translate(" + (state.player.position.x) + ", " + (state.player.position.y) + ") rotate(" + (state.player.rotation) + ")");
@@ -1546,22 +1790,43 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 	}
 	
 	render(){
-		var t$0, c$0, b$0, d$0, t$1, b$1, d$1, v$1, t$2, b$2, d$2, v$2, t$3, b$3, d$3, v$3, t$4, t$5, k$3, c$3, b$4, d$4, c$4, v$4, b$5, d$5, v$5;
+		var t$0, c$0, b$0, d$0, t$1, b$1, d$1, t$2, b$2, d$2, v$2, t$3, b$3, d$3, v$3, t$4, t$5, k$3, c$3, b$4, d$4, c$4, v$4, b$5, d$5, v$5;
 		t$0=this;
 		t$0.open$();
 		c$0 = (b$0=d$0=1,t$0.$) || (b$0=d$0=0,t$0.$={});
-		t$1 = (b$1=d$1=1,c$0.b) || (b$1=d$1=0,c$0.b=t$1=imba.createElement('div',4096,t$0,null,null,null));
-		b$1 || (t$1.style="position: fixed;color: red;font-size: 30px; z-index: 1;");
-		(v$1=("Reputation: " + (state.player.reputation)),v$1===c$0.c || (c$0.c_ = t$1.insert$(c$0.c=v$1,0,c$0.c_)));
+		t$1 = (b$1=d$1=1,c$0.b) || (b$1=d$1=0,c$0.b=t$1=imba.createComponent('player-hud',0,t$0,null,null,null));
+		b$1 || !t$1.setup || t$1.setup(d$1);
+		t$1.end$(d$1);
+		b$1 || t$1.insertInto$(t$0);
 		b$0 || (t$1=imba.createSVGElement('svg',0,t$0,null,null,null));
 		b$0 || (t$1.set$('transform',"scale(1,-1)"));
 		b$0 || (t$1.set$('height',"100%"));
 		b$0 || (t$1.set$('width',"100%"));
 		b$0 || (t$1.set$('style',"background-color: black"));
-		t$2 = (b$2=d$2=1,c$0.d) || (b$2=d$2=0,c$0.d=t$2=imba.createSVGElement('g',2048,t$1,null,null,null));
-		(v$2=this.transformCamera(),v$2===c$0.e || (t$2.set$('transform',c$0.e=v$2)));
-		t$3 = (b$3=d$3=1,c$0.f) || (b$3=d$3=0,c$0.f=t$3=imba.createSVGElement('g',0,t$2,null,null,null));
-		(v$3=this.transformPlayer(),v$3===c$0.g || (t$3.set$('transform',c$0.g=v$3)));
+		t$2 = (b$2=d$2=1,c$0.c) || (b$2=d$2=0,c$0.c=t$2=imba.createSVGElement('g',0,t$1,null,null,null));
+		(v$2=("translate(" + (state.mouse.x) + ", " + (state.mouse.y) + ")"),v$2===c$0.d || (t$2.set$('transform',c$0.d=v$2)));
+		b$2 || (t$3=imba.createSVGElement('line',0,t$2,null,null,null));
+		b$2 || (t$3.set$('y1',4));
+		b$2 || (t$3.set$('y2',10));
+		b$2 || (t$3.set$('stroke','#AFA'));
+		b$2 || (t$3=imba.createSVGElement('line',0,t$2,null,null,null));
+		b$2 || (t$3.set$('y1',-4));
+		b$2 || (t$3.set$('y2',-10));
+		b$2 || (t$3.set$('stroke','#AFA'));
+		b$2 || (t$3=imba.createSVGElement('line',0,t$2,null,null,null));
+		b$2 || (t$3.set$('x1',4));
+		b$2 || (t$3.set$('x2',10));
+		b$2 || (t$3.set$('stroke','#AFA'));
+		b$2 || (t$3=imba.createSVGElement('line',0,t$2,null,null,null));
+		b$2 || (t$3.set$('x1',-4));
+		b$2 || (t$3.set$('x2',-10));
+		b$2 || (t$3.set$('stroke','#AFA'));
+		t$2 = (b$2=d$2=1,c$0.e) || (b$2=d$2=0,c$0.e=t$2=imba.createSVGElement('g',2560,t$1,null,null,null));
+		(v$2=this.transformCamera(),v$2===c$0.f || (t$2.set$('transform',c$0.f=v$2)));
+		(v$2=(state.player.dead||undefined),v$2===c$0.h||(d$2|=2,c$0.h=v$2));
+		(d$2&2 && t$2.flag$((c$0.h ? `fadeOut` : '')));
+		t$3 = (b$3=d$3=1,c$0.i) || (b$3=d$3=0,c$0.i=t$3=imba.createSVGElement('g',0,t$2,null,null,null));
+		(v$3=this.transformPlayer(),v$3===c$0.j || (t$3.set$('transform',c$0.j=v$3)));
 		b$3 || (t$4=imba.createSVGElement('circle',0,t$3,null,null,null));
 		b$3 || (t$4.set$('r',"10"));
 		b$3 || (t$4.set$('fill',"white"));
@@ -1571,63 +1836,63 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		b$3 || (t$5.set$('height',"13"));
 		b$3 || (t$5.set$('width',"2"));
 		b$3 || (t$5.set$('fill',"white"));
-		t$3 = c$0.h || (c$0.h = t$3 = imba.createIndexedFragment(0,t$2));
+		t$3 = c$0.k || (c$0.k = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
-		for (let bullet of iter$$7(state.bullets)){
+		for (let bullet of iter$$8(state.bullets)){
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,null,null,null));
 			b$4||(t$4.up$=t$3);
-			c$4=t$4.$i || (t$4.$i={});
-			(v$4=this.transformBullet(bullet),v$4===c$4.j || (t$4.set$('transform',c$4.j=v$4)));
+			c$4=t$4.$l || (t$4.$l={});
+			(v$4=this.transformBullet(bullet),v$4===c$4.m || (t$4.set$('transform',c$4.m=v$4)));
 			b$4 || (t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
 			b$4 || (t$5.set$('width',"50"));
 			b$4 || (t$5.set$('height',"1"));
 			b$4 || (t$5.set$('fill',"yellow"));
 			k$3++;
 		}t$3.end$(k$3);
-		t$3 = c$0.k || (c$0.k = t$3 = imba.createIndexedFragment(0,t$2));
+		t$3 = c$0.n || (c$0.n = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
-		for (let zombie of iter$$7(state.player.nearZombies)){
+		for (let zombie of iter$$8(state.player.nearZombies)){
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,null,null,null));
 			b$4||(t$4.up$=t$3);
-			c$4=t$4.$l || (t$4.$l={});
-			(v$4=this.transformZombie(zombie),v$4===c$4.m || (t$4.set$('transform',c$4.m=v$4)));
-			t$5 = (b$5=d$5=1,c$4.n) || (b$5=d$5=0,c$4.n=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
-			(v$5=zombie.size / 2,v$5===c$4.o || (t$5.set$('r',c$4.o=v$5)));
+			c$4=t$4.$o || (t$4.$o={});
+			(v$4=this.transformZombie(zombie),v$4===c$4.p || (t$4.set$('transform',c$4.p=v$4)));
+			t$5 = (b$5=d$5=1,c$4.q) || (b$5=d$5=0,c$4.q=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
+			(v$5=zombie.size / 2,v$5===c$4.r || (t$5.set$('r',c$4.r=v$5)));
 			b$5 || (t$5.set$('fill',"red"));
 			b$5 || (t$5.set$('stroke','black'));
-			t$5 = (b$5=d$5=1,c$4.p) || (b$5=d$5=0,c$4.p=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-			(v$5=zombie.size,v$5===c$4.q || (t$5.set$('width',c$4.q=v$5)));
+			t$5 = (b$5=d$5=1,c$4.s) || (b$5=d$5=0,c$4.s=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
+			(v$5=zombie.size,v$5===c$4.t || (t$5.set$('width',c$4.t=v$5)));
 			b$5 || (t$5.set$('height',"4"));
 			b$5 || (t$5.set$('y',"6"));
 			b$5 || (t$5.set$('fill',"red"));
-			t$5 = (b$5=d$5=1,c$4.r) || (b$5=d$5=0,c$4.r=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-			(v$5=zombie.size,v$5===c$4.s || (t$5.set$('width',c$4.s=v$5)));
+			t$5 = (b$5=d$5=1,c$4.u) || (b$5=d$5=0,c$4.u=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
+			(v$5=zombie.size,v$5===c$4.v || (t$5.set$('width',c$4.v=v$5)));
 			b$5 || (t$5.set$('height',"4"));
 			b$5 || (t$5.set$('y',"-10"));
 			b$5 || (t$5.set$('fill',"red"));
 			k$3++;
 		}t$3.end$(k$3);
-		t$3 = c$0.t || (c$0.t = t$3 = imba.createIndexedFragment(0,t$2));
+		t$3 = c$0.w || (c$0.w = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
-		for (let zombie of iter$$7(state.killed)){
+		for (let zombie of iter$$8(state.killed)){
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,'fadeOut',null,null));
 			b$4||(t$4.up$=t$3);
-			c$4=t$4.$u || (t$4.$u={});
-			(v$4=this.transformZombie(zombie),v$4===c$4.v || (t$4.set$('transform',c$4.v=v$4)));
-			t$5 = (b$5=d$5=1,c$4.w) || (b$5=d$5=0,c$4.w=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
-			(v$5=zombie.size / 2,v$5===c$4.x || (t$5.set$('r',c$4.x=v$5)));
+			c$4=t$4.$x || (t$4.$x={});
+			(v$4=this.transformZombie(zombie),v$4===c$4.y || (t$4.set$('transform',c$4.y=v$4)));
+			t$5 = (b$5=d$5=1,c$4.z) || (b$5=d$5=0,c$4.z=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
+			(v$5=zombie.size / 2,v$5===c$4.aa || (t$5.set$('r',c$4.aa=v$5)));
 			b$5 || (t$5.set$('fill',"grey"));
 			b$5 || (t$5.set$('stroke','black'));
-			t$5 = (b$5=d$5=1,c$4.y) || (b$5=d$5=0,c$4.y=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-			(v$5=zombie.size,v$5===c$4.z || (t$5.set$('width',c$4.z=v$5)));
+			t$5 = (b$5=d$5=1,c$4.ab) || (b$5=d$5=0,c$4.ab=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
+			(v$5=zombie.size,v$5===c$4.ac || (t$5.set$('width',c$4.ac=v$5)));
 			b$5 || (t$5.set$('height',"4"));
 			b$5 || (t$5.set$('y',"6"));
 			b$5 || (t$5.set$('fill',"grey"));
-			t$5 = (b$5=d$5=1,c$4.aa) || (b$5=d$5=0,c$4.aa=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-			(v$5=zombie.size,v$5===c$4.ab || (t$5.set$('width',c$4.ab=v$5)));
+			t$5 = (b$5=d$5=1,c$4.ad) || (b$5=d$5=0,c$4.ad=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
+			(v$5=zombie.size,v$5===c$4.ae || (t$5.set$('width',c$4.ae=v$5)));
 			b$5 || (t$5.set$('height',"4"));
 			b$5 || (t$5.set$('y',"-10"));
 			b$5 || (t$5.set$('fill',"grey"));
@@ -1636,11 +1901,75 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		b$2 || (t$3=imba.createSVGElement('circle',0,t$2,null,null,null));
 		b$2 || (t$3.set$('x',"0"));
 		b$2 || (t$3.set$('y',"0"));
-		b$2 || (t$3.set$('r',10));
+		b$2 || (t$3.set$('r',50));
 		b$2 || (t$3.set$('stroke',"green"));
-		b$2 || (t$3.set$('fill',"rgba(0,0,0,0)"));
+		b$2 || (t$3.set$('fill',"rgba(0,255,0,0.1)"));
 		t$0.close$(d$0);
 		return t$0;
 	}
 } imba.tags.define('app-root',AppRootComponent,{});
+
+
+
+/* css
+
+    body {
+        margin: 0px;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    app-root {
+        display: block; 
+        position: relative;
+        background-color: black
+        cursor: none;
+    }
+
+    @font-face {
+        font-family: MenofNihilist;
+        src: url(/fonts/MenofNihilist-Regular.otf) format("opentype");
+    }
+
+    @keyframes fadeOut {
+        0% {
+            opacity: 1
+        }
+        to {
+            opacity: 0
+        }
+    }
+
+
+    @keyframes fadeIn {
+        0% {
+            opacity: 0
+        }
+        to {
+            opacity: 1
+        }
+    }
+
+    .fadeOut {
+        -webkit-animation-duration: 2.5s;
+        animation-duration: 2.5s;
+        -webkit-animation-fill-mode: both;
+        animation-fill-mode: both
+        -webkit-animation-name: fadeOut;
+        animation-name: fadeOut
+    }
+
+    .fadeIn {
+        -webkit-animation-duration: 2.5s;
+        animation-duration: 2.5s;
+        -webkit-animation-fill-mode: both;
+        animation-fill-mode: both
+        -webkit-animation-name: fadeIn;
+        animation-name: fadeIn
+    }
+*/
 //# sourceMappingURL=app.imba.js.map

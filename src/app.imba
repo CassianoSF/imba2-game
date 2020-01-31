@@ -1,5 +1,6 @@
-import {Zombie} from './Zombie'
+import {Zombie} from './classes/Zombie'
 import {state} from './state'
+import player-hud    from './tags/player-hud'
 
 tag app-root
 
@@ -29,11 +30,11 @@ tag app-root
         setInterval(@refresh.bind(this), 16)
 
     def keydownEvent e
-        state.player.checkAction(e.key.toUpperCase())
-        state.keys[e.key.toUpperCase()] = true
+        state.player.onKeyEvent(e.code)
+        state.keys[e.code] = true
 
     def keyupEvent e
-        state.keys[e.key.toUpperCase()] = false
+        state.keys[e.code] = false
 
     def mousemoveEvent e
         state.mouse.x = e.clientX
@@ -63,7 +64,13 @@ tag app-root
         window.innerHeight / 2 - state.player.position.y
 
     def transformCamera
-        "translate({window.innerWidth / 2 - state.player.position.x}, {window.innerHeight / 2 - state.player.position.y})"
+        if state.time - state.player.gun.last_shot < 30
+            let power = state.player.gun.power / 2
+            let x = window.innerWidth / 2 - state.player.position.x + Math.random() * power - power/2
+            let y = window.innerHeight / 2 - state.player.position.y + Math.random() * power - power/2
+            "translate({x}, {y})"
+        else
+            "translate({window.innerWidth / 2 - state.player.position.x}, {window.innerHeight / 2 - state.player.position.y})"
 
     def transformPlayer
         "translate({state.player.position.x}, {state.player.position.y}) rotate({state.player.rotation})"
@@ -76,10 +83,17 @@ tag app-root
 
     def render
         <self>
-            <div style="position: fixed;color: red;font-size: 30px; z-index: 1;">
-                "Reputation: {state.player.reputation}"
-            <svg transform="scale(1,-1)" height="100%" width="100%" style="background-color: black">
-                <g transform=@transformCamera()>
+            <player-hud>
+            <svg transform="scale(1,-1)" height="100%" width="100%" style="background-color: black" >
+                # CROSSHAIR
+                <g transform="translate({state.mouse.x}, {state.mouse.y})">
+                    <line y1=4 y2=10 stroke='#AFA'>
+                    <line y1=-4 y2=-10 stroke='#AFA'>
+                    <line x1=4 x2=10 stroke='#AFA'>
+                    <line x1=-4 x2=-10 stroke='#AFA'>
+
+                # CAMERA
+                <g transform=@transformCamera() .fadeOut=(state.player.dead)>
 
                     # PLAYER
                     <g transform=@transformPlayer()>
@@ -101,9 +115,76 @@ tag app-root
                             <rect width=(zombie.size) height="4" y="6" fill="red">
                             <rect width=(zombie.size) height="4" y="-10" fill="red">
 
+                    # BODIES
                     for zombie of state.killed
                         <g transform=@transformZombie(zombie) .fadeOut>
                             <circle r=(zombie.size / 2) fill="grey" stroke='black'>
                             <rect width=(zombie.size) height="4" y="6" fill="grey">
                             <rect width=(zombie.size) height="4" y="-10" fill="grey">
-                    <circle x="0" y="0" r=10 stroke="green" fill="rgba(0,0,0,0)">
+
+                    # SAFE ZONE
+                    <circle x="0" y="0" r=50 stroke="green" fill="rgba(0,255,0,0.1)">
+
+
+
+### css
+
+    body {
+        margin: 0px;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    app-root {
+        display: block; 
+        position: relative;
+        background-color: black
+        cursor: none;
+    }
+
+    @font-face {
+        font-family: MenofNihilist;
+        src: url(/fonts/MenofNihilist-Regular.otf) format("opentype");
+    }
+
+    @keyframes fadeOut {
+        0% {
+            opacity: 1
+        }
+        to {
+            opacity: 0
+        }
+    }
+
+
+    @keyframes fadeIn {
+        0% {
+            opacity: 0
+        }
+        to {
+            opacity: 1
+        }
+    }
+
+    .fadeOut {
+        -webkit-animation-duration: 2.5s;
+        animation-duration: 2.5s;
+        -webkit-animation-fill-mode: both;
+        animation-fill-mode: both
+        -webkit-animation-name: fadeOut;
+        animation-name: fadeOut
+    }
+
+    .fadeIn {
+        -webkit-animation-duration: 2.5s;
+        animation-duration: 2.5s;
+        -webkit-animation-fill-mode: both;
+        animation-fill-mode: both
+        -webkit-animation-name: fadeIn;
+        animation-name: fadeIn
+    }
+###
