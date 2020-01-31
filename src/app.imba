@@ -148,7 +148,7 @@ tag app-root
 
     @font-face {
         font-family: MenofNihilist;
-        src: url(/fonts/MenofNihilist-Regular.otf) format("opentype");
+        src: url(./fonts/MenofNihilist-Regular.otf) format("opentype");
     }
 
     @keyframes fadeOut {

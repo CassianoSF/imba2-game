@@ -1693,7 +1693,7 @@ class PlayerHudComponent extends imba.tags.get('component','ImbaElement') {
     }
 */
 
-imba.inlineStyles("body{margin:0px;-webkit-touch-callout:none;-webkit-user-select:none;-khtml-user-select:none;-moz-user-select:none;-ms-user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}app-root{display:block;position:relative;background-color:black;cursor:none;}@font-face{font-family:MenofNihilist;src:url(/fonts/MenofNihilist-Regular.otf) format(\"opentype\");}@-webkit-keyframes fadeOut{0%{opacity:1;}to{opacity:0;}}@keyframes fadeOut{0%{opacity:1;}to{opacity:0;}}@-webkit-keyframes fadeIn{0%{opacity:0;}to{opacity:1;}}@keyframes fadeIn{0%{opacity:0;}to{opacity:1;}}.fadeOut{-webkit-animation-duration:2.5s;-webkit-animation-duration:2.5s;animation-duration:2.5s;-webkit-animation-fill-mode:both;-webkit-animation-fill-mode:both;animation-fill-mode:both;-webkit-animation-name:fadeOut;-webkit-animation-name:fadeOut;animation-name:fadeOut;}.fadeIn{-webkit-animation-duration:2.5s;-webkit-animation-duration:2.5s;animation-duration:2.5s;-webkit-animation-fill-mode:both;-webkit-animation-fill-mode:both;animation-fill-mode:both;-webkit-animation-name:fadeIn;-webkit-animation-name:fadeIn;animation-name:fadeIn;}\n");
+imba.inlineStyles("body{margin:0px;-webkit-touch-callout:none;-webkit-user-select:none;-khtml-user-select:none;-moz-user-select:none;-ms-user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}app-root{display:block;position:relative;background-color:black;cursor:none;}@font-face{font-family:MenofNihilist;src:url(./fonts/MenofNihilist-Regular.otf) format(\"opentype\");}@-webkit-keyframes fadeOut{0%{opacity:1;}to{opacity:0;}}@keyframes fadeOut{0%{opacity:1;}to{opacity:0;}}@-webkit-keyframes fadeIn{0%{opacity:0;}to{opacity:1;}}@keyframes fadeIn{0%{opacity:0;}to{opacity:1;}}.fadeOut{-webkit-animation-duration:2.5s;-webkit-animation-duration:2.5s;animation-duration:2.5s;-webkit-animation-fill-mode:both;-webkit-animation-fill-mode:both;animation-fill-mode:both;-webkit-animation-name:fadeOut;-webkit-animation-name:fadeOut;animation-name:fadeOut;}.fadeIn{-webkit-animation-duration:2.5s;-webkit-animation-duration:2.5s;animation-duration:2.5s;-webkit-animation-fill-mode:both;-webkit-animation-fill-mode:both;animation-fill-mode:both;-webkit-animation-name:fadeIn;-webkit-animation-name:fadeIn;animation-name:fadeIn;}\n");
 function iter$$8(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
 class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 	
@@ -1932,7 +1932,7 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 
     @font-face {
         font-family: MenofNihilist;
-        src: url(/fonts/MenofNihilist-Regular.otf) format("opentype");
+        src: url(./fonts/MenofNihilist-Regular.otf) format("opentype");
     }
 
     @keyframes fadeOut {
