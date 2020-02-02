@@ -1266,7 +1266,6 @@ class Player {
 	
 	onKeyEvent(key){
 		var self = this;
-		console.log(key);
 		let actions = {
 			'Digit1': function() { return self.changeGun(0); },
 			'Digit2': function() { return self.changeGun(1); },
@@ -1289,50 +1288,17 @@ class Player {
 	}
 }
 
-var guns = [
-	//       cap,   rate,  spread, damage, power, projectiles, speed, reload_time,  name,               price
-	new Gun(6,150,15,30,15,1,8,2000,'revolver',0),
-	new Gun(12,170,10,13,15,1,7,1000,'usp45',2000),
-	new Gun(7,100,20,50,30,1,8,1400,'desert eagle',5000),
-	new Gun(30,1000,15,13,5,1,8,1000,'mp5',10000),
-	new Gun(25,800,17,17,8,1,7,1000,'ump',15000),
-	new Gun(5,60,25,12,30,6,6,2200,'pump shotgun',20000),
-	new Gun(2,300,25,20,40,6,7,1800,'double barrel',22000),
-	new Gun(15,600,20,40,20,1,12,1500,'ak47',30000),
-	new Gun(25,800,15,30,15,1,13,1200,'m4a1',33000),
-	new Gun(10,220,6,50,15,1,14,1500,'dragunov',15000),
-	new Gun(5,60,4,100,20,1,15,1600,'m95',18000)
-];
-
-
-var state = {
-	time: 0,
-	keys: [],
-	mouse: {x: 0,y: 0},
-	player: new Player([guns[0]]),
-	bullets: new Set(),
-	camera: {},
-	sector: {},
-	killed: new Set(),
-	delta: 1,
-	svg: {
-		height: 1,
-		width: 1
-	},
-	store: guns.slice(1,-1)
-};
-
 function iter$$6(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
 let DRIFT = 0;
 let AGGRO = 1;
 let ATTACK = 2;
 let DEAD = 3;
 
-function randomPosition(){
+function randomPosition(player){
 	let posx = Math.random() * window.innerWidth * 30 - (window.innerWidth * 15);
 	let posy = Math.random() * window.innerHeight * 30 - (window.innerHeight * 15);
-	let diffx = Math.abs(posx - state.player.position.x);
-	let diffy = Math.abs(posy - state.player.position.y);
+	let diffx = Math.abs(posx - this.player.position.x);
+	let diffy = Math.abs(posy - this.player.position.y);
 	if (diffx < 400 && diffy < 400) {
 		return randomPosition();
 	}	
@@ -1342,11 +1308,12 @@ function randomPosition(){
 	};
 }
 class Zombie {
-	constructor(){
-		this.position = randomPosition();
+	constructor(player){
+		this.player = player;
+		this.position = randomPosition(this.player);
 		this.rotation = Math.random() * 360;
 		this.sector = ("" + (~~(this.position.x / 1800)) + "|" + (~~(this.position.y / 1800)));
-		this.state = DRIFT;
+		this.state = 0;
 		this.speed = .2;
 		this.base_speed = .2;
 		this.max_speed = .6;
@@ -1373,7 +1340,7 @@ class Zombie {
 			this.start_attack = state.time;
 		}		if (state.time - this.start_attack > 100 && this.playerIsClose(this.size * 1.5) && !this.player_beaten) {
 			this.player_beaten = true;
-			state.player.takeHit(10);
+			this.player.takeHit(10);
 		}		if (state.time - this.start_attack > 500) {
 			this.start_attack = false;
 			this.player_beaten = false;
@@ -1395,7 +1362,7 @@ class Zombie {
 	}
 	
 	execAggro(){
-		if (state.player.isInSafeZone()) {
+		if (this.player.isInSafeZone()) {
 			this.state = DRIFT;
 		}		if (this.playerIsClose(this.size * 1.5)) {
 			this.state = ATTACK;
@@ -1412,17 +1379,17 @@ class Zombie {
 	}
 	
 	angleToPlayer(){
-		let dx = state.player.position.x - this.position.x;
-		let dy = state.player.position.y - this.position.y;
+		let dx = this.player.position.x - this.position.x;
+		let dy = this.player.position.y - this.position.y;
 		return -(Math.atan2(dx,dy) / 0.01745 - 90) % 360;
 	}
 	
 	distanceToPlayerX(){
-		return Math.abs(state.player.position.x - this.position.x);
+		return Math.abs(this.player.position.x - this.position.x);
 	}
 	
 	distanceToPlayerY(){
-		return Math.abs(state.player.position.y - this.position.y);
+		return Math.abs(this.player.position.y - this.position.y);
 	}
 	
 	distanceToZombieX(zombie){
@@ -1447,7 +1414,7 @@ class Zombie {
 	}
 	
 	playerDetected(){
-		return (this.playerOnSight() && this.playerIsClose(750) || this.playerIsClose(40)) && !state.player.isInSafeZone();
+		return (this.playerOnSight() && this.playerIsClose(750) || this.playerIsClose(40)) && !this.player.isInSafeZone();
 	}
 	
 	currentSector(){
@@ -1478,7 +1445,6 @@ class Zombie {
 		}	}
 	
 	takeHit(bullet){
-		var player_;
 		this.position.x = this.position.x - Math.sin((bullet.rotation - 90) * 0.01745) * bullet.power;
 		this.position.y = this.position.y + Math.cos((bullet.rotation - 90) * 0.01745) * bullet.power;
 		this.state = AGGRO;
@@ -1487,40 +1453,115 @@ class Zombie {
 			state.sector[this.sector].delete(this);
 			state.killed.add(this);
 			this.state = DEAD;
-			(player_ = state.player).score = player_.score + 10;
+			this.player.score = this.player.score + 10;
 			return this.death = state.time;
 		}	}
 }
 
-imba.inlineStyles(".you-died{left:33%;top:20%;font-size:15vw;color:#900;position:fixed;z-index:1;font-family:MenofNihilist;}.store{left:2%;top:2%;font-size:15px;margin:3%;}.row{width:40%;display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;}.buy-row{width:40%;display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;}.guns{width:50vw;}.prices{text-align:right;-webkit-box-flex:2;-webkit-flex-grow:2;-ms-flex-positive:2;flex-grow:2;}.action{text-align:right;-webkit-box-flex:3;-webkit-flex-grow:3;-ms-flex-positive:3;flex-grow:3;margin-left:10%;}.action:hover,.buy-row:hover{color:#5F5;font-size:20;}.ui{position:fixed;z-index:1;font-family:MenofNihilist;color:white;}.score{top:2%;right:2%;font-size:30px;}.life{bottom:2%;right:2%;font-size:30px;}.slots{left:2%;bottom:10%;font-size:16px;}.select-slot{color:green;}.ammo{bottom:2%;left:2%;font-size:30px;}.onHand{color:yellow;}\n");
 function iter$$7(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
+class Game {
+	constructor(renderer){
+		this.renderer = renderer;
+		state.first_date = new Date();
+		window.addEventListener('keydown',this.keydownEvent);
+		window.addEventListener('keyup',this.keyupEvent);
+		window.addEventListener('mousemove',this.mousemoveEvent);
+		window.addEventListener('mousedown',this.mousedownEvent);
+		window.addEventListener('mouseup',this.mouseupEvent);
+		setInterval(this.update.bind(this),16);
+	}
+	
+	update(){
+		let current_date = new Date();
+		state.delta = (current_date - (state.last_date || new Date())) / 5;
+		state.time = current_date - state.first_date;
+		state.last_date = current_date;
+		if (state.delta > 4) { console.log(state.delta); }		state.player.update();
+		
+		for (let bullet of iter$$7(state.bullets)){
+			if (bullet) { bullet.update(); }		}		
+		for (let zombie of iter$$7(state.player.nearZombies)){
+			if (zombie) { zombie.update(); }		}		
+		for (let zombie of iter$$7(state.killed)){
+			if (zombie) { zombie.update(); }		}		
+		return this.renderer.render();
+	}
+	
+	keydownEvent(e){
+		state.player.onKeyEvent(e.code);
+		return state.keys[e.code] = true;
+	}
+	
+	keyupEvent(e){
+		return state.keys[e.code] = false;
+	}
+	
+	mousemoveEvent(e){
+		state.mouse.x = e.clientX;
+		return state.mouse.y = window.innerHeight - e.clientY;
+	}
+	
+	mousedownEvent(e){
+		return state.mouse.press = true;
+	}
+	
+	mouseupEvent(e){
+		return state.mouse.press = false;
+	}
+}
+
+var $1;
+
+var guns = [
+	//       cap,   rate,  spread, damage, power, projectiles, speed, reload_time,  name,               price
+	new Gun(6,150,15,30,15,1,8,2000,'revolver',0),
+	new Gun(12,170,10,13,15,1,7,1000,'usp45',2000),
+	new Gun(7,100,20,50,30,1,8,1400,'desert eagle',5000),
+	new Gun(30,1000,15,13,5,1,8,1000,'mp5',10000),
+	new Gun(25,800,17,17,8,1,7,1000,'ump',15000),
+	new Gun(5,60,25,12,30,6,6,2200,'pump shotgun',20000),
+	new Gun(2,300,25,20,40,6,7,1800,'double barrel',22000),
+	new Gun(15,600,20,40,20,1,12,1500,'ak47',30000),
+	new Gun(25,800,15,30,15,1,13,1200,'m4a1',33000),
+	new Gun(10,220,6,50,15,1,14,1500,'dragunov',15000),
+	new Gun(5,60,4,100,20,1,15,1600,'m95',18000)
+];
+
+var player = new Player(guns);
+
+let sector = {};
+for (let i = 0; i <= 10000; i++) {
+	let zombie = new Zombie(player);
+	sector[$1 = zombie.currentSector()] || (sector[$1] = new Set());
+	sector[zombie.currentSector()].add(zombie);
+}
+var state = {
+	game: Game,
+	time: 0,
+	keys: [],
+	mouse: {x: 0,y: 0},
+	player: player,
+	bullets: new Set(),
+	camera: {},
+	sector: sector,
+	killed: new Set(),
+	delta: 1,
+	svg: {
+		height: 1,
+		width: 1
+	},
+	store: guns.slice(1,-1)
+};
+
+imba.inlineStyles(".you-died{left:33%;top:20%;font-size:15vw;color:#900;position:fixed;z-index:1;font-family:MenofNihilist;}.ui{position:fixed;z-index:1;font-family:MenofNihilist;color:white;}.score{top:2%;right:2%;font-size:30px;}.life{bottom:2%;right:2%;font-size:30px;}.slots{left:2%;bottom:10%;font-size:16px;}.select-slot{color:green;}.ammo{bottom:2%;left:2%;font-size:30px;}.onHand{color:yellow;}\n");
+
 class PlayerHudComponent extends imba.tags.get('component','ImbaElement') {
-	
-	buyGun(gun){
-		var player_;
-		if (gun.price <= state.player.score) {
-			(player_ = state.player).score = player_.score - gun.price;
-			var index = state.store.indexOf(gun);
-			if ((index != -1)) { state.store.splice(index,1); }			return state.player.inventory.push(gun);
-		}	}
-	
-	upgradeGun(gun){
-		return;
-	}
-	
-	useGun(gun){
-		console.log(state.player.holsters.map(function(g) { return g.name; }));
-		if (state.player.holsters.find(function(g) { return g == gun; })) { return }		if (state.player.holsters[state.player.slots - 1]) {
-			state.player.holsters.pop();
-		}		return state.player.holsters.unshift(gun);
-	}
-	
 	render(){
-		var t$0, c$0, b$0, d$0, t$1, b$1, d$1, v$1, t$2, v$2, t$3, b$3, d$3, v$3, m$$2, t$4, t$5, k$5, c$5, t$6, b$6, d$6, c$6, v$6, t$7, v$7, b$7, d$7, b$2, d$2, k$3, c$3, b$4, d$4, c$4, v$4, ap$$1;
+		var t$0, c$0, b$0, d$0, t$1, b$1, d$1, v$1, t$2, v$2, t$3, b$3, d$3, v$3, b$2, d$2, k$3, c$3, t$4, b$4, d$4, c$4, v$4, y$$1;
 		t$0=this;
 		t$0.open$();
 		c$0 = (b$0=d$0=1,t$0.$) || (b$0=d$0=0,t$0.$={});
-		t$1 = (b$1=d$1=1,c$0.b) || (b$1=d$1=0,c$0.b=t$1=imba.createElement('div',1536,t$0,null,null,null));
+		t$1 = (b$1=d$1=1,c$0.b) || (b$1=d$1=0,c$0.b=t$1=imba.createElement('div',512,t$0,null,null,null));
 		(v$1=(state.player.dead||undefined),v$1===c$0.d||(d$1|=2,c$0.d=v$1));
 		(d$1&2 && t$1.flag$((c$0.d ? `fadeOut` : '')));
 		t$2 = c$0.e || (c$0.e = t$2=imba.createElement('div',0,t$1,'ui score',null,null));
@@ -1533,75 +1574,31 @@ class PlayerHudComponent extends imba.tags.get('component','ImbaElement') {
 		t$3 = (b$3=d$3=1,c$0.k) || (b$3=d$3=0,c$0.k=t$3=imba.createElement('b',4096,t$2,null,null,null));
 		b$3 || (t$3.css$('font-size',"50px"));
 		(v$3=state.player.life,v$3===c$0.l || (c$0.l_ = t$3.insert$(c$0.l=v$3,0,c$0.l_)));
-		if (state.player.isInSafeZone()) {
-			m$$2 = (b$3=d$3=1,c$0.m) || (b$3=d$3=0,c$0.m=m$$2=imba.createElement('div',0,null,'ui',null,null));
-			b$3||(m$$2.up$=t$1);
-			t$4 = c$0.n || (c$0.n = t$4=imba.createElement('div',2048,m$$2,'store',null,null));
-			t$5 = c$0.o || (c$0.o = t$5 = imba.createIndexedFragment(0,t$4));
-			k$5 = 0;
-			c$5=t$5.$;
-			for (let i = 0, items = iter$$7(state.store), len = items.length, gun; i < len; i++) {
-				gun = items[i];
-				t$6 = (b$6=d$6=1,c$5[k$5]) || (b$6=d$6=0,c$5[k$5] = t$6=imba.createElement('div',0,t$5,'buy-row',null,null));
-				b$6||(t$6.up$=t$5);
-				c$6=t$6.$p || (t$6.$p={});
-				v$6 = c$6.q || (c$6.q={buyGun: [null]});
-				v$6.buyGun[0]=gun;
-				b$6 || t$6.on$(`click`,v$6,this);
-				t$7 = c$6.r || (c$6.r = t$7=imba.createElement('div',4096,t$6,'guns',null,null));
-				(v$7=("buy " + (gun.name)),v$7===c$6.s || (c$6.s_ = t$7.insert$(c$6.s=v$7,0,c$6.s_)));
-				t$7 = c$6.t || (c$6.t = t$7=imba.createElement('div',4096,t$6,'prices',null,null));
-				(v$7=gun.price,v$7===c$6.u || (c$6.u_ = t$7.insert$(c$6.u=v$7,0,c$6.u_)));
-				k$5++;
-			}t$5.end$(k$5);
-			b$3 || (t$5=imba.createElement('div',0,t$4,'row',null,null));
-			b$3 || (t$5.css$('margin-top',"5%"));
-			t$5 = c$0.v || (c$0.v = t$5 = imba.createIndexedFragment(0,t$4));
-			k$5 = 0;
-			c$5=t$5.$;
-			for (let i = 0, items = iter$$7(state.player.inventory), len = items.length, gun; i < len; i++) {
-				gun = items[i];
-				t$6 = (b$6=d$6=1,c$5[k$5]) || (b$6=d$6=0,c$5[k$5] = t$6=imba.createElement('div',0,t$5,'row',null,null));
-				b$6||(t$6.up$=t$5);
-				c$6=t$6.$w || (t$6.$w={});
-				t$7 = c$6.x || (c$6.x = t$7=imba.createElement('div',4096,t$6,'guns',null,null));
-				(v$7=gun.name,v$7===c$6.y || (c$6.y_ = t$7.insert$(c$6.y=v$7,0,c$6.y_)));
-				t$7 = (b$7=d$7=1,c$6.z) || (b$7=d$7=0,c$6.z=t$7=imba.createElement('div',0,t$6,'action',"Use",null));
-				v$7 = c$6.aa || (c$6.aa={useGun: [null]});
-				v$7.useGun[0]=gun;
-				b$7 || t$7.on$(`click`,v$7,this);
-				t$7 = (b$7=d$7=1,c$6.ab) || (b$7=d$7=0,c$6.ab=t$7=imba.createElement('div',0,t$6,'action',"Upgrade",null));
-				v$7 = c$6.ac || (c$6.ac={upgradeGun: [null]});
-				v$7.upgradeGun[0]=gun;
-				b$7 || t$7.on$(`click`,v$7,this);
-				k$5++;
-			}t$5.end$(k$5);
-		}
-		(c$0.m$$2_ = t$1.insert$(m$$2,1024,c$0.m$$2_));		t$2 = (b$2=d$2=1,c$0.ad) || (b$2=d$2=0,c$0.ad=t$2=imba.createElement('div',2560,t$1,'ui slots',null,null));
-		(v$2=(this.selected_gun||undefined),v$2===c$0.af||(d$2|=2,c$0.af=v$2));
-		(d$2&2 && t$2.flag$('ui slots'+' '+(c$0.af ? `select-slot` : '')));
-		t$3 = c$0.ag || (c$0.ag = t$3 = imba.createIndexedFragment(0,t$2));
+		t$2 = (b$2=d$2=1,c$0.m) || (b$2=d$2=0,c$0.m=t$2=imba.createElement('div',2560,t$1,'ui slots',null,null));
+		(v$2=(this.selected_gun||undefined),v$2===c$0.o||(d$2|=2,c$0.o=v$2));
+		(d$2&2 && t$2.flag$('ui slots'+' '+(c$0.o ? `select-slot` : '')));
+		t$3 = c$0.p || (c$0.p = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
 		for (let len = state.player.slots, i = 0, rd = len - i; (rd > 0) ? (i < len) : (i > len); (rd > 0) ? (i++) : (i--)) {
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createElement('div',4608,t$3,null,null,null));
 			b$4||(t$4.up$=t$3);
-			c$4=t$4.$ah || (t$4.$ah={});
-			(v$4=(state.player.gun == state.player.holsters[i]||undefined),v$4===c$4.aj||(d$4|=2,c$4.aj=v$4));
-			(d$4&2 && t$4.flag$((c$4.aj ? `onHand` : '')));
-			(v$4=("" + (i + 1) + ". " + ((state.player.holsters[i] || {}).name || '')),v$4===c$4.ak || (c$4.ak_ = t$4.insert$(c$4.ak=v$4,0,c$4.ak_)));
+			c$4=t$4.$q || (t$4.$q={});
+			(v$4=(state.player.gun == state.player.holsters[i]||undefined),v$4===c$4.s||(d$4|=2,c$4.s=v$4));
+			(d$4&2 && t$4.flag$((c$4.s ? `onHand` : '')));
+			(v$4=("" + (i + 1) + ". " + ((state.player.holsters[i] || {}).name || '')),v$4===c$4.t || (c$4.t_ = t$4.insert$(c$4.t=v$4,0,c$4.t_)));
 			k$3++;
 		}t$3.end$(k$3);
-		t$2 = c$0.al || (c$0.al = t$2=imba.createElement('div',0,t$1,'ui ammo',null,null));
-		t$3 = (b$3=d$3=1,c$0.am) || (b$3=d$3=0,c$0.am=t$3=imba.createElement('b',4096,t$2,null,null,null));
+		t$2 = c$0.u || (c$0.u = t$2=imba.createElement('div',0,t$1,'ui ammo',null,null));
+		t$3 = (b$3=d$3=1,c$0.v) || (b$3=d$3=0,c$0.v=t$3=imba.createElement('b',4096,t$2,null,null,null));
 		b$3 || (t$3.css$('font-size',"50px"));
-		(v$3=state.player.gun.ammo,v$3===c$0.an || (c$0.an_ = t$3.insert$(c$0.an=v$3,0,c$0.an_)));
-		(v$2=" Ammo",v$2===c$0.ao || (c$0.ao_ = t$2.insert$(c$0.ao=v$2,0,c$0.ao_)));
+		(v$3=state.player.gun.ammo,v$3===c$0.w || (c$0.w_ = t$3.insert$(c$0.w=v$3,0,c$0.w_)));
+		(v$2=" Ammo",v$2===c$0.x || (c$0.x_ = t$2.insert$(c$0.x=v$2,0,c$0.x_)));
 		if (state.player.dead) {
-			ap$$1 = (b$2=d$2=1,c$0.ap) || (b$2=d$2=0,c$0.ap=ap$$1=imba.createElement('div',0,null,'you-died fadeIn',"you died",null));
-			b$2||(ap$$1.up$=t$0);
+			y$$1 = (b$2=d$2=1,c$0.y) || (b$2=d$2=0,c$0.y=y$$1=imba.createElement('div',0,null,'you-died fadeIn',"you died",null));
+			b$2||(y$$1.up$=t$0);
 		}
-		(c$0.ap$$1_ = t$0.insert$(ap$$1,1024,c$0.ap$$1_));		t$0.close$(d$0);
+		(c$0.y$$1_ = t$0.insert$(y$$1,1024,c$0.y$$1_));		t$0.close$(d$0);
 		return t$0;
 	}
 } imba.tags.define('player-hud',PlayerHudComponent,{});
@@ -1615,43 +1612,6 @@ class PlayerHudComponent extends imba.tags.get('component','ImbaElement') {
         position: fixed;
         z-index: 1;
         font-family: MenofNihilist;
-    }
-    .store {
-        left: 2%;
-        top: 2%;
-        font-size: 15px;
-        margin: 3%;
-    }
-
-
-    .row {
-        width: 40%;
-        display: flex;
-    }
-
-    .buy-row {
-        width: 40%;
-        display: flex;
-    }
-
-    .guns{
-        width: 50vw;
-    }
-
-    .prices {
-        text-align: right;
-        flex-grow: 2;
-    }
-
-    .action{
-        text-align: right;
-        flex-grow: 3;
-        margin-left: 10%
-    }
-
-    .action:hover, .buy-row:hover{
-        color: #5F5;
-        font-size: 20;
     }
 
     .ui {
@@ -1693,70 +1653,140 @@ class PlayerHudComponent extends imba.tags.get('component','ImbaElement') {
     }
 */
 
-imba.inlineStyles("body{margin:0px;-webkit-touch-callout:none;-webkit-user-select:none;-khtml-user-select:none;-moz-user-select:none;-ms-user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}app-root{display:block;position:relative;background-color:black;cursor:none;}@font-face{font-family:MenofNihilist;src:url(./fonts/MenofNihilist-Regular.otf) format(\"opentype\");}@-webkit-keyframes fadeOut{0%{opacity:1;}to{opacity:0;}}@keyframes fadeOut{0%{opacity:1;}to{opacity:0;}}@-webkit-keyframes fadeIn{0%{opacity:0;}to{opacity:1;}}@keyframes fadeIn{0%{opacity:0;}to{opacity:1;}}.fadeOut{-webkit-animation-duration:2.5s;-webkit-animation-duration:2.5s;animation-duration:2.5s;-webkit-animation-fill-mode:both;-webkit-animation-fill-mode:both;animation-fill-mode:both;-webkit-animation-name:fadeOut;-webkit-animation-name:fadeOut;animation-name:fadeOut;}.fadeIn{-webkit-animation-duration:2.5s;-webkit-animation-duration:2.5s;animation-duration:2.5s;-webkit-animation-fill-mode:both;-webkit-animation-fill-mode:both;animation-fill-mode:both;-webkit-animation-name:fadeIn;-webkit-animation-name:fadeIn;animation-name:fadeIn;}\n");
+imba.inlineStyles(".ui{position:fixed;z-index:1;font-family:MenofNihilist;color:white;}.row{width:40%;display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;}.buy-row{width:40%;display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;}.guns{width:50vw;}.prices{text-align:right;-webkit-box-flex:2;-webkit-flex-grow:2;-ms-flex-positive:2;flex-grow:2;}.action{text-align:right;-webkit-box-flex:3;-webkit-flex-grow:3;-ms-flex-positive:3;flex-grow:3;margin-left:10%;}.action:hover,.buy-row:hover{color:#5F5;font-size:20;}.store{left:2%;top:2%;font-size:15px;margin:3%;}.ui{position:fixed;z-index:1;font-family:MenofNihilist;color:white;}\n");
 function iter$$8(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
+class PlayerStoreComponent extends imba.tags.get('component','ImbaElement') {
+	buyGun(gun){
+		var player_;
+		if (gun.price <= state.player.score) {
+			(player_ = state.player).score = player_.score - gun.price;
+			var index = state.store.indexOf(gun);
+			if ((index != -1)) { state.store.splice(index,1); }			return state.player.inventory.push(gun);
+		}	}
+	
+	upgradeGun(gun){
+		return;
+	}
+	
+	useGun(gun){
+		if (state.player.holsters.find(function(g) { return g == gun; })) { return }		if (state.player.holsters[state.player.slots - 1]) {
+			state.player.holsters.pop();
+		}		return state.player.holsters.unshift(gun);
+	}
+	
+	render(){
+		var t$0, c$0, b$0, d$0, t$1, t$2, k$2, c$2, t$3, b$3, d$3, c$3, v$3, t$4, v$4, b$4, d$4;
+		if (state.player.isInSafeZone()) {
+			t$0=this;
+			t$0.open$();
+			c$0 = (b$0=d$0=1,t$0.$) || (b$0=d$0=0,t$0.$={});
+			((!b$0||d$0&2) && t$0.flagSelf$('ui'));
+			t$1 = c$0.b || (c$0.b = t$1=imba.createElement('div',2048,t$0,'store',null,null));
+			t$2 = c$0.c || (c$0.c = t$2 = imba.createIndexedFragment(0,t$1));
+			k$2 = 0;
+			c$2=t$2.$;
+			for (let i = 0, items = iter$$8(state.store), len = items.length, gun; i < len; i++) {
+				gun = items[i];
+				t$3 = (b$3=d$3=1,c$2[k$2]) || (b$3=d$3=0,c$2[k$2] = t$3=imba.createElement('div',0,t$2,'buy-row',null,null));
+				b$3||(t$3.up$=t$2);
+				c$3=t$3.$d || (t$3.$d={});
+				v$3 = c$3.e || (c$3.e={buyGun: [null]});
+				v$3.buyGun[0]=gun;
+				b$3 || t$3.on$(`click`,v$3,this);
+				t$4 = c$3.f || (c$3.f = t$4=imba.createElement('div',4096,t$3,'guns',null,null));
+				(v$4=("buy " + (gun.name)),v$4===c$3.g || (c$3.g_ = t$4.insert$(c$3.g=v$4,0,c$3.g_)));
+				t$4 = c$3.h || (c$3.h = t$4=imba.createElement('div',4096,t$3,'prices',null,null));
+				(v$4=gun.price,v$4===c$3.i || (c$3.i_ = t$4.insert$(c$3.i=v$4,0,c$3.i_)));
+				k$2++;
+			}t$2.end$(k$2);
+			b$0 || (t$2=imba.createElement('div',0,t$1,'row',null,null));
+			b$0 || (t$2.css$('margin-top',"5%"));
+			t$2 = c$0.j || (c$0.j = t$2 = imba.createIndexedFragment(0,t$1));
+			k$2 = 0;
+			c$2=t$2.$;
+			for (let i = 0, items = iter$$8(state.player.inventory), len = items.length, gun; i < len; i++) {
+				gun = items[i];
+				t$3 = (b$3=d$3=1,c$2[k$2]) || (b$3=d$3=0,c$2[k$2] = t$3=imba.createElement('div',0,t$2,'row',null,null));
+				b$3||(t$3.up$=t$2);
+				c$3=t$3.$k || (t$3.$k={});
+				t$4 = c$3.l || (c$3.l = t$4=imba.createElement('div',4096,t$3,'guns',null,null));
+				(v$4=gun.name,v$4===c$3.m || (c$3.m_ = t$4.insert$(c$3.m=v$4,0,c$3.m_)));
+				t$4 = (b$4=d$4=1,c$3.n) || (b$4=d$4=0,c$3.n=t$4=imba.createElement('div',0,t$3,'action',"Use",null));
+				v$4 = c$3.o || (c$3.o={useGun: [null]});
+				v$4.useGun[0]=gun;
+				b$4 || t$4.on$(`click`,v$4,this);
+				t$4 = (b$4=d$4=1,c$3.p) || (b$4=d$4=0,c$3.p=t$4=imba.createElement('div',0,t$3,'action',"Upgrade",null));
+				v$4 = c$3.q || (c$3.q={upgradeGun: [null]});
+				v$4.upgradeGun[0]=gun;
+				b$4 || t$4.on$(`click`,v$4,this);
+				k$2++;
+			}t$2.end$(k$2);
+			t$0.close$(d$0);
+			return t$0;
+		}	}
+} imba.tags.define('player-store',PlayerStoreComponent,{});
+
+/* css
+    .ui {
+        position: fixed;
+        z-index: 1;
+        font-family: MenofNihilist;
+        color: white;
+    }
+
+    .row {
+        width: 40%;
+        display: flex;
+    }
+
+    .buy-row {
+        width: 40%;
+        display: flex;
+    }
+
+    .guns{
+        width: 50vw;
+    }
+
+    .prices {
+        text-align: right;
+        flex-grow: 2;
+    }
+
+    .action{
+        text-align: right;
+        flex-grow: 3;
+        margin-left: 10%
+    }
+
+    .action:hover, .buy-row:hover{
+        color: #5F5;
+        font-size: 20;
+    }
+
+    .store {
+        left: 2%;
+        top: 2%;
+        font-size: 15px;
+        margin: 3%;
+    }
+
+    .ui {
+        position: fixed;
+        z-index: 1;
+        font-family: MenofNihilist;
+        color: white;
+    }
+
+
+*/
+
+imba.inlineStyles("body{margin:0px;-webkit-touch-callout:none;-webkit-user-select:none;-khtml-user-select:none;-moz-user-select:none;-ms-user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}app-root{display:block;position:relative;background-color:black;cursor:none;}@font-face{font-family:MenofNihilist;src:url(./fonts/MenofNihilist-Regular.otf) format(\"opentype\");}@-webkit-keyframes fadeOut{0%{opacity:1;}to{opacity:0;}}@keyframes fadeOut{0%{opacity:1;}to{opacity:0;}}@-webkit-keyframes fadeIn{0%{opacity:0;}to{opacity:1;}}@keyframes fadeIn{0%{opacity:0;}to{opacity:1;}}.fadeOut{-webkit-animation-duration:2.5s;-webkit-animation-duration:2.5s;animation-duration:2.5s;-webkit-animation-fill-mode:both;-webkit-animation-fill-mode:both;animation-fill-mode:both;-webkit-animation-name:fadeOut;-webkit-animation-name:fadeOut;animation-name:fadeOut;}.fadeIn{-webkit-animation-duration:2.5s;-webkit-animation-duration:2.5s;animation-duration:2.5s;-webkit-animation-fill-mode:both;-webkit-animation-fill-mode:both;animation-fill-mode:both;-webkit-animation-name:fadeIn;-webkit-animation-name:fadeIn;animation-name:fadeIn;}\n");
+function iter$$9(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
 class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 	
-	refresh(){
-		this.frames++;
-		let current_date = new Date();
-		state.delta = (current_date - (state.last_date || new Date())) / 5;
-		state.time = current_date - state.first_date;
-		this.render();
-		this.update();
-		return state.last_date = current_date;
-	}
-	
 	mount(){
-		var sector_, $1;
-		state.first_date = new Date();
-		window.addEventListener('keydown',this.keydownEvent);
-		window.addEventListener('keyup',this.keyupEvent);
-		window.addEventListener('mousemove',this.mousemoveEvent);
-		window.addEventListener('mousedown',this.mousedownEvent);
-		window.addEventListener('mouseup',this.mouseupEvent);
-		for (let i = 0; i <= 30000; i++) {
-			let zombie = new Zombie();
-			zombie.update();
-			(sector_ = state.sector)[$1 = zombie.currentSector()] || (sector_[$1] = new Set());
-			state.sector[zombie.currentSector()].add(zombie);
-		}		this.update();
-		this.update();
-		return setInterval(this.refresh.bind(this),16);
-	}
-	
-	keydownEvent(e){
-		state.player.onKeyEvent(e.code);
-		return state.keys[e.code] = true;
-	}
-	
-	keyupEvent(e){
-		return state.keys[e.code] = false;
-	}
-	
-	mousemoveEvent(e){
-		state.mouse.x = e.clientX;
-		return state.mouse.y = window.innerHeight - e.clientY;
-	}
-	
-	mousedownEvent(e){
-		return state.mouse.press = true;
-	}
-	
-	mouseupEvent(e){
-		return state.mouse.press = false;
-	}
-	
-	update(){
-		state.player.update();
-		if (state.delta < 16) {
-			for (let zombie of iter$$8(state.player.nearZombies)){
-				if (zombie) { zombie.update(); }			}		}		for (let bullet of iter$$8(state.bullets)){
-			if (bullet) { bullet.update(); }		}		
-		let res = [];
-		for (let zombie of iter$$8(state.killed)){
-			res.push(zombie && zombie.update());
-		}		return res;
+		return new (state.game)(this);
 	}
 	
 	cameraPosX(){
@@ -1770,11 +1800,11 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 	transformCamera(){
 		if (state.time - state.player.gun.last_shot < 30) {
 			let power = state.player.gun.power / 2;
-			let x = window.innerWidth / 2 - state.player.position.x + Math.random() * power - power / 2;
-			let y = window.innerHeight / 2 - state.player.position.y + Math.random() * power - power / 2;
+			let x = this.cameraPosX() + Math.random() * power - power / 2;
+			let y = this.cameraPosY() + Math.random() * power - power / 2;
 			return ("translate(" + x + ", " + y + ")");
 		} else {
-			return ("translate(" + (window.innerWidth / 2 - state.player.position.x) + ", " + (window.innerHeight / 2 - state.player.position.y) + ")");
+			return ("translate(" + this.cameraPosX() + ", " + this.cameraPosY() + ")");
 		}	}
 	
 	transformPlayer(){
@@ -1798,13 +1828,17 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		b$1 || !t$1.setup || t$1.setup(d$1);
 		t$1.end$(d$1);
 		b$1 || t$1.insertInto$(t$0);
+		t$1 = (b$1=d$1=1,c$0.c) || (b$1=d$1=0,c$0.c=t$1=imba.createComponent('player-store',0,t$0,null,null,null));
+		b$1 || !t$1.setup || t$1.setup(d$1);
+		t$1.end$(d$1);
+		b$1 || t$1.insertInto$(t$0);
 		b$0 || (t$1=imba.createSVGElement('svg',0,t$0,null,null,null));
 		b$0 || (t$1.set$('transform',"scale(1,-1)"));
 		b$0 || (t$1.set$('height',"100%"));
 		b$0 || (t$1.set$('width',"100%"));
 		b$0 || (t$1.set$('style',"background-color: black"));
-		t$2 = (b$2=d$2=1,c$0.c) || (b$2=d$2=0,c$0.c=t$2=imba.createSVGElement('g',0,t$1,null,null,null));
-		(v$2=("translate(" + (state.mouse.x) + ", " + (state.mouse.y) + ")"),v$2===c$0.d || (t$2.set$('transform',c$0.d=v$2)));
+		t$2 = (b$2=d$2=1,c$0.d) || (b$2=d$2=0,c$0.d=t$2=imba.createSVGElement('g',0,t$1,null,null,null));
+		(v$2=("translate(" + (state.mouse.x) + ", " + (state.mouse.y) + ")"),v$2===c$0.e || (t$2.set$('transform',c$0.e=v$2)));
 		b$2 || (t$3=imba.createSVGElement('line',0,t$2,null,null,null));
 		b$2 || (t$3.set$('y1',4));
 		b$2 || (t$3.set$('y2',10));
@@ -1821,12 +1855,12 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		b$2 || (t$3.set$('x1',-4));
 		b$2 || (t$3.set$('x2',-10));
 		b$2 || (t$3.set$('stroke','#AFA'));
-		t$2 = (b$2=d$2=1,c$0.e) || (b$2=d$2=0,c$0.e=t$2=imba.createSVGElement('g',2560,t$1,null,null,null));
-		(v$2=this.transformCamera(),v$2===c$0.f || (t$2.set$('transform',c$0.f=v$2)));
-		(v$2=(state.player.dead||undefined),v$2===c$0.h||(d$2|=2,c$0.h=v$2));
-		(d$2&2 && t$2.flag$((c$0.h ? `fadeOut` : '')));
-		t$3 = (b$3=d$3=1,c$0.i) || (b$3=d$3=0,c$0.i=t$3=imba.createSVGElement('g',0,t$2,null,null,null));
-		(v$3=this.transformPlayer(),v$3===c$0.j || (t$3.set$('transform',c$0.j=v$3)));
+		t$2 = (b$2=d$2=1,c$0.f) || (b$2=d$2=0,c$0.f=t$2=imba.createSVGElement('g',2560,t$1,null,null,null));
+		(v$2=this.transformCamera(),v$2===c$0.g || (t$2.set$('transform',c$0.g=v$2)));
+		(v$2=(state.player.dead||undefined),v$2===c$0.i||(d$2|=2,c$0.i=v$2));
+		(d$2&2 && t$2.flag$((c$0.i ? `fadeOut` : '')));
+		t$3 = (b$3=d$3=1,c$0.j) || (b$3=d$3=0,c$0.j=t$3=imba.createSVGElement('g',0,t$2,null,null,null));
+		(v$3=this.transformPlayer(),v$3===c$0.k || (t$3.set$('transform',c$0.k=v$3)));
 		b$3 || (t$4=imba.createSVGElement('circle',0,t$3,null,null,null));
 		b$3 || (t$4.set$('r',"10"));
 		b$3 || (t$4.set$('fill',"white"));
@@ -1836,63 +1870,63 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		b$3 || (t$5.set$('height',"13"));
 		b$3 || (t$5.set$('width',"2"));
 		b$3 || (t$5.set$('fill',"white"));
-		t$3 = c$0.k || (c$0.k = t$3 = imba.createIndexedFragment(0,t$2));
+		t$3 = c$0.l || (c$0.l = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
-		for (let bullet of iter$$8(state.bullets)){
+		for (let bullet of iter$$9(state.bullets)){
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,null,null,null));
 			b$4||(t$4.up$=t$3);
-			c$4=t$4.$l || (t$4.$l={});
-			(v$4=this.transformBullet(bullet),v$4===c$4.m || (t$4.set$('transform',c$4.m=v$4)));
+			c$4=t$4.$m || (t$4.$m={});
+			(v$4=this.transformBullet(bullet),v$4===c$4.n || (t$4.set$('transform',c$4.n=v$4)));
 			b$4 || (t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
 			b$4 || (t$5.set$('width',"50"));
 			b$4 || (t$5.set$('height',"1"));
 			b$4 || (t$5.set$('fill',"yellow"));
 			k$3++;
 		}t$3.end$(k$3);
-		t$3 = c$0.n || (c$0.n = t$3 = imba.createIndexedFragment(0,t$2));
+		t$3 = c$0.o || (c$0.o = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
-		for (let zombie of iter$$8(state.player.nearZombies)){
+		for (let zombie of iter$$9(state.player.nearZombies)){
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,null,null,null));
 			b$4||(t$4.up$=t$3);
-			c$4=t$4.$o || (t$4.$o={});
-			(v$4=this.transformZombie(zombie),v$4===c$4.p || (t$4.set$('transform',c$4.p=v$4)));
-			t$5 = (b$5=d$5=1,c$4.q) || (b$5=d$5=0,c$4.q=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
-			(v$5=zombie.size / 2,v$5===c$4.r || (t$5.set$('r',c$4.r=v$5)));
+			c$4=t$4.$p || (t$4.$p={});
+			(v$4=this.transformZombie(zombie),v$4===c$4.q || (t$4.set$('transform',c$4.q=v$4)));
+			t$5 = (b$5=d$5=1,c$4.r) || (b$5=d$5=0,c$4.r=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
+			(v$5=zombie.size / 2,v$5===c$4.s || (t$5.set$('r',c$4.s=v$5)));
 			b$5 || (t$5.set$('fill',"red"));
 			b$5 || (t$5.set$('stroke','black'));
-			t$5 = (b$5=d$5=1,c$4.s) || (b$5=d$5=0,c$4.s=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-			(v$5=zombie.size,v$5===c$4.t || (t$5.set$('width',c$4.t=v$5)));
+			t$5 = (b$5=d$5=1,c$4.t) || (b$5=d$5=0,c$4.t=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
+			(v$5=zombie.size,v$5===c$4.u || (t$5.set$('width',c$4.u=v$5)));
 			b$5 || (t$5.set$('height',"4"));
 			b$5 || (t$5.set$('y',"6"));
 			b$5 || (t$5.set$('fill',"red"));
-			t$5 = (b$5=d$5=1,c$4.u) || (b$5=d$5=0,c$4.u=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-			(v$5=zombie.size,v$5===c$4.v || (t$5.set$('width',c$4.v=v$5)));
+			t$5 = (b$5=d$5=1,c$4.v) || (b$5=d$5=0,c$4.v=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
+			(v$5=zombie.size,v$5===c$4.w || (t$5.set$('width',c$4.w=v$5)));
 			b$5 || (t$5.set$('height',"4"));
 			b$5 || (t$5.set$('y',"-10"));
 			b$5 || (t$5.set$('fill',"red"));
 			k$3++;
 		}t$3.end$(k$3);
-		t$3 = c$0.w || (c$0.w = t$3 = imba.createIndexedFragment(0,t$2));
+		t$3 = c$0.x || (c$0.x = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
-		for (let zombie of iter$$8(state.killed)){
+		for (let zombie of iter$$9(state.killed)){
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,'fadeOut',null,null));
 			b$4||(t$4.up$=t$3);
-			c$4=t$4.$x || (t$4.$x={});
-			(v$4=this.transformZombie(zombie),v$4===c$4.y || (t$4.set$('transform',c$4.y=v$4)));
-			t$5 = (b$5=d$5=1,c$4.z) || (b$5=d$5=0,c$4.z=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
-			(v$5=zombie.size / 2,v$5===c$4.aa || (t$5.set$('r',c$4.aa=v$5)));
+			c$4=t$4.$y || (t$4.$y={});
+			(v$4=this.transformZombie(zombie),v$4===c$4.z || (t$4.set$('transform',c$4.z=v$4)));
+			t$5 = (b$5=d$5=1,c$4.aa) || (b$5=d$5=0,c$4.aa=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
+			(v$5=zombie.size / 2,v$5===c$4.ab || (t$5.set$('r',c$4.ab=v$5)));
 			b$5 || (t$5.set$('fill',"grey"));
 			b$5 || (t$5.set$('stroke','black'));
-			t$5 = (b$5=d$5=1,c$4.ab) || (b$5=d$5=0,c$4.ab=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-			(v$5=zombie.size,v$5===c$4.ac || (t$5.set$('width',c$4.ac=v$5)));
+			t$5 = (b$5=d$5=1,c$4.ac) || (b$5=d$5=0,c$4.ac=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
+			(v$5=zombie.size,v$5===c$4.ad || (t$5.set$('width',c$4.ad=v$5)));
 			b$5 || (t$5.set$('height',"4"));
 			b$5 || (t$5.set$('y',"6"));
 			b$5 || (t$5.set$('fill',"grey"));
-			t$5 = (b$5=d$5=1,c$4.ad) || (b$5=d$5=0,c$4.ad=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-			(v$5=zombie.size,v$5===c$4.ae || (t$5.set$('width',c$4.ae=v$5)));
+			t$5 = (b$5=d$5=1,c$4.ae) || (b$5=d$5=0,c$4.ae=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
+			(v$5=zombie.size,v$5===c$4.af || (t$5.set$('width',c$4.af=v$5)));
 			b$5 || (t$5.set$('height',"4"));
 			b$5 || (t$5.set$('y',"-10"));
 			b$5 || (t$5.set$('fill',"grey"));
@@ -1908,8 +1942,6 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		return t$0;
 	}
 } imba.tags.define('app-root',AppRootComponent,{});
-
-
 
 /* css
 
@@ -1943,7 +1975,6 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
             opacity: 0
         }
     }
-
 
     @keyframes fadeIn {
         0% {

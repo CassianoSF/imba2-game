@@ -1,6 +1,7 @@
 import {Gun} from './classes/Gun'
 import {Player} from './classes/Player'
 import {Zombie} from './classes/Zombie'
+import {Game} from './classes/Game'
 
 var guns = [
     #       cap,   rate,  spread, damage, power, projectiles, speed, reload_time,  name,               price
@@ -17,15 +18,23 @@ var guns = [
     Gun.new(5,     60,    4,      100,    20,    1,           15,    1600,         'm95',              18000)
 ]
 
+var player = Player.new(guns)
+
+let sector = {} 
+for i in [0..10000]
+    let zombie = Zombie.new(player)
+    sector[zombie.currentSector()] ||= Set.new
+    sector[zombie.currentSector()].add(zombie)
 
 export var state = 
+    game: Game
     time: 0
     keys: []
     mouse: {x: 0, y: 0}
-    player: Player.new([guns[0]])
+    player: player
     bullets: Set.new
     camera: {}
-    sector: {}
+    sector: sector
     killed: Set.new
     delta: 1
     svg: 

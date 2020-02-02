@@ -60,7 +60,6 @@ export class Player
             @gun = @holsters[slot]
 
     def onKeyEvent key
-        console.log key
         let actions = {
             'Digit1': do @changeGun(0)
             'Digit2': do @changeGun(1)

@@ -5,11 +5,11 @@ let AGGRO = 1
 let ATTACK = 2
 let DEAD = 3
 
-def randomPosition
+def randomPosition player
     let posx = Math.random() * window.innerWidth * 30 - (window.innerWidth * 15)
     let posy = Math.random() * window.innerHeight * 30 - (window.innerHeight * 15)
-    let diffx = Math.abs(posx - state.player.position.x)
-    let diffy = Math.abs(posy - state.player.position.y)
+    let diffx = Math.abs(posx - @player.position.x)
+    let diffy = Math.abs(posy - @player.position.y)
     if diffx < 400 and diffy < 400
         return randomPosition()
 
@@ -19,11 +19,12 @@ def randomPosition
     }
 
 export class Zombie
-    def constructor
-        @position = randomPosition() 
+    def constructor player
+        @player = player
+        @position = randomPosition(@player) 
         @rotation = Math.random() * 360
         @sector = "{~~(@position.x / 1800)}|{~~(@position.y / 1800)}"
-        @state = DRIFT
+        @state = 0
         @speed = .2
         @base_speed = .2
         @max_speed = .6
@@ -50,7 +51,7 @@ export class Zombie
             @start_attack = state.time
         if state.time - @start_attack > 100 and @playerIsClose(@size * 1.5) and not @player_beaten
             @player_beaten = yes
-            state.player.takeHit(10)
+            @player.takeHit(10)
         if state.time - @start_attack > 500
             @start_attack = no
             @player_beaten = no
@@ -70,7 +71,7 @@ export class Zombie
         @move()
 
     def execAggro
-        if state.player.isInSafeZone()
+        if @player.isInSafeZone()
             @state = DRIFT
         if @playerIsClose(@size * 1.5)
             @state = ATTACK
@@ -86,15 +87,15 @@ export class Zombie
         return no
 
     def angleToPlayer
-        let dx = state.player.position.x - @position.x
-        let dy = state.player.position.y - @position.y
+        let dx = @player.position.x - @position.x
+        let dy = @player.position.y - @position.y
         -(Math.atan2(dx, dy)/0.01745 - 90) % 360
 
     def distanceToPlayerX
-        Math.abs(state.player.position.x - @position.x)
+        Math.abs(@player.position.x - @position.x)
 
     def distanceToPlayerY
-        Math.abs(state.player.position.y - @position.y)
+        Math.abs(@player.position.y - @position.y)
 
     def distanceToZombieX zombie
         Math.abs(zombie.position.x - @position.x)
@@ -113,7 +114,7 @@ export class Zombie
         @distanceToPlayerX() < distance and @distanceToPlayerY() < distance
 
     def playerDetected
-        (@playerOnSight() and @playerIsClose(750) or @playerIsClose(40)) and not state.player.isInSafeZone()
+        (@playerOnSight() and @playerIsClose(750) or @playerIsClose(40)) and not @player.isInSafeZone()
 
     def currentSector
         "{~~(@position.x / 1800)}|{~~(@position.y / 1800)}"
@@ -146,5 +147,5 @@ export class Zombie
             state.sector[@sector].delete(self)
             state.killed.add(self)
             @state = DEAD
-            state.player.score += 10
+            @player.score += 10
             @death = state.time
