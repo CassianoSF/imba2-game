@@ -35,13 +35,13 @@ tag app-root
         <self>
             <player-hud>
             <player-store>
-            <svg transform="scale(1,-1)" height="100%" width="100%" style="background-color: black" >
+            <svg transform="scale(1,-1)" height="100%" width="100%" >
                 # CROSSHAIR
                 <g transform="translate({state.mouse.x}, {state.mouse.y})">
-                    <line y1=4 y2=10 stroke='#AFA'>
-                    <line y1=-4 y2=-10 stroke='#AFA'>
-                    <line x1=4 x2=10 stroke='#AFA'>
-                    <line x1=-4 x2=-10 stroke='#AFA'>
+                    <line y1=4 y2=10 stroke='#5F5'>
+                    <line y1=-4 y2=-10 stroke='#5F5'>
+                    <line x1=4 x2=10 stroke='#5F5'>
+                    <line x1=-4 x2=-10 stroke='#5F5'>
 
                 # CAMERA
                 <g transform=@transformCamera() .fadeOut=(state.player.dead)>
@@ -86,18 +86,22 @@ tag app-root
         -moz-user-select: none;
         -ms-user-select: none;
         user-select: none;
+        cursor: none;
     }
 
     app-root {
         display: block; 
         position: relative;
         background-color: black
-        cursor: none;
     }
 
     @font-face {
         font-family: MenofNihilist;
-        src: url(./fonts/MenofNihilist-Regular.otf) format("opentype");
+        src: url(fonts/MenofNihilist.otf) format("opentype");
+    }
+    @font-face {
+        font-family: Typewriter;
+        src: url("fonts/JMH Typewriter-Black.otf") format("opentype");
     }
 
     @keyframes fadeOut {
@@ -119,8 +123,8 @@ tag app-root
     }
 
     .fadeOut {
-        -webkit-animation-duration: 2.5s;
-        animation-duration: 2.5s;
+        -webkit-animation-duration: 1.5s;
+        animation-duration: 1.5s;
         -webkit-animation-fill-mode: both;
         animation-fill-mode: both
         -webkit-animation-name: fadeOut;
@@ -128,8 +132,8 @@ tag app-root
     }
 
     .fadeIn {
-        -webkit-animation-duration: 2.5s;
-        animation-duration: 2.5s;
+        -webkit-animation-duration: 1.5s;
+        animation-duration: 1.5s;
         -webkit-animation-fill-mode: both;
         animation-fill-mode: both
         -webkit-animation-name: fadeIn;

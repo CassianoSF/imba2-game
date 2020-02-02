@@ -32,7 +32,7 @@ export class Bullet
         Math.abs(zombie.position.y - @position.y)
 
     def currentSector
-        "{~~(@position.x / 1800)}|{~~(@position.y / 1800)}"
+        "{~~(@position.x / 800)}|{~~(@position.y / 800)}"
 
     def checkColision
         for zombie of state.sector[@currentSector()]

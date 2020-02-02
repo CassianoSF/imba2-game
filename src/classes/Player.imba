@@ -8,7 +8,7 @@ export class Player
         @score = 100000
         @gun = @inventory[0]
         @holsters = [@gun]
-        @speed = .3
+        @speed = .4
         @nearZombies = Set.new
         @life = 100
         @slots = 2
@@ -19,8 +19,8 @@ export class Player
         @move()
         @rotate()
         @shoot()
-        let x = ~~((@position.x - 899) / 1800)
-        let y = ~~((@position.y - 899) / 1800)
+        let x = ~~((@position.x) / 800)
+        let y = ~~((@position.y) / 800)
 
         @nearZombies.clear()
         for val of (state.sector["{x + 0}|{y + 0}"])
@@ -31,9 +31,19 @@ export class Player
             @nearZombies.add(val)
         for val of (state.sector["{x + 1}|{y + 0}"])
             @nearZombies.add(val)
+        for val of (state.sector["{x - 1}|{y + 0}"])
+            @nearZombies.add(val)
+        for val of (state.sector["{x - 1}|{y - 1}"])
+            @nearZombies.add(val)
+        for val of (state.sector["{x + 0}|{y - 1}"])
+            @nearZombies.add(val)
+        for val of (state.sector["{x + 1}|{y - 1}"])
+            @nearZombies.add(val)
+        for val of (state.sector["{x - 1}|{y + 1}"])
+            @nearZombies.add(val)
 
     def shoot
-        return if @isInSafeZone()
+        return if @inSafeZone()
         @gun.fire() if state.mouse.press
 
     def rotate
@@ -76,5 +86,15 @@ export class Player
         if @life <= 0
             @dead = true
 
-    def isInSafeZone
+    def inSafeZone
         Math.abs(@position.x) < 50 and Math.abs(@position.y) < 50
+
+    def usingGun gun
+        @holsters.find(do |g| g == gun)
+
+
+    def equip gun
+        return if @holsters.find(do |g| g == gun)
+        if @holsters[@slots - 1]
+            @holsters.pop()
+        @holsters.unshift(gun)

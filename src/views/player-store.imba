@@ -2,6 +2,7 @@ import {state} from '../state'
 
 tag player-store
     def buyGun gun
+        return unless state.player.inSafeZone()
         if gun.price <= state.player.score
             state.player.score -= gun.price
             var index = state.store.indexOf(gun)
@@ -9,54 +10,82 @@ tag player-store
             state.player.inventory.push(gun)
 
     def upgradeGun gun
-        return
+        return unless state.player.inSafeZone()
 
-    def useGun gun
-        return if state.player.holsters.find(do |g| g == gun)
-        if state.player.holsters[state.player.slots - 1]
-            state.player.holsters.pop()
-        state.player.holsters.unshift(gun)
+    def equipGun gun
+        return unless state.player.inSafeZone()
+        state.player.equip(gun)
 
     def render
-        if state.player.isInSafeZone()
-            <self.ui>
-                <div .store>
-                    for gun in state.store
-                        <div .buy-row :click.buyGun(gun)>
-                            <div .guns>
-                                "buy {gun.name}"
-                            <div .prices>
-                                gun.price
-                    <div .row css:margin-top="5%">
-                    for gun in state.player.inventory
-                        <div .row>
-                            <div .guns>
-                                gun.name
-                            <div .action :click.useGun(gun)>
-                                "Use"
-                            <div .action :click.upgradeGun(gun)>
-                                "Upgrade"
-
-### css
-    .ui {
+        <self.hud.score .{state.player.inSafeZone() ? "fadeIn" : "fadeOut"}>
+            <.store>
+                <.buy-row>
+                    <.item>
+                        "Item"
+                    <.prices>
+                        "price"
+                <.buy-row>
+                    <.item>
+                        "Restore health"
+                    <.prices>
+                        "2000"
+                <.buy-row>
+                    <.item>
+                        "Increse health"
+                    <.prices>
+                        "2000"
+                <.buy-row>
+                    <.item>
+                        "Increse speed"
+                    <.prices>
+                        "2000"
+                <.buy-row>
+                    <.item>
+                        "Increse stamina"
+                    <.prices>
+                        "2000"
+                <.row css:margin-top="5%">
+                for gun in state.store
+                    <.buy-row :click.buyGun(gun)>
+                        <.item>
+                            "buy {gun.name}"
+                        <.prices>
+                            gun.price
+                <.row css:margin-top="5%">
+                for gun in state.player.inventory
+                    <.row>
+                        <.item>
+                            gun.name
+                        <.action :click.equipGun(gun)>
+                            "Equip"
+                        <.action :click.upgradeGun(gun)>
+                            "Upgrade"
+                <.row css:margin-top="5%">
+                <.buy-row>
+                    <.next-day>
+                        "Go to next day"
+### css scoped
+    .hud {
         position: fixed;
         z-index: 1;
-        font-family: MenofNihilist;
+        font-family: Typewriter;
         color: white;
+        background-color: rgba(0,0,0,0.9);
+        border-color: white;
+        border: 1px;
+        cursor: pointer;
     }
 
     .row {
-        width: 40%;
         display: flex;
     }
 
     .buy-row {
-        width: 40%;
         display: flex;
     }
 
-    .guns{
-        width: 50vw;
+    .item, .next-day{
+        width: 25vw;
     }
 
     .prices {
@@ -66,28 +95,30 @@ tag player-store
 
     .action{
         text-align: right;
-        flex-grow: 3;
-        margin-left: 10%
+        width: 12vw
     }
 
-    .action:hover, .buy-row:hover{
+    .buy-row:hover{
         color: #5F5;
-        font-size: 20;
+        text-shadow: 2px 2px #A00;
+        .prices {
+            transform: translate(-2vw,0) scale(1.3,1.3);
+        }
+    }
+    .action:hover{
+        text-shadow: 2px 2px #A00;
+        color: #5F5;
+        transform: scale(1.3,1.3);
+    }
+    .next-day:hover {
+        text-shadow: 2px 2px #A00;
+        color: #5F5;
+        transform: scale(1.3,1.3) translate(3.2vw,0)
     }
 
     .store {
-        left: 2%;
-        top: 2%;
-        font-size: 15px;
+        font-size: 1.5vw;
         margin: 3%;
     }
-
-    .ui {
-        position: fixed;
-        z-index: 1;
-        font-family: MenofNihilist;
-        color: white;
-    }
-
 
 ###

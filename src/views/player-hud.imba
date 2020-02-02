@@ -3,21 +3,21 @@ import {state} from '../state'
 tag player-hud
     def render
         <self>
-            <div .fadeOut=(state.player.dead)>
-                <div .ui.score>
+            <.fadeOut=(state.player.dead)>
+                <.hud.score>
                     "score "
                     <b css:font-size="50px">
                         state.player.score
-                <div .ui.life>
+                <.hud.life>
                     "Life "
                     <b css:font-size="50px">
                         state.player.life
                     
-                <div .ui.slots .select-slot=(@selected_gun)>
+                <.hud.slots .select-slot=(@selected_gun)>
                     for i in [0...state.player.slots]
-                        <div .onHand=(state.player.gun == state.player.holsters[i])>
+                        <.onHand=(state.player.gun == state.player.holsters[i])>
                             "{i + 1}. {((state.player.holsters[i] or {}).name or '')}"
-                <div .ui.ammo>
+                <.hud.ammo>
                     <b css:font-size="50px">
                         state.player.gun.ammo
                     " Ammo"
@@ -25,7 +25,7 @@ tag player-hud
                 <div .you-died .fadeIn>
                     "you died"
 
-### css
+### css scoped
     .you-died {
         left: 33%
         top: 20%
@@ -36,7 +36,7 @@ tag player-hud
         font-family: MenofNihilist;
     }
 
-    .ui {
+    .hud {
         position: fixed;
         z-index: 1;
         font-family: MenofNihilist;

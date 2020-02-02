@@ -23,7 +23,7 @@ export class Zombie
         @player = player
         @position = randomPosition(@player) 
         @rotation = Math.random() * 360
-        @sector = "{~~(@position.x / 1800)}|{~~(@position.y / 1800)}"
+        @sector = "{~~(@position.x / 800)}|{~~(@position.y / 800)}"
         @state = 0
         @speed = .2
         @base_speed = .2
@@ -71,7 +71,7 @@ export class Zombie
         @move()
 
     def execAggro
-        if @player.isInSafeZone()
+        if @player.inSafeZone()
             @state = DRIFT
         if @playerIsClose(@size * 1.5)
             @state = ATTACK
@@ -114,10 +114,10 @@ export class Zombie
         @distanceToPlayerX() < distance and @distanceToPlayerY() < distance
 
     def playerDetected
-        (@playerOnSight() and @playerIsClose(750) or @playerIsClose(40)) and not @player.isInSafeZone()
+        (@playerOnSight() and @playerIsClose(750) or @playerIsClose(40)) and not @player.inSafeZone()
 
     def currentSector
-        "{~~(@position.x / 1800)}|{~~(@position.y / 1800)}"
+        "{~~(@position.x / 800)}|{~~(@position.y / 800)}"
 
     def updateSector()
         let temp_sector = @currentSector()
@@ -147,5 +147,5 @@ export class Zombie
             state.sector[@sector].delete(self)
             state.killed.add(self)
             @state = DEAD
-            @player.score += 10
+            @player.score += 10 * state.day
             @death = state.time

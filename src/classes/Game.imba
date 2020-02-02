@@ -4,6 +4,7 @@ export class Game
     def constructor renderer
         @renderer = renderer
         state.first_date = Date.new
+        state.last_date = Date.new
         window.addEventListener('keydown', @keydownEvent)
         window.addEventListener('keyup', @keyupEvent)
         window.addEventListener('mousemove', @mousemoveEvent)
@@ -13,10 +14,9 @@ export class Game
 
     def update
         let current_date = Date.new
-        state.delta = (current_date - (state.last_date or Date.new)) / 5
+        state.delta = (current_date - state.last_date) / 5
         state.time = current_date - state.first_date
         state.last_date = current_date
-        console.log state.delta if state.delta > 4
         state.player.update()
 
         for bullet of state.bullets

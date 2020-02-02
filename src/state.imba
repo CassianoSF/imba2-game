@@ -18,10 +18,10 @@ var guns = [
     Gun.new(5,     60,    4,      100,    20,    1,           15,    1600,         'm95',              18000)
 ]
 
-var player = Player.new(guns)
+var player = Player.new([guns[0]])
 
 let sector = {} 
-for i in [0..10000]
+for i in [0..50000]
     let zombie = Zombie.new(player)
     sector[zombie.currentSector()] ||= Set.new
     sector[zombie.currentSector()].add(zombie)
@@ -37,6 +37,7 @@ export var state =
     sector: sector
     killed: Set.new
     delta: 1
+    day: 1
     svg: 
         height: 1
         width: 1
