@@ -1207,20 +1207,26 @@ class Player {
 		this.position = {x: 0,y: 0};
 		this.rotation = 0;
 		this.inventory = inventory;
-		this.score = 100000;
+		this.score = 50;
 		this.gun = this.inventory[0];
 		this.holsters = [this.gun];
 		this.speed = .4;
 		this.nearZombies = new Set();
-		this.life = 100;
+		this.maxLife = 50;
+		this.life = 50;
 		this.slots = 2;
+		this.safe = true;
 	}
+	
+	checkShop(){
+		if (!this.inSafeZone()) { return state.shop.open = false }	}
 	
 	update(){
 		if (this.dead) { return }		this.gun.update();
 		this.move();
 		this.rotate();
 		this.shoot();
+		this.checkShop();
 		let x = ~~((this.position.x) / 800);
 		let y = ~~((this.position.y) / 800);
 		
@@ -1305,7 +1311,8 @@ class Player {
 	equip(gun){
 		if (this.holsters.find(function(g) { return g == gun; })) { return }		if (this.holsters[this.slots - 1]) {
 			this.holsters.pop();
-		}		return this.holsters.unshift(gun);
+		}		this.holsters.unshift(gun);
+		return this.gun = gun;
 	}
 }
 
@@ -1329,7 +1336,7 @@ function randomPosition(player){
 	};
 }
 class Zombie {
-	constructor(player){
+	constructor(player,day){
 		this.player = player;
 		this.position = randomPosition(this.player);
 		this.rotation = Math.random() * 360;
@@ -1337,10 +1344,10 @@ class Zombie {
 		this.state = 0;
 		this.speed = .2;
 		this.base_speed = .2;
-		this.max_speed = .6;
+		this.max_speed = .6 + (day / 20);
 		this.size = 20;
 		this.turn = 0;
-		this.life = 100;
+		this.life = 50 + (day * 3);
 		this.death = 0;
 	}
 	
@@ -1534,10 +1541,9 @@ class Game {
 
 var $1;
 
-var guns = [
-	//       cap,   rate,  spread, damage, power, projectiles, speed, reload_time,  name,               price
-	new Gun(6,150,15,30,15,1,8,2000,'revolver',0),
-	new Gun(12,170,10,13,15,1,7,1000,'usp45',2000),
+var guns = [ //       cap,   rate,  spread, damage, power, projectiles, speed, reload_time,  name,               price
+	new Gun(6,150,6,30,15,1,8,2000,'revolver',0),
+	new Gun(12,280,10,13,15,1,7,1000,'usp45',500),
 	new Gun(7,100,20,50,30,1,8,1400,'desert eagle',5000),
 	new Gun(30,1000,15,13,5,1,8,1000,'mp5',10000),
 	new Gun(25,800,17,17,8,1,7,1000,'ump',15000),
@@ -1548,12 +1554,10 @@ var guns = [
 	new Gun(10,220,6,50,15,1,14,1500,'dragunov',15000),
 	new Gun(5,60,4,100,20,1,15,1600,'m95',18000)
 ];
-
 var player = new Player([guns[0]]);
-
 let sector = {};
-for (let i = 0; i <= 50000; i++) {
-	let zombie = new Zombie(player);
+for (let i = 0; i <= 5000; i++) {
+	let zombie = new Zombie(player,1);
 	sector[$1 = zombie.currentSector()] || (sector[$1] = new Set());
 	sector[zombie.currentSector()].add(zombie);
 }
@@ -1573,58 +1577,67 @@ var state = {
 		height: 1,
 		width: 1
 	},
-	store: guns.slice(1,-1)
+	store: guns.slice(1,-1),
+	shop: {
+		guns: [],
+		upgradeGun: {},
+		health: 500,
+		speed: 500,
+		stamina: 500,
+		slots: 18000
+	}
 };
 
-imba.inlineStyles(".you-died[data-i48af5f05]{left:33%;top:20%;font-size:15vw;color:#900;position:fixed;z-index:1;font-family:MenofNihilist;}.hud[data-i48af5f05]{position:fixed;z-index:1;font-family:MenofNihilist;color:white;}.score[data-i48af5f05]{top:2%;right:2%;font-size:30px;}.life[data-i48af5f05]{bottom:2%;right:2%;font-size:30px;}.slots[data-i48af5f05]{left:2%;bottom:10%;font-size:16px;}.select-slot[data-i48af5f05]{color:green;}.ammo[data-i48af5f05]{bottom:2%;left:2%;font-size:30px;}.onHand[data-i48af5f05]{color:yellow;}\n");
+imba.inlineStyles(".you-died[data-i1cf1fae0]{left:33%;top:20%;font-size:15vw;color:#900;position:fixed;z-index:1;font-family:MenofNihilist;}.hud[data-i1cf1fae0]{position:fixed;z-index:1;font-family:MenofNihilist;color:white;}.score[data-i1cf1fae0]{top:2%;right:2%;font-size:30px;}.life[data-i1cf1fae0]{bottom:2%;right:2%;font-size:30px;}.slots[data-i1cf1fae0]{left:2%;bottom:10%;font-size:16px;}.select-slot[data-i1cf1fae0]{color:green;}.ammo[data-i1cf1fae0]{bottom:2%;left:2%;font-size:30px;}.onHand[data-i1cf1fae0]{color:yellow;}\n");
 
 class PlayerHudComponent extends imba.tags.get('component','ImbaElement') {
 	init$(){
-		super.init$();return this.setAttribute('data-i48af5f05','');
+		super.init$();return this.setAttribute('data-i1cf1fae0','');
 	}
 	render(){
-		var t$0, c$0, b$0, d$0, t$1, b$1, d$1, v$1, t$2, v$2, t$3, b$3, d$3, v$3, b$2, d$2, k$3, c$3, t$4, b$4, d$4, c$4, v$4, y$$1;
+		var t$0, c$0, b$0, d$0, t$1, b$1, d$1, v$1, t$2, v$2, t$3, b$3, d$3, v$3, b$2, d$2, k$3, c$3, t$4, b$4, d$4, c$4, v$4, aa$$1;
 		t$0=this;
 		t$0.open$();
 		c$0 = (b$0=d$0=1,t$0.$) || (b$0=d$0=0,t$0.$={});
-		t$1 = (b$1=d$1=1,c$0.b) || (b$1=d$1=0,c$0.b=t$1=imba.createElement('div',512,t$0,null,null,'i48af5f05'));
+		t$1 = (b$1=d$1=1,c$0.b) || (b$1=d$1=0,c$0.b=t$1=imba.createElement('div',512,t$0,null,null,'i1cf1fae0'));
 		(v$1=(state.player.dead||undefined),v$1===c$0.d||(d$1|=2,c$0.d=v$1));
-		(d$1&2 && t$1.flag$((c$0.d ? `fadeOut` : '')));
-		t$2 = c$0.e || (c$0.e = t$2=imba.createElement('div',0,t$1,'hud score',null,'i48af5f05'));
-		(v$2="score ",v$2===c$0.f || (c$0.f_ = t$2.insert$(c$0.f=v$2,0,c$0.f_)));
-		t$3 = (b$3=d$3=1,c$0.g) || (b$3=d$3=0,c$0.g=t$3=imba.createElement('b',4096,t$2,null,null,'i48af5f05'));
+		(v$1=(!state.player.dead||undefined),v$1===c$0.f||(d$1|=2,c$0.f=v$1));
+		(d$1&2 && t$1.flag$((c$0.d ? `fadeOut` : '')+' '+(c$0.f ? `fadeIn` : '')));
+		t$2 = c$0.g || (c$0.g = t$2=imba.createElement('div',0,t$1,'hud score',null,'i1cf1fae0'));
+		(v$2="score ",v$2===c$0.h || (c$0.h_ = t$2.insert$(c$0.h=v$2,0,c$0.h_)));
+		t$3 = (b$3=d$3=1,c$0.i) || (b$3=d$3=0,c$0.i=t$3=imba.createElement('b',4096,t$2,null,null,'i1cf1fae0'));
 		b$3 || (t$3.css$('font-size',"50px"));
-		(v$3=state.player.score,v$3===c$0.h || (c$0.h_ = t$3.insert$(c$0.h=v$3,0,c$0.h_)));
-		t$2 = c$0.i || (c$0.i = t$2=imba.createElement('div',0,t$1,'hud life',null,'i48af5f05'));
-		(v$2="Life ",v$2===c$0.j || (c$0.j_ = t$2.insert$(c$0.j=v$2,0,c$0.j_)));
-		t$3 = (b$3=d$3=1,c$0.k) || (b$3=d$3=0,c$0.k=t$3=imba.createElement('b',4096,t$2,null,null,'i48af5f05'));
+		(v$3=state.player.score,v$3===c$0.j || (c$0.j_ = t$3.insert$(c$0.j=v$3,0,c$0.j_)));
+		t$2 = c$0.k || (c$0.k = t$2=imba.createElement('div',0,t$1,'hud life',null,'i1cf1fae0'));
+		(v$2="Life ",v$2===c$0.l || (c$0.l_ = t$2.insert$(c$0.l=v$2,0,c$0.l_)));
+		t$3 = (b$3=d$3=1,c$0.m) || (b$3=d$3=0,c$0.m=t$3=imba.createElement('b',4096,t$2,null,null,'i1cf1fae0'));
 		b$3 || (t$3.css$('font-size',"50px"));
-		(v$3=state.player.life,v$3===c$0.l || (c$0.l_ = t$3.insert$(c$0.l=v$3,0,c$0.l_)));
-		t$2 = (b$2=d$2=1,c$0.m) || (b$2=d$2=0,c$0.m=t$2=imba.createElement('div',2560,t$1,'hud slots',null,'i48af5f05'));
-		(v$2=(this.selected_gun||undefined),v$2===c$0.o||(d$2|=2,c$0.o=v$2));
-		(d$2&2 && t$2.flag$('hud slots'+' '+(c$0.o ? `select-slot` : '')));
-		t$3 = c$0.p || (c$0.p = t$3 = imba.createIndexedFragment(0,t$2));
+		(v$3=state.player.life,v$3===c$0.n || (c$0.n_ = t$3.insert$(c$0.n=v$3,0,c$0.n_)));
+		t$2 = (b$2=d$2=1,c$0.o) || (b$2=d$2=0,c$0.o=t$2=imba.createElement('div',2560,t$1,'hud slots',null,'i1cf1fae0'));
+		(v$2=(this.selected_gun||undefined),v$2===c$0.q||(d$2|=2,c$0.q=v$2));
+		(d$2&2 && t$2.flag$('hud slots'+' '+(c$0.q ? `select-slot` : '')));
+		t$3 = c$0.r || (c$0.r = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
 		for (let len = state.player.slots, i = 0, rd = len - i; (rd > 0) ? (i < len) : (i > len); (rd > 0) ? (i++) : (i--)) {
-			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createElement('div',4608,t$3,null,null,'i48af5f05'));
+			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createElement('div',4608,t$3,null,null,'i1cf1fae0'));
 			b$4||(t$4.up$=t$3);
-			c$4=t$4.$q || (t$4.$q={});
-			(v$4=(state.player.gun == state.player.holsters[i]||undefined),v$4===c$4.s||(d$4|=2,c$4.s=v$4));
-			(d$4&2 && t$4.flag$((c$4.s ? `onHand` : '')));
-			(v$4=("" + (i + 1) + ". " + ((state.player.holsters[i] || {}).name || '')),v$4===c$4.t || (c$4.t_ = t$4.insert$(c$4.t=v$4,0,c$4.t_)));
+			c$4=t$4.$s || (t$4.$s={});
+			(v$4=(state.player.gun == state.player.holsters[i]||undefined),v$4===c$4.u||(d$4|=2,c$4.u=v$4));
+			(d$4&2 && t$4.flag$((c$4.u ? `onHand` : '')));
+			(v$4=("" + (i + 1) + ". " + ((state.player.holsters[i] || {}).name || '')),v$4===c$4.v || (c$4.v_ = t$4.insert$(c$4.v=v$4,0,c$4.v_)));
 			k$3++;
 		}t$3.end$(k$3);
-		t$2 = c$0.u || (c$0.u = t$2=imba.createElement('div',0,t$1,'hud ammo',null,'i48af5f05'));
-		t$3 = (b$3=d$3=1,c$0.v) || (b$3=d$3=0,c$0.v=t$3=imba.createElement('b',4096,t$2,null,null,'i48af5f05'));
+		t$2 = c$0.w || (c$0.w = t$2=imba.createElement('div',0,t$1,'hud ammo',null,'i1cf1fae0'));
+		t$3 = (b$3=d$3=1,c$0.x) || (b$3=d$3=0,c$0.x=t$3=imba.createElement('b',4096,t$2,null,null,'i1cf1fae0'));
 		b$3 || (t$3.css$('font-size',"50px"));
-		(v$3=state.player.gun.ammo,v$3===c$0.w || (c$0.w_ = t$3.insert$(c$0.w=v$3,0,c$0.w_)));
-		(v$2=" Ammo",v$2===c$0.x || (c$0.x_ = t$2.insert$(c$0.x=v$2,0,c$0.x_)));
+		(v$3=state.player.gun.ammo,v$3===c$0.y || (c$0.y_ = t$3.insert$(c$0.y=v$3,0,c$0.y_)));
+		(v$2=" Ammo",v$2===c$0.z || (c$0.z_ = t$2.insert$(c$0.z=v$2,0,c$0.z_)));
 		if (state.player.dead) {
-			y$$1 = (b$2=d$2=1,c$0.y) || (b$2=d$2=0,c$0.y=y$$1=imba.createElement('div',0,null,'you-died fadeIn',"you died",'i48af5f05'));
-			b$2||(y$$1.up$=t$0);
+			aa$$1 = (b$2=d$2=1,c$0.aa) || (b$2=d$2=0,c$0.aa=aa$$1=imba.createElement('div',0,null,'you-died fadeIn',"you died",'i1cf1fae0'));
+			b$2||(aa$$1.up$=t$0);
 		}
-		(c$0.y$$1_ = t$0.insert$(y$$1,1024,c$0.y$$1_));		t$0.close$(d$0);
+		(c$0.aa$$1_ = t$0.insert$(aa$$1,1024,c$0.aa$$1_));		t$0.close$(d$0);
 		return t$0;
 	}
 } imba.tags.define('player-hud',PlayerHudComponent,{});
@@ -1679,96 +1692,202 @@ class PlayerHudComponent extends imba.tags.get('component','ImbaElement') {
     }
 */
 
-imba.inlineStyles(".hud[data-i8b7dc4e7]{position:fixed;z-index:1;font-family:Typewriter;color:white;background-color:rgba(0,0,0,0.9);border-color:white;border:1px;cursor:pointer;}.row[data-i8b7dc4e7]{display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;}.buy-row[data-i8b7dc4e7]{display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;}.item[data-i8b7dc4e7],.next-day[data-i8b7dc4e7]{width:25vw;}.prices[data-i8b7dc4e7]{text-align:right;-webkit-box-flex:2;-webkit-flex-grow:2;-ms-flex-positive:2;flex-grow:2;}.action[data-i8b7dc4e7]{text-align:right;width:12vw;}.buy-row[data-i8b7dc4e7]:hover{color:#5F5;text-shadow:2px 2px #A00;}.buy-row:hover .prices[data-i8b7dc4e7]{-webkit-transform:translate(-2vw,0) scale(1.3,1.3);-ms-transform:translate(-2vw,0) scale(1.3,1.3);transform:translate(-2vw,0) scale(1.3,1.3);}.action[data-i8b7dc4e7]:hover{text-shadow:2px 2px #A00;color:#5F5;-webkit-transform:scale(1.3,1.3);-ms-transform:scale(1.3,1.3);transform:scale(1.3,1.3);}.next-day[data-i8b7dc4e7]:hover{text-shadow:2px 2px #A00;color:#5F5;-webkit-transform:scale(1.3,1.3) translate(3.2vw,0);-ms-transform:scale(1.3,1.3) translate(3.2vw,0);transform:scale(1.3,1.3) translate(3.2vw,0);}.store[data-i8b7dc4e7]{font-size:1.5vw;margin:3%;}\n");
+imba.inlineStyles(".hud[data-i73d2b83f]{position:fixed;z-index:1;font-family:Typewriter;color:white;background-color:rgba(0,0,0,0.9);border-color:white;border:1px;cursor:pointer;top:10%;left:50%;-webkit-transform:translate(-50%,0);-ms-transform:translate(-50%,0);transform:translate(-50%,0);}.row[data-i73d2b83f],.buy-row[data-i73d2b83f]{display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;}.item[data-i73d2b83f],.next-day[data-i73d2b83f]{width:300px;}.prices[data-i73d2b83f],.close[data-i73d2b83f]{text-align:right;-webkit-box-flex:1;-webkit-flex-grow:1;-ms-flex-positive:1;flex-grow:1;}.action[data-i73d2b83f]{text-align:right;width:6vw;}.buy-row[data-i73d2b83f]:hover{color:#5F5;text-shadow:2px 2px #A00;}.buy-row:hover .prices[data-i73d2b83f]{-webkit-transform:translate(-1vw,0) scale(1.3,1.3);-ms-transform:translate(-1vw,0) scale(1.3,1.3);transform:translate(-1vw,0) scale(1.3,1.3);}.action[data-i73d2b83f]:hover{text-shadow:2px 2px #A00;color:#5F5;-webkit-transform:scale(1.3,1.3);-ms-transform:scale(1.3,1.3);transform:scale(1.3,1.3);}.next-day[data-i73d2b83f]:hover{text-shadow:2px 2px #A00;color:#5F5;-webkit-transform:scale(1.3,1.3) translate(1vw,0);-ms-transform:scale(1.3,1.3) translate(1vw,0);transform:scale(1.3,1.3) translate(1vw,0);}.close[data-i73d2b83f]:hover{text-shadow:2px 2px #A00;color:#5F5;-webkit-transform:scale(1.3,1.3) translate(-1vw,0);-ms-transform:scale(1.3,1.3) translate(-1vw,0);transform:scale(1.3,1.3) translate(-1vw,0);}.store[data-i73d2b83f]{font-size:calc(10px + .6vw);}.open-store[data-i73d2b83f]{font-size:calc(15px + .8vw);}.open-store[data-i73d2b83f]{text-align:center;}\n");
 function iter$$8(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
 class PlayerStoreComponent extends imba.tags.get('component','ImbaElement') {
+	
 	init$(){
-		super.init$();return this.setAttribute('data-i8b7dc4e7','');
+		super.init$();return this.setAttribute('data-i73d2b83f','');
 	}
 	buyGun(gun){
 		var player_;
-		if (!state.player.inSafeZone()) { return }		if (gun.price <= state.player.score) {
+		if (gun.price <= state.player.score) {
 			(player_ = state.player).score = player_.score - gun.price;
 			var index = state.store.indexOf(gun);
 			if ((index != -1)) { state.store.splice(index,1); }			return state.player.inventory.push(gun);
 		}	}
 	
 	upgradeGun(gun){
-		if (!state.player.inSafeZone()) { return }	}
+		return state.shop.upgradeGun = gun;
+	}
 	
 	equipGun(gun){
-		if (!state.player.inSafeZone()) { return }		return state.player.equip(gun);
+		return state.player.equip(gun);
+	}
+	
+	toggleShop(){
+		if (state.player.inSafeZone()) {
+			return state.shop.open = !state.shop.open;
+		}	}
+	
+	nextDay(){
+		var sector_, $1;
+		state.day++;
+		for (let o = state.sector, sector, i = 0, keys = Object.keys(o), l = keys.length, key; i < l; i++){
+			key = keys[i];sector = o[key];sector.clear();
+		}		
+		for (let len = (5000 + 1000 * (state.day ** 1.4)), i = 0, rd = len - i; (rd > 0) ? (i <= len) : (i >= len); (rd > 0) ? (i++) : (i--)) {
+			let zombie = new Zombie(state.player,state.day);
+			(sector_ = state.sector)[$1 = zombie.currentSector()] || (sector_[$1] = new Set());
+			state.sector[zombie.currentSector()].add(zombie);
+		}		
+		return state.shop.open = false;
+	}
+	
+	
+	healPlayer(){
+		var player_;
+		(player_ = state.player).score = player_.score - state.day * 40;
+		return state.player.life = state.player.maxLife;
+	}
+	
+	buyAmmo(){
+		var player_;
+		(player_ = state.player).score = player_.score - state.day * 200;
+		return state.player.life = state.player.maxLife;
+	}
+	
+	upgradeHealth(){
+		var player_, $1, shop_;
+		(player_ = state.player).score = player_.score - state.shop.health;
+		($1 = state.player).maxLife = $1.maxLife + 10;
+		return (shop_ = state.shop).health = shop_.health * 2;
+	}
+	
+	upgradeSpeed(){
+		var player_, $1, shop_;
+		(player_ = state.player).score = player_.score - state.shop.speed;
+		($1 = state.player).speed = $1.speed + 0.05;
+		return (shop_ = state.shop).speed = shop_.speed * 2;
+	}
+	
+	upgradeStamina(){
+		var player_, $1, shop_;
+		(player_ = state.player).score = player_.score - state.shop.stamina;
+		($1 = state.player).stamina = $1.stamina + 10;
+		return (shop_ = state.shop).stamina = shop_.stamina * 10;
+	}
+	
+	upgradeHolster(){
+		var player_, $1, shop_;
+		(player_ = state.player).score = player_.score - state.shop.slots;
+		($1 = state.player).slots = $1.slots + 1;
+		return (shop_ = state.shop).slots = shop_.slots * 2;
 	}
 	
 	render(){
-		var t$0, c$0, b$0, d$0, v$0, t$1, t$2, t$3, k$2, c$2, b$3, d$3, c$3, v$3, t$4, v$4, b$4, d$4;
+		var t$0, c$0, b$0, d$0, v$0, d$$1, b$2, d$2, e$$1, f$$1, t$3, t$4, v$4, q$$3, b$4, d$4, t$5, v$5, k$3, c$3, c$4, b$5, d$5;
 		t$0=this;
 		t$0.open$();
 		c$0 = (b$0=d$0=1,t$0.$) || (b$0=d$0=0,t$0.$={});
 		(v$0=state.player.inSafeZone() ? "fadeIn" : "fadeOut",v$0===c$0.c||(d$0|=2,c$0.c=v$0));
 		((!b$0||d$0&2) && t$0.flagSelf$('hud score'+' '+(c$0.c||'')));
-		t$1 = c$0.d || (c$0.d = t$1=imba.createElement('div',2048,t$0,'store',null,'i8b7dc4e7'));
-		b$0 || (t$2=imba.createElement('div',0,t$1,'buy-row',null,'i8b7dc4e7'));
-		b$0 || (t$3=imba.createElement('div',0,t$2,'item',"Item",'i8b7dc4e7'));
-		b$0 || (t$3=imba.createElement('div',0,t$2,'prices',"price",'i8b7dc4e7'));
-		b$0 || (t$2=imba.createElement('div',0,t$1,'buy-row',null,'i8b7dc4e7'));
-		b$0 || (t$3=imba.createElement('div',0,t$2,'item',"Restore health",'i8b7dc4e7'));
-		b$0 || (t$3=imba.createElement('div',0,t$2,'prices',"2000",'i8b7dc4e7'));
-		b$0 || (t$2=imba.createElement('div',0,t$1,'buy-row',null,'i8b7dc4e7'));
-		b$0 || (t$3=imba.createElement('div',0,t$2,'item',"Increse health",'i8b7dc4e7'));
-		b$0 || (t$3=imba.createElement('div',0,t$2,'prices',"2000",'i8b7dc4e7'));
-		b$0 || (t$2=imba.createElement('div',0,t$1,'buy-row',null,'i8b7dc4e7'));
-		b$0 || (t$3=imba.createElement('div',0,t$2,'item',"Increse speed",'i8b7dc4e7'));
-		b$0 || (t$3=imba.createElement('div',0,t$2,'prices',"2000",'i8b7dc4e7'));
-		b$0 || (t$2=imba.createElement('div',0,t$1,'buy-row',null,'i8b7dc4e7'));
-		b$0 || (t$3=imba.createElement('div',0,t$2,'item',"Increse stamina",'i8b7dc4e7'));
-		b$0 || (t$3=imba.createElement('div',0,t$2,'prices',"2000",'i8b7dc4e7'));
-		b$0 || (t$2=imba.createElement('div',0,t$1,'row',null,'i8b7dc4e7'));
-		b$0 || (t$2.css$('margin-top',"5%"));
-		t$2 = c$0.e || (c$0.e = t$2 = imba.createIndexedFragment(0,t$1));
-		k$2 = 0;
-		c$2=t$2.$;
-		for (let i = 0, items = iter$$8(state.store), len = items.length, gun; i < len; i++) {
-			gun = items[i];
-			t$3 = (b$3=d$3=1,c$2[k$2]) || (b$3=d$3=0,c$2[k$2] = t$3=imba.createElement('div',0,t$2,'buy-row',null,'i8b7dc4e7'));
-			b$3||(t$3.up$=t$2);
-			c$3=t$3.$f || (t$3.$f={});
-			v$3 = c$3.g || (c$3.g={buyGun: [null]});
-			v$3.buyGun[0]=gun;
-			b$3 || t$3.on$(`click`,v$3,this);
-			t$4 = c$3.h || (c$3.h = t$4=imba.createElement('div',4096,t$3,'item',null,'i8b7dc4e7'));
-			(v$4=("buy " + (gun.name)),v$4===c$3.i || (c$3.i_ = t$4.insert$(c$3.i=v$4,0,c$3.i_)));
-			t$4 = c$3.j || (c$3.j = t$4=imba.createElement('div',4096,t$3,'prices',null,'i8b7dc4e7'));
-			(v$4=gun.price,v$4===c$3.k || (c$3.k_ = t$4.insert$(c$3.k=v$4,0,c$3.k_)));
-			k$2++;
-		}t$2.end$(k$2);
-		b$0 || (t$2=imba.createElement('div',0,t$1,'row',null,'i8b7dc4e7'));
-		b$0 || (t$2.css$('margin-top',"5%"));
-		t$2 = c$0.l || (c$0.l = t$2 = imba.createIndexedFragment(0,t$1));
-		k$2 = 0;
-		c$2=t$2.$;
-		for (let i = 0, items = iter$$8(state.player.inventory), len = items.length, gun; i < len; i++) {
-			gun = items[i];
-			t$3 = (b$3=d$3=1,c$2[k$2]) || (b$3=d$3=0,c$2[k$2] = t$3=imba.createElement('div',0,t$2,'row',null,'i8b7dc4e7'));
-			b$3||(t$3.up$=t$2);
-			c$3=t$3.$m || (t$3.$m={});
-			t$4 = c$3.n || (c$3.n = t$4=imba.createElement('div',4096,t$3,'item',null,'i8b7dc4e7'));
-			(v$4=gun.name,v$4===c$3.o || (c$3.o_ = t$4.insert$(c$3.o=v$4,0,c$3.o_)));
-			t$4 = (b$4=d$4=1,c$3.p) || (b$4=d$4=0,c$3.p=t$4=imba.createElement('div',0,t$3,'action',"Equip",'i8b7dc4e7'));
-			v$4 = c$3.q || (c$3.q={equipGun: [null]});
-			v$4.equipGun[0]=gun;
-			b$4 || t$4.on$(`click`,v$4,this);
-			t$4 = (b$4=d$4=1,c$3.r) || (b$4=d$4=0,c$3.r=t$4=imba.createElement('div',0,t$3,'action',"Upgrade",'i8b7dc4e7'));
-			v$4 = c$3.s || (c$3.s={upgradeGun: [null]});
-			v$4.upgradeGun[0]=gun;
-			b$4 || t$4.on$(`click`,v$4,this);
-			k$2++;
-		}t$2.end$(k$2);
-		b$0 || (t$2=imba.createElement('div',0,t$1,'row',null,'i8b7dc4e7'));
-		b$0 || (t$2.css$('margin-top',"5%"));
-		b$0 || (t$2=imba.createElement('div',0,t$1,'buy-row',null,'i8b7dc4e7'));
-		b$0 || (t$3=imba.createElement('div',0,t$2,'next-day',"Go to next day",'i8b7dc4e7'));
-		t$0.close$(d$0);
+		if (state.shop.upgradeGun) { d$$1 = (b$2=d$2=1,c$0.d) || (b$2=d$2=0,c$0.d=d$$1=imba.createComponent('upgrade-gun',0,null,null,null,'i73d2b83f'));
+		b$2||(d$$1.up$=t$0);
+		b$2 || !d$$1.setup || d$$1.setup(d$2);
+		d$$1.end$(d$2); }
+		(c$0.d$$1_ = t$0.insert$(d$$1,1024,c$0.d$$1_));		if (!state.shop.open) {
+			e$$1 = (b$2=d$2=1,c$0.e) || (b$2=d$2=0,c$0.e=e$$1=imba.createElement('div',0,null,'open-store',null,'i73d2b83f'));
+			b$2||(e$$1.up$=t$0);
+			b$2 || (t$3=imba.createElement('div',0,e$$1,'buy-row',null,'i73d2b83f'));
+			b$2 || (t$3.on$(`click`,{toggleShop: true},this));
+			b$2 || (t$4=imba.createElement('div',0,t$3,'item',"Open shop",'i73d2b83f'));
+		} else {
+			f$$1 = (b$2=d$2=1,c$0.f) || (b$2=d$2=0,c$0.f=f$$1=imba.createElement('div',3072,null,'store',null,'i73d2b83f'));
+			b$2||(f$$1.up$=t$0);
+			b$2 || (t$3=imba.createElement('h1',0,f$$1,null,"SHOP",'i73d2b83f'));
+			b$2 || (t$3=imba.createElement('div',0,f$$1,'buy-row',null,'i73d2b83f'));
+			b$2 || (t$4=imba.createElement('div',0,t$3,'item',"Item",'i73d2b83f'));
+			b$2 || (t$4=imba.createElement('div',0,t$3,'prices',"price",'i73d2b83f'));
+			b$2 || (t$3=imba.createElement('div',0,f$$1,'row',null,'i73d2b83f'));
+			b$2 || (t$3.css$('margin-top',"5%"));
+			b$2 || (t$3=imba.createElement('div',0,f$$1,'buy-row',null,'i73d2b83f'));
+			b$2 || (t$3.on$(`click`,{healPlayer: true},this));
+			b$2 || (t$4=imba.createElement('div',0,t$3,'item',"Heal",'i73d2b83f'));
+			t$4 = c$0.g || (c$0.g = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
+			(v$4=state.day * 40,v$4===c$0.h || (c$0.h_ = t$4.insert$(c$0.h=v$4,0,c$0.h_)));
+			b$2 || (t$3=imba.createElement('div',0,f$$1,'buy-row',null,'i73d2b83f'));
+			b$2 || (t$3.on$(`click`,{buyAmmo: true},this));
+			b$2 || (t$4=imba.createElement('div',0,t$3,'item',"Buy Ammo",'i73d2b83f'));
+			t$4 = c$0.i || (c$0.i = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
+			(v$4=state.day * 200,v$4===c$0.j || (c$0.j_ = t$4.insert$(c$0.j=v$4,0,c$0.j_)));
+			b$2 || (t$3=imba.createElement('div',0,f$$1,'row',null,'i73d2b83f'));
+			b$2 || (t$3.css$('margin-top',"5%"));
+			b$2 || (t$3=imba.createElement('div',0,f$$1,'buy-row',null,'i73d2b83f'));
+			b$2 || (t$3.on$(`click`,{upgradeHealth: true},this));
+			b$2 || (t$4=imba.createElement('div',0,t$3,'item',"Upgrade health",'i73d2b83f'));
+			t$4 = c$0.k || (c$0.k = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
+			(v$4=state.shop.health,v$4===c$0.l || (c$0.l_ = t$4.insert$(c$0.l=v$4,0,c$0.l_)));
+			b$2 || (t$3=imba.createElement('div',0,f$$1,'buy-row',null,'i73d2b83f'));
+			b$2 || (t$3.on$(`click`,{upgradeSpeed: true},this));
+			b$2 || (t$4=imba.createElement('div',0,t$3,'item',"Upgrade speed",'i73d2b83f'));
+			t$4 = c$0.m || (c$0.m = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
+			(v$4=state.shop.speed,v$4===c$0.n || (c$0.n_ = t$4.insert$(c$0.n=v$4,0,c$0.n_)));
+			b$2 || (t$3=imba.createElement('div',0,f$$1,'buy-row',null,'i73d2b83f'));
+			b$2 || (t$3.on$(`click`,{upgradeStamina: true},this));
+			b$2 || (t$4=imba.createElement('div',0,t$3,'item',"Upgrade stamina",'i73d2b83f'));
+			t$4 = c$0.o || (c$0.o = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
+			(v$4=state.shop.stamina,v$4===c$0.p || (c$0.p_ = t$4.insert$(c$0.p=v$4,0,c$0.p_)));
+			if (state.player.slots < 6) {
+				q$$3 = (b$4=d$4=1,c$0.q) || (b$4=d$4=0,c$0.q=q$$3=imba.createElement('div',0,null,'buy-row',null,'i73d2b83f'));
+				b$4||(q$$3.up$=f$$1);
+				b$4 || (q$$3.on$(`click`,{upgradeHolster: true},this));
+				b$4 || (t$5=imba.createElement('div',0,q$$3,'item',"Upgrade holster",'i73d2b83f'));
+				t$5 = c$0.r || (c$0.r = t$5=imba.createElement('div',4096,q$$3,'prices',null,'i73d2b83f'));
+				(v$5=("" + (state.shop.slots)),v$5===c$0.s || (c$0.s_ = t$5.insert$(c$0.s=v$5,0,c$0.s_)));
+			}
+			(c$0.q$$3_ = f$$1.insert$(q$$3,1024,c$0.q$$3_));			b$2 || (t$3=imba.createElement('div',0,f$$1,'row',null,'i73d2b83f'));
+			b$2 || (t$3.css$('margin-top',"5%"));
+			t$3 = c$0.t || (c$0.t = t$3 = imba.createIndexedFragment(0,f$$1));
+			k$3 = 0;
+			c$3=t$3.$;
+			for (let i = 0, items = iter$$8(state.store), len = items.length, gun; i < len; i++) {
+				gun = items[i];
+				t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createElement('div',0,t$3,'buy-row',null,'i73d2b83f'));
+				b$4||(t$4.up$=t$3);
+				c$4=t$4.$u || (t$4.$u={});
+				v$4 = c$4.v || (c$4.v={buyGun: [null]});
+				v$4.buyGun[0]=gun;
+				b$4 || t$4.on$(`click`,v$4,this);
+				t$5 = c$4.w || (c$4.w = t$5=imba.createElement('div',4096,t$4,'item',null,'i73d2b83f'));
+				(v$5=("buy " + (gun.name)),v$5===c$4.x || (c$4.x_ = t$5.insert$(c$4.x=v$5,0,c$4.x_)));
+				t$5 = c$4.y || (c$4.y = t$5=imba.createElement('div',4096,t$4,'prices',null,'i73d2b83f'));
+				(v$5=gun.price,v$5===c$4.z || (c$4.z_ = t$5.insert$(c$4.z=v$5,0,c$4.z_)));
+				k$3++;
+			}t$3.end$(k$3);
+			b$2 || (t$3=imba.createElement('div',0,f$$1,'row',null,'i73d2b83f'));
+			b$2 || (t$3.css$('margin-top',"5%"));
+			b$2 || (t$3=imba.createElement('h1',0,f$$1,null,"INVERTORY",'i73d2b83f'));
+			t$3 = c$0.aa || (c$0.aa = t$3 = imba.createIndexedFragment(0,f$$1));
+			k$3 = 0;
+			c$3=t$3.$;
+			for (let i = 0, items = iter$$8(state.player.inventory), len = items.length, gun; i < len; i++) {
+				gun = items[i];
+				t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createElement('div',0,t$3,'row',null,'i73d2b83f'));
+				b$4||(t$4.up$=t$3);
+				c$4=t$4.$ab || (t$4.$ab={});
+				t$5 = c$4.ac || (c$4.ac = t$5=imba.createElement('div',4096,t$4,'item',null,'i73d2b83f'));
+				(v$5=gun.name,v$5===c$4.ad || (c$4.ad_ = t$5.insert$(c$4.ad=v$5,0,c$4.ad_)));
+				t$5 = (b$5=d$5=1,c$4.ae) || (b$5=d$5=0,c$4.ae=t$5=imba.createElement('div',0,t$4,'action',"Equip",'i73d2b83f'));
+				v$5 = c$4.af || (c$4.af={equipGun: [null]});
+				v$5.equipGun[0]=gun;
+				b$5 || t$5.on$(`click`,v$5,this);
+				t$5 = (b$5=d$5=1,c$4.ag) || (b$5=d$5=0,c$4.ag=t$5=imba.createElement('div',0,t$4,'action',"Upgrade",'i73d2b83f'));
+				v$5 = c$4.ah || (c$4.ah={upgradeGun: [null]});
+				v$5.upgradeGun[0]=gun;
+				b$5 || t$5.on$(`click`,v$5,this);
+				k$3++;
+			}t$3.end$(k$3);
+			b$2 || (t$3=imba.createElement('div',0,f$$1,'row',null,'i73d2b83f'));
+			b$2 || (t$3.css$('margin-top',"5%"));
+			b$2 || (t$3=imba.createElement('div',0,f$$1,'row',null,'i73d2b83f'));
+			b$2 || (t$4=imba.createElement('div',0,t$3,'next-day',"Go to next day",'i73d2b83f'));
+			b$2 || (t$4.on$(`click`,{nextDay: true},this));
+			b$2 || (t$4=imba.createElement('div',0,t$3,'close',"Close",'i73d2b83f'));
+			b$2 || (t$4.on$(`click`,{toggleShop: true},this));
+		}
+		(c$0.e$$1_ = t$0.insert$(e$$1,1024,c$0.e$$1_));
+		(c$0.f$$1_ = t$0.insert$(f$$1,1024,c$0.f$$1_));		t$0.close$(d$0);
 		return t$0;
 	}
 } imba.tags.define('player-store',PlayerStoreComponent,{});
@@ -1782,35 +1901,34 @@ class PlayerStoreComponent extends imba.tags.get('component','ImbaElement') {
         border-color: white;
         border: 1px;
         cursor: pointer;
+        top: 10%;
+        left: 50%;
+        transform: translate(-50%,0);
     }
 
-    .row {
-        display: flex;
-    }
-
-    .buy-row {
+    .row, .buy-row {
         display: flex;
     }
 
     .item, .next-day{
-        width: 25vw;
+        width: 300px;
     }
 
-    .prices {
+    .prices, .close {
         text-align: right;
-        flex-grow: 2;
+        flex-grow: 1;
     }
 
     .action{
         text-align: right;
-        width: 12vw
+        width: 6vw
     }
 
     .buy-row:hover{
         color: #5F5;
         text-shadow: 2px 2px #A00;
         .prices {
-            transform: translate(-2vw,0) scale(1.3,1.3);
+            transform: translate(-1vw,0) scale(1.3,1.3);
         }
     }
     .action:hover{
@@ -1821,17 +1939,28 @@ class PlayerStoreComponent extends imba.tags.get('component','ImbaElement') {
     .next-day:hover {
         text-shadow: 2px 2px #A00;
         color: #5F5;
-        transform: scale(1.3,1.3) translate(3.2vw,0)
+        transform: scale(1.3,1.3) translate(1vw,0)
+    }
+    .close:hover {
+        text-shadow: 2px 2px #A00;
+        color: #5F5;
+        transform: scale(1.3,1.3) translate(-1vw,0)
     }
 
     .store {
-        font-size: 1.5vw;
-        margin: 3%;
+        font-size: calc(10px + .6vw);
+    }
+    .open-store {
+        font-size: calc(15px + .8vw);
+    }
+
+    .open-store {
+        text-align: center
     }
 
 */
 
-imba.inlineStyles("body{margin:0px;-webkit-touch-callout:none;-webkit-user-select:none;-khtml-user-select:none;-moz-user-select:none;-ms-user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;cursor:none;}app-root{display:block;position:relative;background-color:black;}@font-face{font-family:MenofNihilist;src:url(fonts/MenofNihilist.otf) format(\"opentype\");}@font-face{font-family:Typewriter;src:url(\"fonts/JMH Typewriter-Black.otf\") format(\"opentype\");}@-webkit-keyframes fadeOut{0%{opacity:1;}to{opacity:0;}}@keyframes fadeOut{0%{opacity:1;}to{opacity:0;}}@-webkit-keyframes fadeIn{0%{opacity:0;}to{opacity:1;}}@keyframes fadeIn{0%{opacity:0;}to{opacity:1;}}.fadeOut{-webkit-animation-duration:1.5s;-webkit-animation-duration:1.5s;animation-duration:1.5s;-webkit-animation-fill-mode:both;-webkit-animation-fill-mode:both;animation-fill-mode:both;-webkit-animation-name:fadeOut;-webkit-animation-name:fadeOut;animation-name:fadeOut;}.fadeIn{-webkit-animation-duration:1.5s;-webkit-animation-duration:1.5s;animation-duration:1.5s;-webkit-animation-fill-mode:both;-webkit-animation-fill-mode:both;animation-fill-mode:both;-webkit-animation-name:fadeIn;-webkit-animation-name:fadeIn;animation-name:fadeIn;}\n");
+imba.inlineStyles("body{margin:0px;-webkit-touch-callout:none;-webkit-user-select:none;-khtml-user-select:none;-moz-user-select:none;-ms-user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;cursor:none;}app-root{display:block;position:relative;background-color:black;}@font-face{font-family:MenofNihilist;src:url(fonts/MenofNihilist.otf) format(\"opentype\");}@font-face{font-family:Typewriter;src:url(\"fonts/JMH Typewriter-Black.otf\") format(\"opentype\");}@-webkit-keyframes fadeOut{0%{opacity:1;}to{opacity:0;}}@keyframes fadeOut{0%{opacity:1;}to{opacity:0;}}@-webkit-keyframes fadeIn{0%{opacity:0;}to{opacity:1;}}@keyframes fadeIn{0%{opacity:0;}to{opacity:1;}}.fadeOut{-webkit-animation-duration:1.5s;-webkit-animation-duration:1.5s;animation-duration:1.5s;-webkit-animation-fill-mode:both;-webkit-animation-fill-mode:both;animation-fill-mode:both;-webkit-animation-name:fadeOut;-webkit-animation-name:fadeOut;animation-name:fadeOut;}.fadeIn{-webkit-animation-duration:1.5s;-webkit-animation-duration:1.5s;animation-duration:1.5s;-webkit-animation-fill-mode:both;-webkit-animation-fill-mode:both;animation-fill-mode:both;-webkit-animation-name:fadeIn;-webkit-animation-name:fadeIn;animation-name:fadeIn;}.ui{position:fixed;z-index:10;}\n");
 function iter$$9(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
 class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 	
@@ -1870,18 +1999,19 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 	}
 	
 	render(){
-		var t$0, c$0, b$0, d$0, t$1, b$1, d$1, t$2, b$2, d$2, v$2, t$3, b$3, d$3, v$3, t$4, t$5, k$3, c$3, b$4, d$4, c$4, v$4, b$5, d$5, v$5;
+		var t$0, c$0, b$0, d$0, t$1, t$2, b$2, d$2, v$2, t$3, b$3, d$3, v$3, t$4, t$5, k$3, c$3, b$4, d$4, c$4, v$4, b$5, d$5, v$5;
 		t$0=this;
 		t$0.open$();
 		c$0 = (b$0=d$0=1,t$0.$) || (b$0=d$0=0,t$0.$={});
-		t$1 = (b$1=d$1=1,c$0.b) || (b$1=d$1=0,c$0.b=t$1=imba.createComponent('player-hud',0,t$0,null,null,null));
-		b$1 || !t$1.setup || t$1.setup(d$1);
-		t$1.end$(d$1);
-		b$1 || t$1.insertInto$(t$0);
-		t$1 = (b$1=d$1=1,c$0.c) || (b$1=d$1=0,c$0.c=t$1=imba.createComponent('player-store',0,t$0,null,null,null));
-		b$1 || !t$1.setup || t$1.setup(d$1);
-		t$1.end$(d$1);
-		b$1 || t$1.insertInto$(t$0);
+		b$0 || (t$1=imba.createElement('div',0,t$0,'ui',null,null));
+		t$2 = (b$2=d$2=1,c$0.b) || (b$2=d$2=0,c$0.b=t$2=imba.createComponent('player-hud',0,t$1,null,null,null));
+		b$2 || !t$2.setup || t$2.setup(d$2);
+		t$2.end$(d$2);
+		b$2 || t$2.insertInto$(t$1);
+		t$2 = (b$2=d$2=1,c$0.c) || (b$2=d$2=0,c$0.c=t$2=imba.createComponent('player-store',0,t$1,null,null,null));
+		b$2 || !t$2.setup || t$2.setup(d$2);
+		t$2.end$(d$2);
+		b$2 || t$2.insertInto$(t$1);
 		b$0 || (t$1=imba.createSVGElement('svg',0,t$0,null,null,null));
 		b$0 || (t$1.set$('transform',"scale(1,-1)"));
 		b$0 || (t$1.set$('height',"100%"));
@@ -2054,6 +2184,11 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
         animation-fill-mode: both
         -webkit-animation-name: fadeIn;
         animation-name: fadeIn
+    }
+
+    .ui {
+        position: fixed;
+        z-index: 10;
     }
 */
 //# sourceMappingURL=app.imba.js.map

@@ -19,7 +19,7 @@ def randomPosition player
     }
 
 export class Zombie
-    def constructor player
+    def constructor player, day
         @player = player
         @position = randomPosition(@player) 
         @rotation = Math.random() * 360
@@ -27,10 +27,10 @@ export class Zombie
         @state = 0
         @speed = .2
         @base_speed = .2
-        @max_speed = .6
+        @max_speed = .6 + (day / 20)
         @size = 20
         @turn = 0
-        @life = 100
+        @life = 50 + (day*3)
         @death = 0
 
     def update

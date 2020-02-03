@@ -5,13 +5,18 @@ export class Player
         @position = {x:0,y:0}
         @rotation = 0
         @inventory = inventory
-        @score = 100000
+        @score = 50
         @gun = @inventory[0]
         @holsters = [@gun]
         @speed = .4
         @nearZombies = Set.new
-        @life = 100
+        @max-life = 50
+        @life = 50
         @slots = 2
+        @safe = true
+
+    def checkShop
+        state.shop.open = false unless @inSafeZone()
 
     def update
         return if @dead
@@ -19,6 +24,7 @@ export class Player
         @move()
         @rotate()
         @shoot()
+        @checkShop()
         let x = ~~((@position.x) / 800)
         let y = ~~((@position.y) / 800)
 
@@ -98,3 +104,4 @@ export class Player
         if @holsters[@slots - 1]
             @holsters.pop()
         @holsters.unshift(gun)
+        @gun = gun

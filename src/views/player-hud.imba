@@ -3,7 +3,7 @@ import {state} from '../state'
 tag player-hud
     def render
         <self>
-            <.fadeOut=(state.player.dead)>
+            <.fadeOut=(state.player.dead) .fadeIn=(!state.player.dead)>
                 <.hud.score>
                     "score "
                     <b css:font-size="50px">

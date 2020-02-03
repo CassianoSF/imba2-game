@@ -33,8 +33,9 @@ tag app-root
 
     def render
         <self>
-            <player-hud>
-            <player-store>
+            <.ui>
+                <player-hud>
+                <player-store>
             <svg transform="scale(1,-1)" height="100%" width="100%" >
                 # CROSSHAIR
                 <g transform="translate({state.mouse.x}, {state.mouse.y})">
@@ -138,5 +139,10 @@ tag app-root
         animation-fill-mode: both
         -webkit-animation-name: fadeIn;
         animation-name: fadeIn
+    }
+
+    .ui {
+        position: fixed;
+        z-index: 10;
     }
 ###
