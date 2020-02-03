@@ -61,16 +61,74 @@ tag player-store
         state.player.slots += 1
         state.shop.slots *= 2
 
+    def back
+        state.shop.upgrade-gun = null
+
+    def buyUpgrade stat
+        return if state.player.score < state.shop.upgrade-gun.upgrades[stat]
+        state.player.score -=  state.shop.upgrade-gun.upgrades[stat]
+        state.shop.upgrade-gun.upgrades[stat] *= 2
+        let upgrade = { 
+            cap:         do state.shop.upgrade-gun.cap         += ~~(1 + state.shop.upgrade-gun.cap * 0.1)
+            rate:        do state.shop.upgrade-gun.rate        += ~~(state.shop.upgrade-gun.rate * 0.1)
+            spread:      do state.shop.upgrade-gun.spread      -= ~~(state.shop.upgrade-gun.spread * 0.1)
+            damage:      do state.shop.upgrade-gun.damage      += ~~(state.shop.upgrade-gun.damage * 0.1)
+            power:       do state.shop.upgrade-gun.power       += ~~(state.shop.upgrade-gun.power * 0.1)
+            reload_time: do state.shop.upgrade-gun.reload_time -= ~~(state.shop.upgrade-gun.reload_time * 0.1)
+        }
+        upgrade[stat]()
+
     def render
-        <self.hud.score .{state.player.inSafeZone() ? "fadeIn" : "fadeOut"}>
-            <upgrade-gun> if state.shop.upgrade-gun
+        <self.hud .{state.player.inSafeZone() ? "fadeIn" : "fadeOut"}>
+            <upgrade-gun> 
             if not state.shop.open
-                <.open-store>
+                <.open-store .fadeOut=(state.player.dead)>
                     <.buy-row :click.toggleShop>
                         <.item>
                             "Open shop"
-            else
+            if state.shop.open and state.shop.upgrade-gun
                 <.store>
+                    <h1>
+                        "UPGRADES"
+                    <h3>
+                        state.shop.upgrade-gun.name
+                    <.buy-row :click.buyUpgrade('cap')>
+                        <.item>
+                            "Capacity"
+                        <.prices>
+                            state.shop.upgrade-gun.upgrades.cap
+                    <.buy-row :click.buyUpgrade('rate')>
+                        <.item>
+                            "Rate of fire"
+                        <.prices>
+                            state.shop.upgrade-gun.upgrades.rate
+                    <.buy-row :click.buyUpgrade('spread')>
+                        <.item>
+                            "Accuracy"
+                        <.prices>
+                            state.shop.upgrade-gun.upgrades.spread
+                    <.buy-row :click.buyUpgrade('damage')>
+                        <.item>
+                            "Damage"
+                        <.prices>
+                            state.shop.upgrade-gun.upgrades.damage
+                    <.buy-row :click.buyUpgrade('power')>
+                        <.item>
+                            "Power"
+                        <.prices>
+                            state.shop.upgrade-gun.upgrades.power
+                    <.buy-row :click.buyUpgrade('reload_time')>
+                        <.item>
+                            "Reload Speed"
+                        <.prices>
+                            state.shop.upgrade-gun.upgrades.reload_time
+                    <.row>
+                        <.next-day>
+                            ""
+                        <.back :click.back>
+                            "Back"
+            if state.shop.open and not state.shop.upgrade-gun
+                <.store .fadeOut=(state.player.dead)>
                     <h1>
                         "SHOP"
                     <.buy-row>
@@ -142,11 +200,11 @@ tag player-store
         z-index: 1;
         font-family: Typewriter;
         color: white;
-        background-color: rgba(0,0,0,0.9);
+        background-color: rgba(0,0,0,0.55);
         border-color: white;
         border: 1px;
         cursor: pointer;
-        top: 10%;
+        top: 2%;
         left: 50%;
         transform: translate(-50%,0);
     }
@@ -192,10 +250,17 @@ tag player-store
         transform: scale(1.3,1.3) translate(-1vw,0)
     }
 
+    .back:hover {
+        text-shadow: 2px 2px #A00;
+        color: #5F5;
+        transform: scale(1.3,1.3)
+    }
+
     .store {
         font-size: calc(10px + .6vw);
     }
     .open-store {
+        cursor: none;
         font-size: calc(15px + .8vw);
     }
 

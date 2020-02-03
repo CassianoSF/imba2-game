@@ -5,18 +5,22 @@ export class Player
         @position = {x:0,y:0}
         @rotation = 0
         @inventory = inventory
-        @score = 50
+        @score = 100000
         @gun = @inventory[0]
         @holsters = [@gun]
         @speed = .4
         @nearZombies = Set.new
+        @nearObstacles = Set.new
         @max-life = 50
-        @life = 50
-        @slots = 2
+        @life = 5000
+        @slots = 1
         @safe = true
 
     def checkShop
         state.shop.open = false unless @inSafeZone()
+
+    def currentSector
+        "{~~(@position.x / 1000)}|{~~(@position.y / 800)}"
 
     def update
         return if @dead
@@ -25,9 +29,35 @@ export class Player
         @rotate()
         @shoot()
         @checkShop()
-        let x = ~~((@position.x) / 800)
-        let y = ~~((@position.y) / 800)
+        @updateNearZombies()
+        @updateNearObstacles()
 
+    def updateNearObstacles
+        let x = ~~((@position.x) / 1000)
+        let y = ~~((@position.y) / 800)
+        @nearObstacles.clear
+        for val of (state.obstacles["{x + 0}|{y + 0}"])
+            @nearObstacles.add(val)
+        for val of (state.obstacles["{x + 0}|{y + 1}"])
+            @nearObstacles.add(val)
+        for val of (state.obstacles["{x + 1}|{y + 1}"])
+            @nearObstacles.add(val)
+        for val of (state.obstacles["{x + 1}|{y + 0}"])
+            @nearObstacles.add(val)
+        for val of (state.obstacles["{x - 1}|{y + 0}"])
+            @nearObstacles.add(val)
+        for val of (state.obstacles["{x - 1}|{y - 1}"])
+            @nearObstacles.add(val)
+        for val of (state.obstacles["{x + 0}|{y - 1}"])
+            @nearObstacles.add(val)
+        for val of (state.obstacles["{x + 1}|{y - 1}"])
+            @nearObstacles.add(val)
+        for val of (state.obstacles["{x - 1}|{y + 1}"])
+            @nearObstacles.add(val)
+
+    def updateNearZombies
+        let x = ~~((@position.x) / 1000)
+        let y = ~~((@position.y) / 800)
         @nearZombies.clear()
         for val of (state.sector["{x + 0}|{y + 0}"])
             @nearZombies.add(val)
@@ -68,6 +98,27 @@ export class Player
         @position.x += @speed * state.delta * slower * (state.keys.ShiftLeft ? 2 : 1) if state.keys.KeyD
         @position.y += @speed * state.delta * slower * (state.keys.ShiftLeft ? 2 : 1) if state.keys.KeyW
         @position.y -= @speed * state.delta * slower * (state.keys.ShiftLeft ? 2 : 1) if state.keys.KeyS
+        @checkColision()
+
+    def checkColision
+        state.obstacles[@currentSector()] ||= Set.new
+        for obs of state.obstacles[@currentSector()]
+            if Math.sqrt(@distanceToObjectX(obs)**2 + @distanceToObjectY(obs)**2) < (10 + obs.size)
+                let dx = Math.sin((@angleToObject(obs) + 90) * 0.01745) * @speed * state.delta
+                let dy = Math.cos((@angleToObject(obs) + 90) * 0.01745) * @speed * state.delta
+                @position.x -= dx * 1.8
+                @position.y += dy * 1.8
+
+    def distanceToObjectX obj
+        Math.abs(obj.position.x - @position.x)
+
+    def distanceToObjectY obj
+        Math.abs(obj.position.y - @position.y)
+
+    def angleToObject obj
+        let dx = obj.position.x - @position.x
+        let dy = obj.position.y - @position.y
+        -(Math.atan2(dx, dy)/0.01745 - 90) % 360        
 
 
     def changeGun slot

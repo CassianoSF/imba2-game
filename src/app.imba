@@ -31,6 +31,9 @@ tag app-root
     def transformZombie zombie
         "translate({zombie.position.x}, {zombie.position.y}) rotate({zombie.rotation})"
 
+    def transformObstacle obs
+        "translate({obs.position.x}, {obs.position.y}) rotate({obs.rotation})"
+
     def render
         <self>
             <.ui>
@@ -46,6 +49,9 @@ tag app-root
 
                 # CAMERA
                 <g transform=@transformCamera() .fadeOut=(state.player.dead)>
+                    for obs of state.player.nearObstacles
+                        <g transform=@transformObstacle(obs)>
+                            <circle r=obs.size fill="grey">
 
                     # PLAYER
                     <g transform=@transformPlayer()>

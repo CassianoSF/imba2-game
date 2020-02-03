@@ -19,7 +19,7 @@ tag player-hud
                             "{i + 1}. {((state.player.holsters[i] or {}).name or '')}"
                 <.hud.ammo>
                     <b css:font-size="50px">
-                        state.player.gun.ammo
+                        "{state.player.gun.ammo}/{state.player.gun.cap}"
                     " Ammo"
             if state.player.dead
                 <div .you-died .fadeIn>
@@ -39,7 +39,7 @@ tag player-hud
     .hud {
         position: fixed;
         z-index: 1;
-        font-family: MenofNihilist;
+        font-family: Typewriter;
         color: white;
     }
 

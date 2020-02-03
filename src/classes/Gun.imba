@@ -16,7 +16,14 @@ export class Gun
         @reloading = false
         @name = name
         @price = price
-        # @penetration = penetration
+        @penetration = penetration
+        @upgrades = {}
+        @upgrades.cap         = 100 + price / 10
+        @upgrades.rate        = 100 + price / 10
+        @upgrades.spread      = 100 + price / 10
+        @upgrades.damage      = 100 + price / 10
+        @upgrades.power       = 100 + price / 10
+        @upgrades.reload_time = 100 + price / 10
 
     def fire
         return if @reloading
@@ -26,7 +33,7 @@ export class Gun
             @ammo--
             @last_shot = state.time
             for i in [0...@projectiles]
-                state.bullets.add(Bullet.new(@spread,@damage,@power,@speed))
+                state.bullets.add(Bullet.new(@spread,@damage,@power,@speed,@penetration))
 
     def reload
         unless @ammo == @cap

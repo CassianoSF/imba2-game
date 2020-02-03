@@ -1,11 +1,12 @@
 import {state} from '../state'
 
 export class Bullet
-    def constructor spread, damage, power, speed
+    def constructor spread, damage, power, speed, penetration
         @spread = spread
         @damage = damage
         @power = power
         @speed = speed
+        @penetration = penetration
         @position = {
             x: state.player.position.x + Math.cos((state.player.rotation) * 0.01745) * 5
             y: state.player.position.y + Math.sin((state.player.rotation) * 0.01745) * 5
@@ -32,10 +33,12 @@ export class Bullet
         Math.abs(zombie.position.y - @position.y)
 
     def currentSector
-        "{~~(@position.x / 800)}|{~~(@position.y / 800)}"
+        "{~~(@position.x / 1000)}|{~~(@position.y / 800)}"
 
     def checkColision
         for zombie of state.sector[@currentSector()]
             if @distanceToZombieX(zombie) < zombie.size and @distanceToZombieY(zombie) < zombie.size
-                state.bullets.delete(self)
                 zombie.takeHit(self)
+                @penetration--
+                if @penetration <= 0
+                    state.bullets.delete(self)
