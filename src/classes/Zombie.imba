@@ -1,3 +1,4 @@
+import {GameObject} from '../engine/GameObject'
 import {state} from '../state'
 
 let DRIFT = 0
@@ -5,30 +6,18 @@ let AGGRO = 1
 let ATTACK = 2
 let DEAD = 3
 
-def randomPosition player
-    let posx = Math.random() * window.innerWidth * 30 - (window.innerWidth * 15)
-    let posy = Math.random() * window.innerHeight * 30 - (window.innerHeight * 15)
-    let diffx = Math.abs(posx - @player.position.x)
-    let diffy = Math.abs(posy - @player.position.y)
-    if diffx < 400 and diffy < 400
-        return randomPosition()
-
-    return {
-        x: posx
-        y: posy
-    }
-
-export class Zombie
+export class Zombie < GameObject
     def constructor player, day
+        super
         @player = player
-        @position = randomPosition(@player) 
+        @position = GameObject.randomPosition(@player) 
         @rotation = Math.random() * 360
         @sector = "{~~(@position.x / 1000)}|{~~(@position.y / 800)}"
         @state = 0
         @speed = .2
         @base_speed = .2
         @max_speed = .6 + (day / 20)
-        @size = 20
+        @size = 10
         @turn = 0
         @life = 50 + (day*3)
         @death = 0
@@ -49,12 +38,13 @@ export class Zombie
     def execAttack
         if not @start_attack
             @start_attack = state.time
-        if state.time - @start_attack > 100 and @playerIsClose(@size * 1.5) and not @player_beaten
+        if state.time - @start_attack > 100 and @playerIsClose(@size * 2) and not @player_beaten
             @player_beaten = yes
             @player.takeHit(10)
         if state.time - @start_attack > 500
             @start_attack = no
             @player_beaten = no
+            @speed = 0
             @state = AGGRO
 
     def execDrift
@@ -68,29 +58,22 @@ export class Zombie
                 @rotation += Math.random() * 3
             elif @turn == 1
                 @rotation -= Math.random() * 3
-        @move()
+        @moveForward()
 
     def execAggro
         if @player.inSafeZone()
             @state = DRIFT
-        if @playerIsClose(@size * 1.5)
+        if @playerIsClose(@size * 2.1)
             @state = ATTACK
         @speed += 0.01 unless @speed >= @max_speed
         @rotation = @angleToPlayer()
-        @move()
+        @moveForward()
 
-    def zombieColide
-        state.sector[@sector] ||= Set.new
-        for zombie of state.sector[@sector]
-            if @distanceToObjectX(zombie) < @size and @distanceToObjectY(zombie) < @size
-                return zombie unless zombie is self
-        return no
-
-    def obstacleColide
-        state.obstacles[@sector] ||= Set.new
-        for obs of state.obstacles[@sector]
-            if Math.sqrt(@distanceToObjectX(obs)**2 + @distanceToObjectY(obs)**2) < (@size + obs.size)
-                return obs
+    def findColision obj-sectors
+        obj-sectors[@sector] ||= Set.new
+        for obj of obj-sectors[@sector]
+            if @colideCircle(obj)
+                return obj unless obj is self
         return no
 
     def angleToPlayer
@@ -98,57 +81,33 @@ export class Zombie
         let dy = @player.position.y - @position.y
         -(Math.atan2(dx, dy)/0.01745 - 90) % 360
 
-    def angleToObject obj
-        let dx = obj.position.x - @position.x
-        let dy = obj.position.y - @position.y
-        -(Math.atan2(dx, dy)/0.01745 - 90) % 360        
-
-    def distanceToPlayerX
-        Math.abs(@player.position.x - @position.x)
-
-    def distanceToPlayerY
-        Math.abs(@player.position.y - @position.y)
-
-    def distanceToObjectX obj
-        Math.abs(obj.position.x - @position.x)
-
-    def distanceToObjectY obj
-        Math.abs(obj.position.y - @position.y)
-
-    def move
-        @position.x -= Math.sin((@rotation - 90) * 0.01745) * state.delta * @speed
-        @position.y += Math.cos((@rotation - 90) * 0.01745) * state.delta * @speed
-
     def playerOnSight
         Math.abs((@angleToPlayer() - @rotation) % 360) < 30
 
     def playerIsClose distance
-        @distanceToPlayerX() < distance and @distanceToPlayerY() < distance
+        @distanceToObjectX(@player) < distance and @distanceToObjectY(@player) < distance
 
     def playerDetected
         (@playerOnSight() and @playerIsClose(750) or @playerIsClose(40)) and not @player.inSafeZone()
 
-    def currentSector
-        "{~~(@position.x / 1000)}|{~~(@position.y / 800)}"
-
     def updateSector()
         let temp_sector = @currentSector()
         if temp_sector != @sector
-            state.sector[@sector] ||= Set.new
-            state.sector[@sector].delete(self)
+            state.zombies[@sector] ||= Set.new
+            state.zombies[@sector].delete(self)
             @sector = temp_sector
-            state.sector[@sector] ||= Set.new
-            state.sector[@sector].add(self)
+            state.zombies[@sector] ||= Set.new
+            state.zombies[@sector].add(self)
 
     def checkColisions
-        let obj = @obstacleColide()
+        let obj = @findColision(state.obstacles)
         if obj
             let dx = Math.sin((@angleToObject(obj) + 90) * 0.01745) * @speed * state.delta
             let dy = Math.cos((@angleToObject(obj) + 90) * 0.01745) * @speed * state.delta
             @position.x -= dx * 1.5
             @position.y += dy * 1.5
             return
-        let zom_col = @zombieColide()
+        let zom_col = @findColision(state.zombies)
         if zom_col
             let dx = Math.sin((@angleToObject(zom_col) + 90) * 0.01745) * @speed * state.delta
             let dy = Math.cos((@angleToObject(zom_col) + 90) * 0.01745) * @speed * state.delta
@@ -162,9 +121,9 @@ export class Zombie
         @position.y += Math.cos((bullet.rotation - 90) * 0.01745) * bullet.power
         @state = AGGRO
         @life -= bullet.damage
-        @speed -= bullet.power / 30
+        @speed -= bullet.power / 30 unless @speed < 0
         if @life <= 0
-            state.sector[@sector].delete(self)
+            state.zombies[@sector].delete(self)
             state.killed.add(self)
             @state = DEAD
             @player.score += 90 + 10 * state.day

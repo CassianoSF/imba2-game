@@ -1,7 +1,7 @@
+import {Game} from './classes/Game'
 import {Gun} from './classes/Gun'
 import {Player} from './classes/Player'
 import {Zombie} from './classes/Zombie'
-import {Game} from './classes/Game'
 import {Obstacle} from './classes/Obstacle'
 
 var guns = 
@@ -16,11 +16,11 @@ var guns =
         Gun.new(5,     60,    4,      100,    20,    1,           15,    1600,         'm95',              18000)
     ]
 var player = Player.new([guns[0]])
-let sector = {} 
-for i in [0..5000]
+let zombies = {} 
+for i in [0..50000]
     let zombie = Zombie.new(player, 1)
-    sector[zombie.currentSector()] ||= Set.new
-    sector[zombie.currentSector()].add(zombie)
+    zombies[zombie.currentSector()] ||= Set.new
+    zombies[zombie.currentSector()].add(zombie)
 
 
 let obstacles = {}
@@ -37,7 +37,7 @@ export var state =
     player: player
     bullets: Set.new
     camera: {}
-    sector: sector
+    zombies: zombies
     killed: Set.new
     delta: 1
     day: 1

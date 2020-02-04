@@ -22,13 +22,13 @@ tag player-store
 
     def nextDay
         state.day++
-        for own key, sector of state.sector
+        for own key, sector of state.zombies
             sector.clear()
 
         for i in [0..(5000 + 1000 * (state.day ** 1.4))]
             let zombie = Zombie.new(state.player, state.day)
-            state.sector[zombie.currentSector()] ||= Set.new
-            state.sector[zombie.currentSector()].add(zombie)
+            state.zombies[zombie.currentSector()] ||= Set.new
+            state.zombies[zombie.currentSector()].add(zombie)
 
         state.shop.open = no
 
@@ -48,13 +48,13 @@ tag player-store
 
     def upgradeSpeed
         state.player.score -= state.shop.speed
-        state.player.speed += 0.05
+        state.player.max-speed += 0.05
         state.shop.speed *= 2
 
     def upgradeStamina
         state.player.score -= state.shop.stamina
-        state.player.stamina += 10 
-        state.shop.stamina *= 10 
+        state.player.max-stamina += 300 
+        state.shop.max-stamina *= 10 
 
     def upgradeHolster
         state.player.score -= state.shop.slots

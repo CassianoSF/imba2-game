@@ -4,6 +4,10 @@ tag player-hud
     def render
         <self>
             <.fadeOut=(state.player.dead) .fadeIn=(!state.player.dead)>
+                <.hud.stamina css:font-size="20px">
+                    "Stamina "
+                    <b>
+                        "{~~(state.player.stamina / state.player.max-stamina * 100)}%"
                 <.hud.score>
                     "score "
                     <b css:font-size="50px">
@@ -41,6 +45,11 @@ tag player-hud
         z-index: 1;
         font-family: Typewriter;
         color: white;
+    }
+    .stamina {
+        bottom: 10%;
+        right: 2%;
+        font-size: 15px;
     }
 
     .score {

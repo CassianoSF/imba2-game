@@ -1,7 +1,9 @@
+import {GameObject} from '../engine/GameObject'
 import {state} from '../state'
 
-export class Bullet
+export class Bullet < GameObject
     def constructor spread, damage, power, speed, penetration
+        super
         @spread = spread
         @damage = damage
         @power = power
@@ -17,27 +19,12 @@ export class Bullet
         @checkColision()
         @position.x += Math.cos((@rotation) * 0.01745) * @speed * state.delta
         @position.y += Math.sin((@rotation) * 0.01745) * @speed * state.delta
-        if @distanceToPlayerX() > window.innerWidth or @distanceToPlayerY() > window.innerHeight
+        if @distanceToObjectX(state.player) > window.innerWidth or @distanceToObjectY(state.player) > window.innerHeight
             state.bullets.delete(self)
 
-    def distanceToPlayerX
-        Math.abs(state.player.position.x - @position.x)
-    
-    def distanceToPlayerY
-        Math.abs(state.player.position.y - @position.y)
-
-    def distanceToZombieX(zombie)
-        Math.abs(zombie.position.x - @position.x)
-
-    def distanceToZombieY(zombie)
-        Math.abs(zombie.position.y - @position.y)
-
-    def currentSector
-        "{~~(@position.x / 1000)}|{~~(@position.y / 800)}"
-
     def checkColision
-        for zombie of state.sector[@currentSector()]
-            if @distanceToZombieX(zombie) < zombie.size and @distanceToZombieY(zombie) < zombie.size
+        for zombie of state.zombies[@currentSector()]
+            if @distanceToObjectX(zombie) < (zombie.size * 2) and @distanceToObjectY(zombie) < (zombie.size * 2)
                 zombie.takeHit(self)
                 @penetration--
                 if @penetration <= 0

@@ -69,16 +69,16 @@ tag app-root
                     # ZOMBIES
                     for zombie of state.player.nearZombies
                         <g transform=@transformZombie(zombie)>
-                            <circle r=(zombie.size / 2) fill="red" stroke='black'>
-                            <rect width=(zombie.size) height="4" y="6" fill="red">
-                            <rect width=(zombie.size) height="4" y="-10" fill="red">
+                            <circle r=(zombie.size) fill="red" stroke='black'>
+                            <rect width=(zombie.size * 2) height="4" y="6" fill="red">
+                            <rect width=(zombie.size * 2) height="4" y="-10" fill="red">
 
                     # BODIES
                     for zombie of state.killed
                         <g transform=@transformZombie(zombie) .fadeOut>
-                            <circle r=(zombie.size / 2) fill="grey" stroke='black'>
-                            <rect width=(zombie.size) height="4" y="6" fill="grey">
-                            <rect width=(zombie.size) height="4" y="-10" fill="grey">
+                            <circle r=(zombie.size) fill="grey" stroke='black'>
+                            <rect width=(zombie.size * 2) height="4" y="6" fill="grey">
+                            <rect width=(zombie.size * 2) height="4" y="-10" fill="grey">
 
                     # SAFE ZONE
                     <circle x="0" y="0" r=50 stroke="green" fill="rgba(0,255,0,0.1)">

@@ -1,6 +1,6 @@
 import {state} from '../state'
 
-export class Game
+export global class Game
     def constructor renderer
         @renderer = renderer
         state.first_date = Date.new
