@@ -1,13 +1,20 @@
 import {state} from '../state'
 
 tag player-hud
+    def stamina
+        ~~(state.player.stamina / state.player.max-stamina * 100)
+
     def render
         <self>
             <.fadeOut=(state.player.dead) .fadeIn=(!state.player.dead)>
-                <.hud.stamina css:font-size="20px">
+                <.hud.day css:font-size="30px">
+                    "Day "
+                    <b>
+                        state.day
+                <.hud.stamina css:font-size="20px" css:color="{@stamina() < 1 ? "red" : "white"}">
                     "Stamina "
                     <b>
-                        "{~~(state.player.stamina / state.player.max-stamina * 100)}%"
+                        "{@stamina()}%"
                 <.hud.score>
                     "score "
                     <b css:font-size="50px">
@@ -46,6 +53,12 @@ tag player-hud
         font-family: Typewriter;
         color: white;
     }
+
+    .day {
+        top: 2%;
+        left: 2%;
+    }
+
     .stamina {
         bottom: 10%;
         right: 2%;

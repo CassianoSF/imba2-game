@@ -12,11 +12,11 @@ export class Player < GameObject
         @gun = @inventory[0]
         @holsters = [@gun]
         @speed = 0
-        @max-speed = 1
+        @max-speed = .8
         @nearZombies = Set.new
         @nearObstacles = Set.new
-        @max-life = 50
-        @life = 5000
+        @max-life = 100
+        @life = 100
         @slots = 1
         @safe = true
         @stamina = 300
@@ -62,11 +62,11 @@ export class Player < GameObject
         # Aceleration
         if key-count and state.keys.ShiftLeft and @stamina
             @stamina--
-            @speed += 0.01 unless @speed >= @max-speed 
+            @speed += (@max-speed/50) unless @speed >= @max-speed 
         elif key-count
             @stamina++ unless (@stamina >= @max-stamina or state.keys.ShiftLeft)
-            @speed += 0.01 unless @speed >= @max-speed / 2
-            @speed -= 0.01 if     @speed >= @max-speed / 2
+            @speed += (@max-speed/50) unless @speed >= @max-speed / 2
+            @speed -= (@max-speed/50) if     @speed >= @max-speed / 2
         else
             @stamina++ unless (@stamina >= @max-stamina or state.keys.ShiftLeft)
             @speed = 0

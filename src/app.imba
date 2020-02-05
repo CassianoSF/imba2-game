@@ -4,6 +4,10 @@ import './views/player-store'
 
 tag app-root
 
+    def build
+        @animations = []
+        @loadAnimations()
+
     def mount
         state.game.new(self)
 
@@ -34,12 +38,41 @@ tag app-root
     def transformObstacle obs
         "translate({obs.position.x}, {obs.position.y}) rotate({obs.rotation})"
 
+
+    def transformShopArrow
+        let pos = state.player.position
+        let rotation = -(Math.atan2(pos.x, pos.y)/0.01745 + 180) % 360
+        "translate({pos.x}, {pos.y}) rotate({rotation})"
+
+
+
+        # for own name, anim of state.animations.feet
+        #     for a, i in Array.from(Array.new(anim.size))
+        #         <svg:defs>
+        #             <svg:pattern id="{anim.name}-{i}" patternUnits="userSpaceOnUse" width="100" height="100" patternContentUnits="userSpaceOnUse">
+        #                 <svg:image href="{anim.path}{i}.png" width="100" height="100">
+
+    def loadAnimations
+        for own gun, anims of state.animations.player
+            for own action, anim of anims
+                for a, i in [0...anim.size]
+                    @animations.push({
+                        name: "{anim.name}-{i}"
+                        path: "{anim.path}{i}"
+                    })
+
     def render
         <self>
             <.ui>
                 <player-hud>
                 <player-store>
-            <svg transform="scale(1,-1)" height="100%" width="100%" >
+            <svg transform="scale(1,-1)" height="100%" width="100%">
+                for animation in @animations
+                    <defs>
+                        <pattern id="{animation.name}" patternUnits="userSpaceOnUse" width="100" height="100" patternContentUnits="userSpaceOnUse">
+                            <image href="{animation.path}.png" width="100" height="100">
+
+
                 # CROSSHAIR
                 <g transform="translate({state.mouse.x}, {state.mouse.y})">
                     <line y1=4 y2=10 stroke='#5F5'>
@@ -53,9 +86,16 @@ tag app-root
                         <g transform=@transformObstacle(obs)>
                             <circle r=obs.size fill="grey">
 
+                    # SHOP ARROW
+                    if state.player.distanceTo(0,0) > 600
+                        <g transform=@transformShopArrow() .fadeIn>
+                            <g transform="translate(0,250) scale(2,2)">
+                                <path fill="rgba(0,255,0,0.4)" d="M0 0l0.93 0 0 21.69c1.42,-0.19 2.96,-1.19 5.18,-3l-5.68 9.66 -5.61 -9.78c2.2,1.91 3.7,2.97 5.18,3.13l0 -21.7z">
+
                     # PLAYER
                     <g transform=@transformPlayer()>
-                        <circle r="10" fill="white">
+                        <circle r=10 fill="white">
+                        <rect width=100 height=100 transform="scale(-.7,.7) rotate(90) translate(-50,-50)" fill="url(#handgun-idle-0)">
 
                         # GUN
                         <g transform='translate(5, 5)'>
@@ -80,7 +120,7 @@ tag app-root
                             <rect width=(zombie.size * 2) height="4" y="6" fill="grey">
                             <rect width=(zombie.size * 2) height="4" y="-10" fill="grey">
 
-                    # SAFE ZONE
+                    # SHOP
                     <circle x="0" y="0" r=50 stroke="green" fill="rgba(0,255,0,0.1)">
 
 ### css

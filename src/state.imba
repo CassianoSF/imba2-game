@@ -1,8 +1,283 @@
+import {Animation} from './engine/Animation'
+
 import {Game} from './classes/Game'
 import {Gun} from './classes/Gun'
 import {Player} from './classes/Player'
 import {Zombie} from './classes/Zombie'
 import {Obstacle} from './classes/Obstacle'
+
+let animations = 
+    player:
+        knife:
+            idle:   Animation.new
+                path: "textures/knife/idle/survivor-idle_knife_"
+                name: "knife-idle"
+                size: 19
+                frame-length: 3
+                adjust: 
+                    scale: "1.15,1.15"
+                    translate: "-5,0"
+
+            move:   Animation.new
+                path: "textures/knife/move/survivor-move_knife_"
+                name: "knife-move"
+                size: 19
+                frame-length: 3
+                adjust: 
+                    scale: "1.15,1.15"
+                    translate: "-5,0"
+
+            attack: Animation.new
+                path: "textures/knife/meleeattack/survivor-meleeattack_knife_"
+                name: "knife-meleeattack"
+                size: 14
+                frame-length: 2
+                adjust: 
+                    scale: "1.3,1.3"
+                    translate: "-5,5"
+
+        handgun:
+            idle:   Animation.new
+                path: "textures/handgun/idle/survivor-idle_handgun_"
+                name: "handgun-idle"
+                size: 19
+                frame-length: 3
+                adjust: 
+                    scale: "1,1"
+                    translate: "0,0"
+
+            move:   Animation.new
+                path: "textures/handgun/move/survivor-move_handgun_"
+                name: "handgun-move"
+                size: 19
+                frame-length: 3
+                adjust: 
+                    scale: "1,1"
+                    translate: "0,0"
+
+            attack: Animation.new
+                path: "textures/handgun/meleeattack/survivor-meleeattack_handgun_"
+                name: "handgun-meleeattack"
+                size: 14
+                frame-length: 2
+                adjust: 
+                    scale: "1.2,1.2"
+                    translate: "0,-5"
+
+            shoot:  Animation.new
+                path: "textures/handgun/shoot/survivor-shoot_handgun_"
+                name: "handgun-shoot"
+                size: 2
+                frame-length: 3
+                adjust: 
+                    scale: "1,1"
+                    translate: "0,0"
+
+            reload: Animation.new
+                path: "textures/handgun/reload/survivor-reload_handgun_"
+                name: "handgun-reload"
+                size: 14
+                frame-length: 3
+                adjust: 
+                    scale: "1,1"
+                    translate: "0,0"
+
+        rifle:
+            idle:   Animation.new
+                path: "textures/rifle/idle/survivor-idle_rifle_"
+                name: "rifle-idle"
+                size: 19
+                frame-length: 3
+                adjust: 
+                    scale: "1.25,1.25"
+                    translate: "0,-10"
+
+            move:   Animation.new
+                path: "textures/rifle/move/survivor-move_rifle_"
+                name: "rifle-move"
+                size: 19
+                frame-length: 3
+                adjust: 
+                    scale: "1.25,1.25"
+                    translate: "0,-10"
+
+            attack: Animation.new
+                path: "textures/rifle/meleeattack/survivor-meleeattack_rifle_"
+                name: "rifle-meleeattack"
+                size: 14
+                frame-length: 2
+                adjust: 
+                    scale: "1.45,1.45"
+                    translate: "-5,-20"
+
+            shoot:  Animation.new
+                path: "textures/rifle/shoot/survivor-shoot_rifle_"
+                name: "rifle-shoot"
+                size: 2
+                frame-length: 3
+                adjust: 
+                    scale: "1.25,1.25"
+                    translate: "0,-10"
+
+            reload: Animation.new
+                path: "textures/rifle/reload/survivor-reload_rifle_"
+                name: "rifle-reload"
+                size: 14
+                frame-length: 3
+                adjust: 
+                    scale: "1.25,1.25"
+                    translate: "0,-10"
+        shotgun:
+            idle:   Animation.new
+                path: "textures/shotgun/idle/survivor-idle_shotgun_"
+                name: "shotgun-idle"
+                size: 19
+                frame-length: 3
+                adjust: 
+                    scale: "1.25,1.25"
+                    translate: "0,-10"
+
+            move:   Animation.new
+                path: "textures/shotgun/move/survivor-move_shotgun_"
+                name: "shotgun-move"
+                size: 19
+                frame-length: 3
+                adjust: 
+                    scale: "1.25,1.25"
+                    translate: "0,-10"
+
+            attack: Animation.new
+                path: "textures/shotgun/meleeattack/survivor-meleeattack_shotgun_"
+                name: "shotgun-meleeattack"
+                size: 14
+                frame-length: 2
+                adjust: 
+                    scale: "1.45,1.45"
+                    translate: "-5,-20"
+
+            shoot:  Animation.new
+                path: "textures/shotgun/shoot/survivor-shoot_shotgun_"
+                name: "shotgun-shoot"
+                size: 2
+                frame-length: 3
+                adjust: 
+                    scale: "1.25,1.25"
+                    translate: "0,-10"
+
+            reload: Animation.new
+                path: "textures/shotgun/reload/survivor-reload_shotgun_"
+                name: "shotgun-reload"
+                size: 14
+                frame-length: 3
+                adjust: 
+                    scale: "1.25,1.25"
+                    translate: "0,-10"
+
+        flashlight:
+            idle:   Animation.new
+                path: "textures/flashlight/idle/survivor-idle_flashlight_"
+                name: "flashlight-idle"
+                size: 19
+                frame-length: 3
+                adjust: 
+                    scale: "1.25,1.25"
+                    translate: "0,-10"
+
+            move:   Animation.new
+                path: "textures/flashlight/move/survivor-move_flashlight_"
+                name: "flashlight-move"
+                size: 19
+                frame-length: 3
+                adjust: 
+                    scale: "1.25,1.25"
+                    translate: "0,-10"
+
+            attack: Animation.new
+                path: "textures/flashlight/meleeattack/survivor-meleeattack_flashlight_"
+                name: "flashlight-meleeattack"
+                size: 14
+                frame-length: 2
+                adjust: 
+                    scale: "1.25,1.25"
+                    translate: "-5,-10"
+
+    feet:
+        idle:         Animation.new
+            path: "textures/feet/idle/survivor-idle_"
+            name: "feet-idle"
+            size: 1
+            frame-length: 3
+            adjust: 
+                scale: "0.9,0.9"
+                translate: "0,10"
+
+        run:          Animation.new
+            path: "textures/feet/run/survivor-run_"
+            name: "feet-run"
+            size: 19
+            frame-length: 3
+            adjust: 
+                scale: "0.9,0.9"
+                translate: "0,10"
+
+        walk:         Animation.new
+            path: "textures/feet/walk/survivor-walk_"
+            name: "feet-walk"
+            size: 19
+            frame-length: 3
+            adjust: 
+                scale: "0.9,0.9"
+                translate: "0,10"
+
+        strafe_left:  Animation.new
+            path: "textures/feet/strafe_left/survivor-strafe_left_"
+            name: "feet-strafe_left"
+            size: 19
+            frame-length: 3
+            adjust: 
+                scale: "0.9,0.9"
+                translate: "0,10"
+
+        strafe_right: Animation.new
+            path: "textures/feet/strafe_right/survivor-strafe_right_"
+            name: "feet-strafe_right"
+            size: 19
+            frame-length: 3
+            adjust: 
+                scale: "0.9,0.9"
+                translate: "0,10"
+
+    zombie:
+        idle:    Animation.new
+            path: "idle"
+            size: 16
+            frame-length: 3
+            adjust: 
+                scale: "1,1"
+                translate: "0,0"
+
+        attack:  Animation.new
+            path: "attack"
+            size: 8
+            frame-length: 2
+            adjust: 
+                scale: "1.3,1.3"
+                translate: "0,0"
+
+        move:    Animation.new
+            path: "move"
+            size: 16
+            frame-length: 3
+            adjust: 
+                scale: "1.3,1.3"
+                translate: "0,0"
+
+
+
+
+
+
+
 
 var guns = 
     [   #       cap,   rate,  spread, damage, power, projectiles, speed, reload_time,  name,               price
@@ -17,7 +292,7 @@ var guns =
     ]
 var player = Player.new([guns[0]])
 let zombies = {} 
-for i in [0..50000]
+for i in [0..5000]
     let zombie = Zombie.new(player, 1)
     zombies[zombie.currentSector()] ||= Set.new
     zombies[zombie.currentSector()].add(zombie)
@@ -25,7 +300,7 @@ for i in [0..50000]
 
 let obstacles = {}
 for i in [0..10000]
-    let ob = Obstacle.new
+    let ob = Obstacle.new(player)
     obstacles[ob.currentSector()] ||= Set.new
     obstacles[ob.currentSector()].add(ob)
 
@@ -51,6 +326,7 @@ export var state =
         upgrade-gun: null
         health: 500
         speed: 500
-        stamina: 500
+        max-stamina: 500
         slots: 5000
     }
+    animations: animations

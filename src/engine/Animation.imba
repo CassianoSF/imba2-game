@@ -1,3 +1,5 @@
 export class Animation
-	def contructor
-		return
+    def constructor obj
+        for own key, value of obj
+            self[key] = value
+

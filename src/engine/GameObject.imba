@@ -42,3 +42,13 @@ export class GameObject
         let dx = obj.position.x - @position.x
         let dy = obj.position.y - @position.y
         -(Math.atan2(dx, dy)/0.01745 - 90) % 360        
+
+    def angleTo x, y
+        let dx = x - @position.x
+        let dy = y - @position.y
+        -(Math.atan2(dx, dy)/0.01745 + 180) % 360        
+
+    def distanceTo x, y
+        let dx = Math.abs(x - @position.x)
+        let dy = Math.abs(y - @position.y)
+        Math.sqrt(dx**2 + dy**2)

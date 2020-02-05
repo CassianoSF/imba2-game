@@ -1104,6 +1104,13 @@ imba$1.createSVGElement = function (name,bitflags,parent,flags,text,sfc){
 
 // import './intersect'
 
+class Animation {
+	constructor(obj){
+		for (let value, i = 0, keys = Object.keys(obj), l = keys.length, key; i < l; i++){
+			key = keys[i];value = obj[key];this[key] = value;
+		}	}
+}
+
 function iter$$4(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }var global$ = (typeof window !== 'undefined' ? window : (typeof global !== 'undefined' ? global : null));
 
 class Game {
@@ -1208,6 +1215,18 @@ class GameObject {
 		let dx = obj.position.x - this.position.x;
 		let dy = obj.position.y - this.position.y;
 		return -(Math.atan2(dx,dy) / 0.01745 - 90) % 360;
+	}
+	
+	angleTo(x,y){
+		let dx = x - this.position.x;
+		let dy = y - this.position.y;
+		return -(Math.atan2(dx,dy) / 0.01745 + 180) % 360;
+	}
+	
+	distanceTo(x,y){
+		let dx = Math.abs(x - this.position.x);
+		let dy = Math.abs(y - this.position.y);
+		return Math.sqrt(dx ** 2 + dy ** 2);
 	}
 }
 
@@ -1318,11 +1337,11 @@ class Player extends GameObject {
 		this.gun = this.inventory[0];
 		this.holsters = [this.gun];
 		this.speed = 0;
-		this.maxSpeed = 1;
+		this.maxSpeed = .8;
 		this.nearZombies = new Set();
 		this.nearObstacles = new Set();
-		this.maxLife = 50;
-		this.life = 5000;
+		this.maxLife = 100;
+		this.life = 100;
 		this.slots = 1;
 		this.safe = true;
 		this.stamina = 300;
@@ -1375,8 +1394,8 @@ class Player extends GameObject {
 		// Aceleration
 		if (keyCount && state.keys.ShiftLeft && this.stamina) {
 			this.stamina--;
-			if (this.speed < this.maxSpeed) { this.speed += 0.01; }		} else if (keyCount) {
-			if (!(this.stamina >= this.maxStamina || state.keys.ShiftLeft)) { this.stamina++; }			if (this.speed < this.maxSpeed / 2) { this.speed += 0.01; }			if (this.speed >= this.maxSpeed / 2) { this.speed -= 0.01; }		} else {
+			if (this.speed < this.maxSpeed) { this.speed += (this.maxSpeed / 50); }		} else if (keyCount) {
+			if (!(this.stamina >= this.maxStamina || state.keys.ShiftLeft)) { this.stamina++; }			if (this.speed < this.maxSpeed / 2) { this.speed += (this.maxSpeed / 50); }			if (this.speed >= this.maxSpeed / 2) { this.speed -= (this.maxSpeed / 50); }		} else {
 			if (!(this.stamina >= this.maxStamina || state.keys.ShiftLeft)) { this.stamina++; }			this.speed = 0;
 		}		
 		// Diagonal correction
@@ -1513,7 +1532,7 @@ class Zombie extends GameObject {
 			this.state = DRIFT;
 		}		if (this.playerIsClose(this.size * 2.1)) {
 			this.state = ATTACK;
-		}		if (this.speed < this.max_speed) { this.speed += 0.01; }		this.rotation = this.angleToPlayer();
+		}		if (this.speed < this.max_speed) { this.speed += 0.01; }		this.rotation = this.angleToObject(this.player);
 		return this.moveForward();
 	}
 	
@@ -1524,14 +1543,8 @@ class Zombie extends GameObject {
 				if (!(obj === this)) { return obj }			}		}		return false;
 	}
 	
-	angleToPlayer(){
-		let dx = this.player.position.x - this.position.x;
-		let dy = this.player.position.y - this.position.y;
-		return -(Math.atan2(dx,dy) / 0.01745 - 90) % 360;
-	}
-	
 	playerOnSight(){
-		return Math.abs((this.angleToPlayer() - this.rotation) % 360) < 30;
+		return Math.abs((this.angleToObject(this.player) - this.rotation) % 360) < 30;
 	}
 	
 	playerIsClose(distance){
@@ -1561,7 +1574,6 @@ class Zombie extends GameObject {
 			let dy = Math.cos((this.angleToObject(obj) + 90) * 0.01745) * this.speed * state.delta;
 			this.position.x = this.position.x - dx * 1.5;
 			this.position.y = this.position.y + dy * 1.5;
-			return;
 		}		let zom_col = this.findColision(state.zombies);
 		if (zom_col) {
 			let dx = Math.sin((this.angleToObject(zom_col) + 90) * 0.01745) * this.speed * state.delta;
@@ -1590,18 +1602,355 @@ class Obstacle extends GameObject {
 	static init$(){
 		return super.inherited instanceof Function && super.inherited(this);
 	}
-	constructor(){
+	constructor(player){
 		super(...arguments);
-		this.position = {
-			x: 10000 - Math.random() * 20000,
-			y: 10000 - Math.random() * 20000
-		};
+		this.position = GameObject.randomPosition(player);
 		this.rotation = Math.random() * 360;
 		this.size = 10 + Math.random() * 40;
 	}
 } Obstacle.init$();
 
 var $1, $2;
+
+let animations = {
+	player: {
+		knife: {
+			idle: new Animation(
+				{path: "textures/knife/idle/survivor-idle_knife_",
+				name: "knife-idle",
+				size: 19,
+				frameLength: 3,
+				adjust: {
+					scale: "1.15,1.15",
+					translate: "-5,0"
+				}}
+			),
+			
+			move: new Animation(
+				{path: "textures/knife/move/survivor-move_knife_",
+				name: "knife-move",
+				size: 19,
+				frameLength: 3,
+				adjust: {
+					scale: "1.15,1.15",
+					translate: "-5,0"
+				}}
+			),
+			
+			attack: new Animation(
+				{path: "textures/knife/meleeattack/survivor-meleeattack_knife_",
+				name: "knife-meleeattack",
+				size: 14,
+				frameLength: 2,
+				adjust: {
+					scale: "1.3,1.3",
+					translate: "-5,5"
+				}}
+			)
+		},
+		
+		handgun: {
+			idle: new Animation(
+				{path: "textures/handgun/idle/survivor-idle_handgun_",
+				name: "handgun-idle",
+				size: 19,
+				frameLength: 3,
+				adjust: {
+					scale: "1,1",
+					translate: "0,0"
+				}}
+			),
+			
+			move: new Animation(
+				{path: "textures/handgun/move/survivor-move_handgun_",
+				name: "handgun-move",
+				size: 19,
+				frameLength: 3,
+				adjust: {
+					scale: "1,1",
+					translate: "0,0"
+				}}
+			),
+			
+			attack: new Animation(
+				{path: "textures/handgun/meleeattack/survivor-meleeattack_handgun_",
+				name: "handgun-meleeattack",
+				size: 14,
+				frameLength: 2,
+				adjust: {
+					scale: "1.2,1.2",
+					translate: "0,-5"
+				}}
+			),
+			
+			shoot: new Animation(
+				{path: "textures/handgun/shoot/survivor-shoot_handgun_",
+				name: "handgun-shoot",
+				size: 2,
+				frameLength: 3,
+				adjust: {
+					scale: "1,1",
+					translate: "0,0"
+				}}
+			),
+			
+			reload: new Animation(
+				{path: "textures/handgun/reload/survivor-reload_handgun_",
+				name: "handgun-reload",
+				size: 14,
+				frameLength: 3,
+				adjust: {
+					scale: "1,1",
+					translate: "0,0"
+				}}
+			)
+		},
+		
+		rifle: {
+			idle: new Animation(
+				{path: "textures/rifle/idle/survivor-idle_rifle_",
+				name: "rifle-idle",
+				size: 19,
+				frameLength: 3,
+				adjust: {
+					scale: "1.25,1.25",
+					translate: "0,-10"
+				}}
+			),
+			
+			move: new Animation(
+				{path: "textures/rifle/move/survivor-move_rifle_",
+				name: "rifle-move",
+				size: 19,
+				frameLength: 3,
+				adjust: {
+					scale: "1.25,1.25",
+					translate: "0,-10"
+				}}
+			),
+			
+			attack: new Animation(
+				{path: "textures/rifle/meleeattack/survivor-meleeattack_rifle_",
+				name: "rifle-meleeattack",
+				size: 14,
+				frameLength: 2,
+				adjust: {
+					scale: "1.45,1.45",
+					translate: "-5,-20"
+				}}
+			),
+			
+			shoot: new Animation(
+				{path: "textures/rifle/shoot/survivor-shoot_rifle_",
+				name: "rifle-shoot",
+				size: 2,
+				frameLength: 3,
+				adjust: {
+					scale: "1.25,1.25",
+					translate: "0,-10"
+				}}
+			),
+			
+			reload: new Animation(
+				{path: "textures/rifle/reload/survivor-reload_rifle_",
+				name: "rifle-reload",
+				size: 14,
+				frameLength: 3,
+				adjust: {
+					scale: "1.25,1.25",
+					translate: "0,-10"
+				}}
+			)
+		},
+		shotgun: {
+			idle: new Animation(
+				{path: "textures/shotgun/idle/survivor-idle_shotgun_",
+				name: "shotgun-idle",
+				size: 19,
+				frameLength: 3,
+				adjust: {
+					scale: "1.25,1.25",
+					translate: "0,-10"
+				}}
+			),
+			
+			move: new Animation(
+				{path: "textures/shotgun/move/survivor-move_shotgun_",
+				name: "shotgun-move",
+				size: 19,
+				frameLength: 3,
+				adjust: {
+					scale: "1.25,1.25",
+					translate: "0,-10"
+				}}
+			),
+			
+			attack: new Animation(
+				{path: "textures/shotgun/meleeattack/survivor-meleeattack_shotgun_",
+				name: "shotgun-meleeattack",
+				size: 14,
+				frameLength: 2,
+				adjust: {
+					scale: "1.45,1.45",
+					translate: "-5,-20"
+				}}
+			),
+			
+			shoot: new Animation(
+				{path: "textures/shotgun/shoot/survivor-shoot_shotgun_",
+				name: "shotgun-shoot",
+				size: 2,
+				frameLength: 3,
+				adjust: {
+					scale: "1.25,1.25",
+					translate: "0,-10"
+				}}
+			),
+			
+			reload: new Animation(
+				{path: "textures/shotgun/reload/survivor-reload_shotgun_",
+				name: "shotgun-reload",
+				size: 14,
+				frameLength: 3,
+				adjust: {
+					scale: "1.25,1.25",
+					translate: "0,-10"
+				}}
+			)
+		},
+		
+		flashlight: {
+			idle: new Animation(
+				{path: "textures/flashlight/idle/survivor-idle_flashlight_",
+				name: "flashlight-idle",
+				size: 19,
+				frameLength: 3,
+				adjust: {
+					scale: "1.25,1.25",
+					translate: "0,-10"
+				}}
+			),
+			
+			move: new Animation(
+				{path: "textures/flashlight/move/survivor-move_flashlight_",
+				name: "flashlight-move",
+				size: 19,
+				frameLength: 3,
+				adjust: {
+					scale: "1.25,1.25",
+					translate: "0,-10"
+				}}
+			),
+			
+			attack: new Animation(
+				{path: "textures/flashlight/meleeattack/survivor-meleeattack_flashlight_",
+				name: "flashlight-meleeattack",
+				size: 14,
+				frameLength: 2,
+				adjust: {
+					scale: "1.25,1.25",
+					translate: "-5,-10"
+				}}
+			)
+		}
+	},
+	
+	feet: {
+		idle: new Animation(
+			{path: "textures/feet/idle/survivor-idle_",
+			name: "feet-idle",
+			size: 1,
+			frameLength: 3,
+			adjust: {
+				scale: "0.9,0.9",
+				translate: "0,10"
+			}}
+		),
+		
+		run: new Animation(
+			{path: "textures/feet/run/survivor-run_",
+			name: "feet-run",
+			size: 19,
+			frameLength: 3,
+			adjust: {
+				scale: "0.9,0.9",
+				translate: "0,10"
+			}}
+		),
+		
+		walk: new Animation(
+			{path: "textures/feet/walk/survivor-walk_",
+			name: "feet-walk",
+			size: 19,
+			frameLength: 3,
+			adjust: {
+				scale: "0.9,0.9",
+				translate: "0,10"
+			}}
+		),
+		
+		strafe_left: new Animation(
+			{path: "textures/feet/strafe_left/survivor-strafe_left_",
+			name: "feet-strafe_left",
+			size: 19,
+			frameLength: 3,
+			adjust: {
+				scale: "0.9,0.9",
+				translate: "0,10"
+			}}
+		),
+		
+		strafe_right: new Animation(
+			{path: "textures/feet/strafe_right/survivor-strafe_right_",
+			name: "feet-strafe_right",
+			size: 19,
+			frameLength: 3,
+			adjust: {
+				scale: "0.9,0.9",
+				translate: "0,10"
+			}}
+		)
+	},
+	
+	zombie: {
+		idle: new Animation(
+			{path: "idle",
+			size: 16,
+			frameLength: 3,
+			adjust: {
+				scale: "1,1",
+				translate: "0,0"
+			}}
+		),
+		
+		attack: new Animation(
+			{path: "attack",
+			size: 8,
+			frameLength: 2,
+			adjust: {
+				scale: "1.3,1.3",
+				translate: "0,0"
+			}}
+		),
+		
+		move: new Animation(
+			{path: "move",
+			size: 16,
+			frameLength: 3,
+			adjust: {
+				scale: "1.3,1.3",
+				translate: "0,0"
+			}}
+		)
+	}
+};
+
+
+
+
+
+
+
 
 var guns = [ //       cap,   rate,  spread, damage, power, projectiles, speed, reload_time,  name,               price
 	new Gun(6,150,6,30,15,1,8,2000,'revolver',0),
@@ -1615,7 +1964,7 @@ var guns = [ //       cap,   rate,  spread, damage, power, projectiles, speed, r
 ];
 var player = new Player([guns[0]]);
 let zombies = {};
-for (let i = 0; i <= 50000; i++) {
+for (let i = 0; i <= 5000; i++) {
 	let zombie = new Zombie(player,1);
 	zombies[$1 = zombie.currentSector()] || (zombies[$1] = new Set());
 	zombies[zombie.currentSector()].add(zombie);
@@ -1623,7 +1972,7 @@ for (let i = 0; i <= 50000; i++) {
 
 let obstacles = {};
 for (let i = 0; i <= 10000; i++) {
-	let ob = new Obstacle();
+	let ob = new Obstacle(player);
 	obstacles[$2 = ob.currentSector()] || (obstacles[$2] = new Set());
 	obstacles[ob.currentSector()].add(ob);
 }
@@ -1650,19 +1999,24 @@ var state = {
 		upgradeGun: null,
 		health: 500,
 		speed: 500,
-		stamina: 500,
+		maxStamina: 500,
 		slots: 5000
-	}
+	},
+	animations: animations
 };
 
-imba.inlineStyles(".you-died[data-i1cf1fae0]{left:33%;top:20%;font-size:15vw;color:#900;position:fixed;z-index:1;font-family:MenofNihilist;}.hud[data-i1cf1fae0]{position:fixed;z-index:1;font-family:Typewriter;color:white;}.stamina[data-i1cf1fae0]{bottom:10%;right:2%;font-size:15px;}.score[data-i1cf1fae0]{top:2%;right:2%;font-size:30px;}.life[data-i1cf1fae0]{bottom:2%;right:2%;font-size:30px;}.slots[data-i1cf1fae0]{left:2%;bottom:10%;font-size:16px;}.select-slot[data-i1cf1fae0]{color:green;}.ammo[data-i1cf1fae0]{bottom:2%;left:2%;font-size:30px;}.onHand[data-i1cf1fae0]{color:yellow;}\n");
+imba.inlineStyles(".you-died[data-i1cf1fae0]{left:33%;top:20%;font-size:15vw;color:#900;position:fixed;z-index:1;font-family:MenofNihilist;}.hud[data-i1cf1fae0]{position:fixed;z-index:1;font-family:Typewriter;color:white;}.day[data-i1cf1fae0]{top:2%;left:2%;}.stamina[data-i1cf1fae0]{bottom:10%;right:2%;font-size:15px;}.score[data-i1cf1fae0]{top:2%;right:2%;font-size:30px;}.life[data-i1cf1fae0]{bottom:2%;right:2%;font-size:30px;}.slots[data-i1cf1fae0]{left:2%;bottom:10%;font-size:16px;}.select-slot[data-i1cf1fae0]{color:green;}.ammo[data-i1cf1fae0]{bottom:2%;left:2%;font-size:30px;}.onHand[data-i1cf1fae0]{color:yellow;}\n");
 
 class PlayerHudComponent extends imba.tags.get('component','ImbaElement') {
 	init$(){
 		super.init$();return this.setAttribute('data-i1cf1fae0','');
 	}
+	stamina(){
+		return ~~(state.player.stamina / state.player.maxStamina * 100);
+	}
+	
 	render(){
-		var t$0, c$0, b$0, d$0, t$1, b$1, d$1, v$1, t$2, b$2, d$2, v$2, t$3, v$3, b$3, d$3, k$3, c$3, t$4, b$4, d$4, c$4, v$4, ae$$1;
+		var t$0, c$0, b$0, d$0, t$1, b$1, d$1, v$1, t$2, b$2, d$2, v$2, t$3, v$3, b$3, d$3, k$3, c$3, t$4, b$4, d$4, c$4, v$4, aj$$1;
 		t$0=this;
 		t$0.open$();
 		c$0 = (b$0=d$0=1,t$0.$) || (b$0=d$0=0,t$0.$={});
@@ -1670,46 +2024,52 @@ class PlayerHudComponent extends imba.tags.get('component','ImbaElement') {
 		(v$1=(state.player.dead||undefined),v$1===c$0.d||(d$1|=2,c$0.d=v$1));
 		(v$1=(!state.player.dead||undefined),v$1===c$0.f||(d$1|=2,c$0.f=v$1));
 		(d$1&2 && t$1.flag$((c$0.d ? `fadeOut` : '')+' '+(c$0.f ? `fadeIn` : '')));
-		t$2 = (b$2=d$2=1,c$0.g) || (b$2=d$2=0,c$0.g=t$2=imba.createElement('div',0,t$1,'hud stamina',null,'i1cf1fae0'));
-		b$2 || (t$2.css$('font-size',"20px"));
-		(v$2="Stamina ",v$2===c$0.h || (c$0.h_ = t$2.insert$(c$0.h=v$2,0,c$0.h_)));
+		t$2 = (b$2=d$2=1,c$0.g) || (b$2=d$2=0,c$0.g=t$2=imba.createElement('div',0,t$1,'hud day',null,'i1cf1fae0'));
+		b$2 || (t$2.css$('font-size',"30px"));
+		(v$2="Day ",v$2===c$0.h || (c$0.h_ = t$2.insert$(c$0.h=v$2,0,c$0.h_)));
 		t$3 = c$0.i || (c$0.i = t$3=imba.createElement('b',4096,t$2,null,null,'i1cf1fae0'));
-		(v$3=("" + (~~(state.player.stamina / state.player.maxStamina * 100)) + "%"),v$3===c$0.j || (c$0.j_ = t$3.insert$(c$0.j=v$3,0,c$0.j_)));
-		t$2 = c$0.k || (c$0.k = t$2=imba.createElement('div',0,t$1,'hud score',null,'i1cf1fae0'));
-		(v$2="score ",v$2===c$0.l || (c$0.l_ = t$2.insert$(c$0.l=v$2,0,c$0.l_)));
-		t$3 = (b$3=d$3=1,c$0.m) || (b$3=d$3=0,c$0.m=t$3=imba.createElement('b',4096,t$2,null,null,'i1cf1fae0'));
+		(v$3=state.day,v$3===c$0.j || (c$0.j_ = t$3.insert$(c$0.j=v$3,0,c$0.j_)));
+		t$2 = (b$2=d$2=1,c$0.k) || (b$2=d$2=0,c$0.k=t$2=imba.createElement('div',0,t$1,'hud stamina',null,'i1cf1fae0'));
+		b$2 || (t$2.css$('font-size',"20px"));
+		(v$2=("" + ((this.stamina() < 1) ? "red" : "white")),v$2===c$0.l || (t$2.css$('color',c$0.l=v$2)));
+		(v$2="Stamina ",v$2===c$0.m || (c$0.m_ = t$2.insert$(c$0.m=v$2,0,c$0.m_)));
+		t$3 = c$0.n || (c$0.n = t$3=imba.createElement('b',4096,t$2,null,null,'i1cf1fae0'));
+		(v$3=("" + this.stamina() + "%"),v$3===c$0.o || (c$0.o_ = t$3.insert$(c$0.o=v$3,0,c$0.o_)));
+		t$2 = c$0.p || (c$0.p = t$2=imba.createElement('div',0,t$1,'hud score',null,'i1cf1fae0'));
+		(v$2="score ",v$2===c$0.q || (c$0.q_ = t$2.insert$(c$0.q=v$2,0,c$0.q_)));
+		t$3 = (b$3=d$3=1,c$0.r) || (b$3=d$3=0,c$0.r=t$3=imba.createElement('b',4096,t$2,null,null,'i1cf1fae0'));
 		b$3 || (t$3.css$('font-size',"50px"));
-		(v$3=state.player.score,v$3===c$0.n || (c$0.n_ = t$3.insert$(c$0.n=v$3,0,c$0.n_)));
-		t$2 = c$0.o || (c$0.o = t$2=imba.createElement('div',0,t$1,'hud life',null,'i1cf1fae0'));
-		(v$2="Life ",v$2===c$0.p || (c$0.p_ = t$2.insert$(c$0.p=v$2,0,c$0.p_)));
-		t$3 = (b$3=d$3=1,c$0.q) || (b$3=d$3=0,c$0.q=t$3=imba.createElement('b',4096,t$2,null,null,'i1cf1fae0'));
+		(v$3=state.player.score,v$3===c$0.s || (c$0.s_ = t$3.insert$(c$0.s=v$3,0,c$0.s_)));
+		t$2 = c$0.t || (c$0.t = t$2=imba.createElement('div',0,t$1,'hud life',null,'i1cf1fae0'));
+		(v$2="Life ",v$2===c$0.u || (c$0.u_ = t$2.insert$(c$0.u=v$2,0,c$0.u_)));
+		t$3 = (b$3=d$3=1,c$0.v) || (b$3=d$3=0,c$0.v=t$3=imba.createElement('b',4096,t$2,null,null,'i1cf1fae0'));
 		b$3 || (t$3.css$('font-size',"50px"));
-		(v$3=state.player.life,v$3===c$0.r || (c$0.r_ = t$3.insert$(c$0.r=v$3,0,c$0.r_)));
-		t$2 = (b$2=d$2=1,c$0.s) || (b$2=d$2=0,c$0.s=t$2=imba.createElement('div',2560,t$1,'hud slots',null,'i1cf1fae0'));
-		(v$2=(this.selected_gun||undefined),v$2===c$0.u||(d$2|=2,c$0.u=v$2));
-		(d$2&2 && t$2.flag$('hud slots'+' '+(c$0.u ? `select-slot` : '')));
-		t$3 = c$0.v || (c$0.v = t$3 = imba.createIndexedFragment(0,t$2));
+		(v$3=state.player.life,v$3===c$0.w || (c$0.w_ = t$3.insert$(c$0.w=v$3,0,c$0.w_)));
+		t$2 = (b$2=d$2=1,c$0.x) || (b$2=d$2=0,c$0.x=t$2=imba.createElement('div',2560,t$1,'hud slots',null,'i1cf1fae0'));
+		(v$2=(this.selected_gun||undefined),v$2===c$0.z||(d$2|=2,c$0.z=v$2));
+		(d$2&2 && t$2.flag$('hud slots'+' '+(c$0.z ? `select-slot` : '')));
+		t$3 = c$0.aa || (c$0.aa = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
 		for (let len = state.player.slots, i = 0, rd = len - i; (rd > 0) ? (i < len) : (i > len); (rd > 0) ? (i++) : (i--)) {
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createElement('div',4608,t$3,null,null,'i1cf1fae0'));
 			b$4||(t$4.up$=t$3);
-			c$4=t$4.$w || (t$4.$w={});
-			(v$4=(state.player.gun == state.player.holsters[i]||undefined),v$4===c$4.y||(d$4|=2,c$4.y=v$4));
-			(d$4&2 && t$4.flag$((c$4.y ? `onHand` : '')));
-			(v$4=("" + (i + 1) + ". " + ((state.player.holsters[i] || {}).name || '')),v$4===c$4.z || (c$4.z_ = t$4.insert$(c$4.z=v$4,0,c$4.z_)));
+			c$4=t$4.$ab || (t$4.$ab={});
+			(v$4=(state.player.gun == state.player.holsters[i]||undefined),v$4===c$4.ad||(d$4|=2,c$4.ad=v$4));
+			(d$4&2 && t$4.flag$((c$4.ad ? `onHand` : '')));
+			(v$4=("" + (i + 1) + ". " + ((state.player.holsters[i] || {}).name || '')),v$4===c$4.ae || (c$4.ae_ = t$4.insert$(c$4.ae=v$4,0,c$4.ae_)));
 			k$3++;
 		}t$3.end$(k$3);
-		t$2 = c$0.aa || (c$0.aa = t$2=imba.createElement('div',0,t$1,'hud ammo',null,'i1cf1fae0'));
-		t$3 = (b$3=d$3=1,c$0.ab) || (b$3=d$3=0,c$0.ab=t$3=imba.createElement('b',4096,t$2,null,null,'i1cf1fae0'));
+		t$2 = c$0.af || (c$0.af = t$2=imba.createElement('div',0,t$1,'hud ammo',null,'i1cf1fae0'));
+		t$3 = (b$3=d$3=1,c$0.ag) || (b$3=d$3=0,c$0.ag=t$3=imba.createElement('b',4096,t$2,null,null,'i1cf1fae0'));
 		b$3 || (t$3.css$('font-size',"50px"));
-		(v$3=("" + (state.player.gun.ammo) + "/" + (state.player.gun.cap)),v$3===c$0.ac || (c$0.ac_ = t$3.insert$(c$0.ac=v$3,0,c$0.ac_)));
-		(v$2=" Ammo",v$2===c$0.ad || (c$0.ad_ = t$2.insert$(c$0.ad=v$2,0,c$0.ad_)));
+		(v$3=("" + (state.player.gun.ammo) + "/" + (state.player.gun.cap)),v$3===c$0.ah || (c$0.ah_ = t$3.insert$(c$0.ah=v$3,0,c$0.ah_)));
+		(v$2=" Ammo",v$2===c$0.ai || (c$0.ai_ = t$2.insert$(c$0.ai=v$2,0,c$0.ai_)));
 		if (state.player.dead) {
-			ae$$1 = (b$2=d$2=1,c$0.ae) || (b$2=d$2=0,c$0.ae=ae$$1=imba.createElement('div',0,null,'you-died fadeIn',"you died",'i1cf1fae0'));
-			b$2||(ae$$1.up$=t$0);
+			aj$$1 = (b$2=d$2=1,c$0.aj) || (b$2=d$2=0,c$0.aj=aj$$1=imba.createElement('div',0,null,'you-died fadeIn',"you died",'i1cf1fae0'));
+			b$2||(aj$$1.up$=t$0);
 		}
-		(c$0.ae$$1_ = t$0.insert$(ae$$1,1024,c$0.ae$$1_));		t$0.close$(d$0);
+		(c$0.aj$$1_ = t$0.insert$(aj$$1,1024,c$0.aj$$1_));		t$0.close$(d$0);
 		return t$0;
 	}
 } imba.tags.define('player-hud',PlayerHudComponent,{});
@@ -1731,6 +2091,12 @@ class PlayerHudComponent extends imba.tags.get('component','ImbaElement') {
         font-family: Typewriter;
         color: white;
     }
+
+    .day {
+        top: 2%;
+        left: 2%;
+    }
+
     .stamina {
         bottom: 10%;
         right: 2%;
@@ -1769,7 +2135,7 @@ class PlayerHudComponent extends imba.tags.get('component','ImbaElement') {
     }
 */
 
-imba.inlineStyles(".hud[data-i73d2b83f]{position:fixed;z-index:1;font-family:Typewriter;color:white;background-color:rgba(0,0,0,0.55);border-color:white;border:1px;cursor:pointer;top:2%;left:50%;-webkit-transform:translate(-50%,0);-ms-transform:translate(-50%,0);transform:translate(-50%,0);}.row[data-i73d2b83f],.buy-row[data-i73d2b83f]{display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;}.item[data-i73d2b83f],.next-day[data-i73d2b83f]{width:300px;}.prices[data-i73d2b83f],.close[data-i73d2b83f]{text-align:right;-webkit-box-flex:1;-webkit-flex-grow:1;-ms-flex-positive:1;flex-grow:1;}.action[data-i73d2b83f]{text-align:right;width:6vw;}.buy-row[data-i73d2b83f]:hover{color:#5F5;text-shadow:2px 2px #A00;}.buy-row:hover .prices[data-i73d2b83f]{-webkit-transform:translate(-1vw,0) scale(1.3,1.3);-ms-transform:translate(-1vw,0) scale(1.3,1.3);transform:translate(-1vw,0) scale(1.3,1.3);}.action[data-i73d2b83f]:hover{text-shadow:2px 2px #A00;color:#5F5;-webkit-transform:scale(1.3,1.3);-ms-transform:scale(1.3,1.3);transform:scale(1.3,1.3);}.next-day[data-i73d2b83f]:hover{text-shadow:2px 2px #A00;color:#5F5;-webkit-transform:scale(1.3,1.3) translate(1vw,0);-ms-transform:scale(1.3,1.3) translate(1vw,0);transform:scale(1.3,1.3) translate(1vw,0);}.close[data-i73d2b83f]:hover{text-shadow:2px 2px #A00;color:#5F5;-webkit-transform:scale(1.3,1.3) translate(-1vw,0);-ms-transform:scale(1.3,1.3) translate(-1vw,0);transform:scale(1.3,1.3) translate(-1vw,0);}.back[data-i73d2b83f]:hover{text-shadow:2px 2px #A00;color:#5F5;-webkit-transform:scale(1.3,1.3);-ms-transform:scale(1.3,1.3);transform:scale(1.3,1.3);}.store[data-i73d2b83f]{font-size:calc(10px + .6vw);}.open-store[data-i73d2b83f]{cursor:none;font-size:calc(15px + .8vw);}.open-store[data-i73d2b83f]{text-align:center;}\n");
+imba.inlineStyles(".hud[data-i73d2b83f]{position:fixed;z-index:1;font-family:Typewriter;color:white;border-color:white;border:1px;cursor:pointer;top:2%;left:50%;-webkit-transform:translate(-50%,0);-ms-transform:translate(-50%,0);transform:translate(-50%,0);}.row[data-i73d2b83f],.buy-row[data-i73d2b83f]{display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;}.item[data-i73d2b83f],.next-day[data-i73d2b83f]{width:300px;}.prices[data-i73d2b83f],.close[data-i73d2b83f]{text-align:right;-webkit-box-flex:1;-webkit-flex-grow:1;-ms-flex-positive:1;flex-grow:1;}.action[data-i73d2b83f]{text-align:right;width:6vw;}.buy-row:hover .prices[data-i73d2b83f]{-webkit-transform:translate(-1vw,0) scale(1.3,1.3);-ms-transform:translate(-1vw,0) scale(1.3,1.3);transform:translate(-1vw,0) scale(1.3,1.3);}.action[data-i73d2b83f]:hover{-webkit-transform:scale(1.3,1.3);-ms-transform:scale(1.3,1.3);transform:scale(1.3,1.3);}.next-day[data-i73d2b83f]:hover{-webkit-transform:scale(1.3,1.3) translate(1vw,0);-ms-transform:scale(1.3,1.3) translate(1vw,0);transform:scale(1.3,1.3) translate(1vw,0);}.close[data-i73d2b83f]:hover{-webkit-transform:scale(1.3,1.3) translate(-1vw,0);-ms-transform:scale(1.3,1.3) translate(-1vw,0);transform:scale(1.3,1.3) translate(-1vw,0);}.back[data-i73d2b83f]:hover{-webkit-transform:scale(1.3,1.3);-ms-transform:scale(1.3,1.3);transform:scale(1.3,1.3);}.buy-row[data-i73d2b83f]:hover,.action[data-i73d2b83f]:hover,.next-day[data-i73d2b83f]:hover,.close[data-i73d2b83f]:hover,.back[data-i73d2b83f]:hover{text-shadow:0px 0px 10px #A00;}.store[data-i73d2b83f]{font-size:calc(10px + .6vw);background-color:rgba(0,0,0,0.55);}.open-store[data-i73d2b83f]{cursor:none;font-size:calc(15px + .8vw);text-align:center;top:25%;}\n");
 function iter$$8(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
 class PlayerStoreComponent extends imba.tags.get('component','ImbaElement') {
 	
@@ -1814,40 +2180,40 @@ class PlayerStoreComponent extends imba.tags.get('component','ImbaElement') {
 	
 	healPlayer(){
 		var player_;
-		(player_ = state.player).score = player_.score - state.day * 40;
+		if (state.player.score < state.day * 40) { return }		(player_ = state.player).score = player_.score - state.day * 40;
 		return state.player.life = state.player.maxLife;
 	}
 	
 	buyAmmo(){
 		var player_;
-		(player_ = state.player).score = player_.score - state.day * 200;
+		if (state.player.score < state.day * 200) { return }		(player_ = state.player).score = player_.score - state.day * 200;
 		return state.player.life = state.player.maxLife;
 	}
 	
 	upgradeHealth(){
 		var player_, $1, shop_;
-		(player_ = state.player).score = player_.score - state.shop.health;
+		if (state.player.score < state.shop.health) { return }		(player_ = state.player).score = player_.score - state.shop.health;
 		($1 = state.player).maxLife = $1.maxLife + 10;
 		return (shop_ = state.shop).health = shop_.health * 2;
 	}
 	
 	upgradeSpeed(){
 		var player_, $1, shop_;
-		(player_ = state.player).score = player_.score - state.shop.speed;
+		if (state.player.score < state.shop.speed) { return }		(player_ = state.player).score = player_.score - state.shop.speed;
 		($1 = state.player).maxSpeed = $1.maxSpeed + 0.05;
 		return (shop_ = state.shop).speed = shop_.speed * 2;
 	}
 	
 	upgradeStamina(){
 		var player_, $1, shop_;
-		(player_ = state.player).score = player_.score - state.shop.stamina;
+		if (state.player.score < state.shop.stamina) { return }		(player_ = state.player).score = player_.score - state.shop.stamina;
 		($1 = state.player).maxStamina = $1.maxStamina + 300;
 		return (shop_ = state.shop).maxStamina = shop_.maxStamina * 10;
 	}
 	
 	upgradeHolster(){
 		var player_, $1, shop_;
-		(player_ = state.player).score = player_.score - state.shop.slots;
+		if (state.player.score < state.shop.slots) { return }		(player_ = state.player).score = player_.score - state.shop.slots;
 		($1 = state.player).slots = $1.slots + 1;
 		return (shop_ = state.shop).slots = shop_.slots * 2;
 	}
@@ -1878,163 +2244,159 @@ class PlayerStoreComponent extends imba.tags.get('component','ImbaElement') {
 	}
 	
 	render(){
-		var t$0, c$0, b$0, d$0, v$0, t$1, b$1, d$1, e$$1, b$2, d$2, v$2, t$3, t$4, h$$1, v$3, v$4, w$$1, aj$$3, b$4, d$4, t$5, v$5, k$3, c$3, c$4, b$5, d$5;
+		var t$0, c$0, b$0, d$0, v$0, d$$1, b$2, d$2, v$2, t$3, t$4, g$$1, v$3, v$4, v$$1, ai$$3, b$4, d$4, t$5, v$5, k$3, c$3, c$4, b$5, d$5;
 		t$0=this;
 		t$0.open$();
 		c$0 = (b$0=d$0=1,t$0.$) || (b$0=d$0=0,t$0.$={});
 		(v$0=state.player.inSafeZone() ? "fadeIn" : "fadeOut",v$0===c$0.c||(d$0|=2,c$0.c=v$0));
-		((!b$0||d$0&2) && t$0.flagSelf$('hud'+' '+(c$0.c||'')));
-		t$1 = (b$1=d$1=1,c$0.d) || (b$1=d$1=0,c$0.d=t$1=imba.createComponent('upgrade-gun',0,t$0,null,null,'i73d2b83f'));
-		b$1 || !t$1.setup || t$1.setup(d$1);
-		t$1.end$(d$1);
-		b$1 || t$1.insertInto$(t$0);
+		((!b$0||d$0&2) && t$0.flagSelf$((c$0.c||'')));
 		if (!state.shop.open) {
-			e$$1 = (b$2=d$2=1,c$0.e) || (b$2=d$2=0,c$0.e=e$$1=imba.createElement('div',512,null,'open-store',null,'i73d2b83f'));
-			b$2||(e$$1.up$=t$0);
-			(v$2=(state.player.dead||undefined),v$2===c$0.g||(d$2|=2,c$0.g=v$2));
-			(d$2&2 && e$$1.flag$('open-store'+' '+(c$0.g ? `fadeOut` : '')));
-			b$2 || (t$3=imba.createElement('div',0,e$$1,'buy-row',null,'i73d2b83f'));
+			d$$1 = (b$2=d$2=1,c$0.d) || (b$2=d$2=0,c$0.d=d$$1=imba.createElement('div',512,null,'hud open-store',null,'i73d2b83f'));
+			b$2||(d$$1.up$=t$0);
+			(v$2=(state.player.dead||undefined),v$2===c$0.f||(d$2|=2,c$0.f=v$2));
+			(d$2&2 && d$$1.flag$('hud open-store'+' '+(c$0.f ? `fadeOut` : '')));
+			b$2 || (t$3=imba.createElement('div',0,d$$1,'buy-row',null,'i73d2b83f'));
 			b$2 || (t$3.on$(`click`,{toggleShop: true},this));
-			b$2 || (t$4=imba.createElement('div',0,t$3,'item',"Open shop",'i73d2b83f'));
+			b$2 || (t$4=imba.createElement('div',0,t$3,'back',"Open shop",'i73d2b83f'));
 		}
-		(c$0.e$$1_ = t$0.insert$(e$$1,1024,c$0.e$$1_));		if (state.shop.open && state.shop.upgradeGun) {
-			h$$1 = (b$2=d$2=1,c$0.h) || (b$2=d$2=0,c$0.h=h$$1=imba.createElement('div',0,null,'store',null,'i73d2b83f'));
-			b$2||(h$$1.up$=t$0);
-			b$2 || (t$3=imba.createElement('h1',0,h$$1,null,"UPGRADES",'i73d2b83f'));
-			t$3 = c$0.i || (c$0.i = t$3=imba.createElement('h3',4096,h$$1,null,null,'i73d2b83f'));
-			(v$3=state.shop.upgradeGun.name,v$3===c$0.j || (c$0.j_ = t$3.insert$(c$0.j=v$3,0,c$0.j_)));
-			b$2 || (t$3=imba.createElement('div',0,h$$1,'buy-row',null,'i73d2b83f'));
+		(c$0.d$$1_ = t$0.insert$(d$$1,1024,c$0.d$$1_));		if (state.shop.open && state.shop.upgradeGun) {
+			g$$1 = (b$2=d$2=1,c$0.g) || (b$2=d$2=0,c$0.g=g$$1=imba.createElement('div',0,null,'hud store',null,'i73d2b83f'));
+			b$2||(g$$1.up$=t$0);
+			b$2 || (t$3=imba.createElement('h1',0,g$$1,null,"UPGRADES",'i73d2b83f'));
+			t$3 = c$0.h || (c$0.h = t$3=imba.createElement('h3',4096,g$$1,null,null,'i73d2b83f'));
+			(v$3=state.shop.upgradeGun.name,v$3===c$0.i || (c$0.i_ = t$3.insert$(c$0.i=v$3,0,c$0.i_)));
+			b$2 || (t$3=imba.createElement('div',0,g$$1,'buy-row',null,'i73d2b83f'));
 			b$2 || (t$3.on$(`click`,{buyUpgrade: ['cap']},this));
 			b$2 || (t$4=imba.createElement('div',0,t$3,'item',"Capacity",'i73d2b83f'));
-			t$4 = c$0.k || (c$0.k = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
-			(v$4=state.shop.upgradeGun.upgrades.cap,v$4===c$0.l || (c$0.l_ = t$4.insert$(c$0.l=v$4,0,c$0.l_)));
-			b$2 || (t$3=imba.createElement('div',0,h$$1,'buy-row',null,'i73d2b83f'));
+			t$4 = c$0.j || (c$0.j = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
+			(v$4=state.shop.upgradeGun.upgrades.cap,v$4===c$0.k || (c$0.k_ = t$4.insert$(c$0.k=v$4,0,c$0.k_)));
+			b$2 || (t$3=imba.createElement('div',0,g$$1,'buy-row',null,'i73d2b83f'));
 			b$2 || (t$3.on$(`click`,{buyUpgrade: ['rate']},this));
 			b$2 || (t$4=imba.createElement('div',0,t$3,'item',"Rate of fire",'i73d2b83f'));
-			t$4 = c$0.m || (c$0.m = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
-			(v$4=state.shop.upgradeGun.upgrades.rate,v$4===c$0.n || (c$0.n_ = t$4.insert$(c$0.n=v$4,0,c$0.n_)));
-			b$2 || (t$3=imba.createElement('div',0,h$$1,'buy-row',null,'i73d2b83f'));
+			t$4 = c$0.l || (c$0.l = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
+			(v$4=state.shop.upgradeGun.upgrades.rate,v$4===c$0.m || (c$0.m_ = t$4.insert$(c$0.m=v$4,0,c$0.m_)));
+			b$2 || (t$3=imba.createElement('div',0,g$$1,'buy-row',null,'i73d2b83f'));
 			b$2 || (t$3.on$(`click`,{buyUpgrade: ['spread']},this));
 			b$2 || (t$4=imba.createElement('div',0,t$3,'item',"Accuracy",'i73d2b83f'));
-			t$4 = c$0.o || (c$0.o = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
-			(v$4=state.shop.upgradeGun.upgrades.spread,v$4===c$0.p || (c$0.p_ = t$4.insert$(c$0.p=v$4,0,c$0.p_)));
-			b$2 || (t$3=imba.createElement('div',0,h$$1,'buy-row',null,'i73d2b83f'));
+			t$4 = c$0.n || (c$0.n = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
+			(v$4=state.shop.upgradeGun.upgrades.spread,v$4===c$0.o || (c$0.o_ = t$4.insert$(c$0.o=v$4,0,c$0.o_)));
+			b$2 || (t$3=imba.createElement('div',0,g$$1,'buy-row',null,'i73d2b83f'));
 			b$2 || (t$3.on$(`click`,{buyUpgrade: ['damage']},this));
 			b$2 || (t$4=imba.createElement('div',0,t$3,'item',"Damage",'i73d2b83f'));
-			t$4 = c$0.q || (c$0.q = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
-			(v$4=state.shop.upgradeGun.upgrades.damage,v$4===c$0.r || (c$0.r_ = t$4.insert$(c$0.r=v$4,0,c$0.r_)));
-			b$2 || (t$3=imba.createElement('div',0,h$$1,'buy-row',null,'i73d2b83f'));
+			t$4 = c$0.p || (c$0.p = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
+			(v$4=state.shop.upgradeGun.upgrades.damage,v$4===c$0.q || (c$0.q_ = t$4.insert$(c$0.q=v$4,0,c$0.q_)));
+			b$2 || (t$3=imba.createElement('div',0,g$$1,'buy-row',null,'i73d2b83f'));
 			b$2 || (t$3.on$(`click`,{buyUpgrade: ['power']},this));
 			b$2 || (t$4=imba.createElement('div',0,t$3,'item',"Power",'i73d2b83f'));
-			t$4 = c$0.s || (c$0.s = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
-			(v$4=state.shop.upgradeGun.upgrades.power,v$4===c$0.t || (c$0.t_ = t$4.insert$(c$0.t=v$4,0,c$0.t_)));
-			b$2 || (t$3=imba.createElement('div',0,h$$1,'buy-row',null,'i73d2b83f'));
+			t$4 = c$0.r || (c$0.r = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
+			(v$4=state.shop.upgradeGun.upgrades.power,v$4===c$0.s || (c$0.s_ = t$4.insert$(c$0.s=v$4,0,c$0.s_)));
+			b$2 || (t$3=imba.createElement('div',0,g$$1,'buy-row',null,'i73d2b83f'));
 			b$2 || (t$3.on$(`click`,{buyUpgrade: ['reload_time']},this));
 			b$2 || (t$4=imba.createElement('div',0,t$3,'item',"Reload Speed",'i73d2b83f'));
-			t$4 = c$0.u || (c$0.u = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
-			(v$4=state.shop.upgradeGun.upgrades.reload_time,v$4===c$0.v || (c$0.v_ = t$4.insert$(c$0.v=v$4,0,c$0.v_)));
-			b$2 || (t$3=imba.createElement('div',0,h$$1,'row',null,'i73d2b83f'));
+			t$4 = c$0.t || (c$0.t = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
+			(v$4=state.shop.upgradeGun.upgrades.reload_time,v$4===c$0.u || (c$0.u_ = t$4.insert$(c$0.u=v$4,0,c$0.u_)));
+			b$2 || (t$3=imba.createElement('div',0,g$$1,'row',null,'i73d2b83f'));
 			b$2 || (t$4=imba.createElement('div',0,t$3,'next-day',"",'i73d2b83f'));
 			b$2 || (t$4=imba.createElement('div',0,t$3,'back',"Back",'i73d2b83f'));
 			b$2 || (t$4.on$(`click`,{back: true},this));
 		}
-		(c$0.h$$1_ = t$0.insert$(h$$1,1024,c$0.h$$1_));		if (state.shop.open && !state.shop.upgradeGun) {
-			w$$1 = (b$2=d$2=1,c$0.w) || (b$2=d$2=0,c$0.w=w$$1=imba.createElement('div',3584,null,'store',null,'i73d2b83f'));
-			b$2||(w$$1.up$=t$0);
-			(v$2=(state.player.dead||undefined),v$2===c$0.y||(d$2|=2,c$0.y=v$2));
-			(d$2&2 && w$$1.flag$('store'+' '+(c$0.y ? `fadeOut` : '')));
-			b$2 || (t$3=imba.createElement('h1',0,w$$1,null,"SHOP",'i73d2b83f'));
-			b$2 || (t$3=imba.createElement('div',0,w$$1,'buy-row',null,'i73d2b83f'));
+		(c$0.g$$1_ = t$0.insert$(g$$1,1024,c$0.g$$1_));		if (state.shop.open && !state.shop.upgradeGun) {
+			v$$1 = (b$2=d$2=1,c$0.v) || (b$2=d$2=0,c$0.v=v$$1=imba.createElement('div',3584,null,'hud store',null,'i73d2b83f'));
+			b$2||(v$$1.up$=t$0);
+			(v$2=(state.player.dead||undefined),v$2===c$0.x||(d$2|=2,c$0.x=v$2));
+			(d$2&2 && v$$1.flag$('hud store'+' '+(c$0.x ? `fadeOut` : '')));
+			b$2 || (t$3=imba.createElement('h1',0,v$$1,null,"SHOP",'i73d2b83f'));
+			b$2 || (t$3=imba.createElement('div',0,v$$1,'buy-row',null,'i73d2b83f'));
 			b$2 || (t$4=imba.createElement('div',0,t$3,'item',"Item",'i73d2b83f'));
 			b$2 || (t$4=imba.createElement('div',0,t$3,'prices',"price",'i73d2b83f'));
-			b$2 || (t$3=imba.createElement('div',0,w$$1,'row',null,'i73d2b83f'));
+			b$2 || (t$3=imba.createElement('div',0,v$$1,'row',null,'i73d2b83f'));
 			b$2 || (t$3.css$('margin-top',"5%"));
-			b$2 || (t$3=imba.createElement('div',0,w$$1,'buy-row',null,'i73d2b83f'));
+			b$2 || (t$3=imba.createElement('div',0,v$$1,'buy-row',null,'i73d2b83f'));
 			b$2 || (t$3.on$(`click`,{healPlayer: true},this));
 			b$2 || (t$4=imba.createElement('div',0,t$3,'item',"Heal",'i73d2b83f'));
-			t$4 = c$0.z || (c$0.z = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
-			(v$4=state.day * 40,v$4===c$0.aa || (c$0.aa_ = t$4.insert$(c$0.aa=v$4,0,c$0.aa_)));
-			b$2 || (t$3=imba.createElement('div',0,w$$1,'buy-row',null,'i73d2b83f'));
+			t$4 = c$0.y || (c$0.y = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
+			(v$4=state.day * 40,v$4===c$0.z || (c$0.z_ = t$4.insert$(c$0.z=v$4,0,c$0.z_)));
+			b$2 || (t$3=imba.createElement('div',0,v$$1,'buy-row',null,'i73d2b83f'));
 			b$2 || (t$3.on$(`click`,{buyAmmo: true},this));
 			b$2 || (t$4=imba.createElement('div',0,t$3,'item',"Buy Ammo",'i73d2b83f'));
-			t$4 = c$0.ab || (c$0.ab = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
-			(v$4=state.day * 200,v$4===c$0.ac || (c$0.ac_ = t$4.insert$(c$0.ac=v$4,0,c$0.ac_)));
-			b$2 || (t$3=imba.createElement('div',0,w$$1,'row',null,'i73d2b83f'));
+			t$4 = c$0.aa || (c$0.aa = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
+			(v$4=state.day * 200,v$4===c$0.ab || (c$0.ab_ = t$4.insert$(c$0.ab=v$4,0,c$0.ab_)));
+			b$2 || (t$3=imba.createElement('div',0,v$$1,'row',null,'i73d2b83f'));
 			b$2 || (t$3.css$('margin-top',"5%"));
-			b$2 || (t$3=imba.createElement('div',0,w$$1,'buy-row',null,'i73d2b83f'));
+			b$2 || (t$3=imba.createElement('div',0,v$$1,'buy-row',null,'i73d2b83f'));
 			b$2 || (t$3.on$(`click`,{upgradeHealth: true},this));
 			b$2 || (t$4=imba.createElement('div',0,t$3,'item',"Upgrade health",'i73d2b83f'));
-			t$4 = c$0.ad || (c$0.ad = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
-			(v$4=state.shop.health,v$4===c$0.ae || (c$0.ae_ = t$4.insert$(c$0.ae=v$4,0,c$0.ae_)));
-			b$2 || (t$3=imba.createElement('div',0,w$$1,'buy-row',null,'i73d2b83f'));
+			t$4 = c$0.ac || (c$0.ac = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
+			(v$4=state.shop.health,v$4===c$0.ad || (c$0.ad_ = t$4.insert$(c$0.ad=v$4,0,c$0.ad_)));
+			b$2 || (t$3=imba.createElement('div',0,v$$1,'buy-row',null,'i73d2b83f'));
 			b$2 || (t$3.on$(`click`,{upgradeSpeed: true},this));
 			b$2 || (t$4=imba.createElement('div',0,t$3,'item',"Upgrade speed",'i73d2b83f'));
-			t$4 = c$0.af || (c$0.af = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
-			(v$4=state.shop.speed,v$4===c$0.ag || (c$0.ag_ = t$4.insert$(c$0.ag=v$4,0,c$0.ag_)));
-			b$2 || (t$3=imba.createElement('div',0,w$$1,'buy-row',null,'i73d2b83f'));
+			t$4 = c$0.ae || (c$0.ae = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
+			(v$4=state.shop.speed,v$4===c$0.af || (c$0.af_ = t$4.insert$(c$0.af=v$4,0,c$0.af_)));
+			b$2 || (t$3=imba.createElement('div',0,v$$1,'buy-row',null,'i73d2b83f'));
 			b$2 || (t$3.on$(`click`,{upgradeStamina: true},this));
 			b$2 || (t$4=imba.createElement('div',0,t$3,'item',"Upgrade stamina",'i73d2b83f'));
-			t$4 = c$0.ah || (c$0.ah = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
-			(v$4=state.shop.stamina,v$4===c$0.ai || (c$0.ai_ = t$4.insert$(c$0.ai=v$4,0,c$0.ai_)));
+			t$4 = c$0.ag || (c$0.ag = t$4=imba.createElement('div',4096,t$3,'prices',null,'i73d2b83f'));
+			(v$4=state.shop.maxStamina,v$4===c$0.ah || (c$0.ah_ = t$4.insert$(c$0.ah=v$4,0,c$0.ah_)));
 			if (state.player.slots < 6) {
-				aj$$3 = (b$4=d$4=1,c$0.aj) || (b$4=d$4=0,c$0.aj=aj$$3=imba.createElement('div',0,null,'buy-row',null,'i73d2b83f'));
-				b$4||(aj$$3.up$=w$$1);
-				b$4 || (aj$$3.on$(`click`,{upgradeHolster: true},this));
-				b$4 || (t$5=imba.createElement('div',0,aj$$3,'item',"Upgrade holster",'i73d2b83f'));
-				t$5 = c$0.ak || (c$0.ak = t$5=imba.createElement('div',4096,aj$$3,'prices',null,'i73d2b83f'));
-				(v$5=("" + (state.shop.slots)),v$5===c$0.al || (c$0.al_ = t$5.insert$(c$0.al=v$5,0,c$0.al_)));
+				ai$$3 = (b$4=d$4=1,c$0.ai) || (b$4=d$4=0,c$0.ai=ai$$3=imba.createElement('div',0,null,'buy-row',null,'i73d2b83f'));
+				b$4||(ai$$3.up$=v$$1);
+				b$4 || (ai$$3.on$(`click`,{upgradeHolster: true},this));
+				b$4 || (t$5=imba.createElement('div',0,ai$$3,'item',"Upgrade holster",'i73d2b83f'));
+				t$5 = c$0.aj || (c$0.aj = t$5=imba.createElement('div',4096,ai$$3,'prices',null,'i73d2b83f'));
+				(v$5=("" + (state.shop.slots)),v$5===c$0.ak || (c$0.ak_ = t$5.insert$(c$0.ak=v$5,0,c$0.ak_)));
 			}
-			(c$0.aj$$3_ = w$$1.insert$(aj$$3,1024,c$0.aj$$3_));			b$2 || (t$3=imba.createElement('div',0,w$$1,'row',null,'i73d2b83f'));
+			(c$0.ai$$3_ = v$$1.insert$(ai$$3,1024,c$0.ai$$3_));			b$2 || (t$3=imba.createElement('div',0,v$$1,'row',null,'i73d2b83f'));
 			b$2 || (t$3.css$('margin-top',"5%"));
-			t$3 = c$0.am || (c$0.am = t$3 = imba.createIndexedFragment(0,w$$1));
+			t$3 = c$0.al || (c$0.al = t$3 = imba.createIndexedFragment(0,v$$1));
 			k$3 = 0;
 			c$3=t$3.$;
 			for (let i = 0, items = iter$$8(state.store), len = items.length, gun; i < len; i++) {
 				gun = items[i];
 				t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createElement('div',0,t$3,'buy-row',null,'i73d2b83f'));
 				b$4||(t$4.up$=t$3);
-				c$4=t$4.$an || (t$4.$an={});
-				v$4 = c$4.ao || (c$4.ao={buyGun: [null]});
+				c$4=t$4.$am || (t$4.$am={});
+				v$4 = c$4.an || (c$4.an={buyGun: [null]});
 				v$4.buyGun[0]=gun;
 				b$4 || t$4.on$(`click`,v$4,this);
-				t$5 = c$4.ap || (c$4.ap = t$5=imba.createElement('div',4096,t$4,'item',null,'i73d2b83f'));
-				(v$5=("buy " + (gun.name)),v$5===c$4.aq || (c$4.aq_ = t$5.insert$(c$4.aq=v$5,0,c$4.aq_)));
-				t$5 = c$4.ar || (c$4.ar = t$5=imba.createElement('div',4096,t$4,'prices',null,'i73d2b83f'));
-				(v$5=gun.price,v$5===c$4.as || (c$4.as_ = t$5.insert$(c$4.as=v$5,0,c$4.as_)));
+				t$5 = c$4.ao || (c$4.ao = t$5=imba.createElement('div',4096,t$4,'item',null,'i73d2b83f'));
+				(v$5=("buy " + (gun.name)),v$5===c$4.ap || (c$4.ap_ = t$5.insert$(c$4.ap=v$5,0,c$4.ap_)));
+				t$5 = c$4.aq || (c$4.aq = t$5=imba.createElement('div',4096,t$4,'prices',null,'i73d2b83f'));
+				(v$5=gun.price,v$5===c$4.ar || (c$4.ar_ = t$5.insert$(c$4.ar=v$5,0,c$4.ar_)));
 				k$3++;
 			}t$3.end$(k$3);
-			b$2 || (t$3=imba.createElement('div',0,w$$1,'row',null,'i73d2b83f'));
+			b$2 || (t$3=imba.createElement('div',0,v$$1,'row',null,'i73d2b83f'));
 			b$2 || (t$3.css$('margin-top',"5%"));
-			b$2 || (t$3=imba.createElement('h1',0,w$$1,null,"INVERTORY",'i73d2b83f'));
-			t$3 = c$0.at || (c$0.at = t$3 = imba.createIndexedFragment(0,w$$1));
+			b$2 || (t$3=imba.createElement('h1',0,v$$1,null,"INVERTORY",'i73d2b83f'));
+			t$3 = c$0.as || (c$0.as = t$3 = imba.createIndexedFragment(0,v$$1));
 			k$3 = 0;
 			c$3=t$3.$;
 			for (let i = 0, items = iter$$8(state.player.inventory), len = items.length, gun; i < len; i++) {
 				gun = items[i];
 				t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createElement('div',0,t$3,'row',null,'i73d2b83f'));
 				b$4||(t$4.up$=t$3);
-				c$4=t$4.$au || (t$4.$au={});
-				t$5 = c$4.av || (c$4.av = t$5=imba.createElement('div',4096,t$4,'item',null,'i73d2b83f'));
-				(v$5=gun.name,v$5===c$4.aw || (c$4.aw_ = t$5.insert$(c$4.aw=v$5,0,c$4.aw_)));
-				t$5 = (b$5=d$5=1,c$4.ax) || (b$5=d$5=0,c$4.ax=t$5=imba.createElement('div',0,t$4,'action',"Equip",'i73d2b83f'));
-				v$5 = c$4.ay || (c$4.ay={equipGun: [null]});
+				c$4=t$4.$at || (t$4.$at={});
+				t$5 = c$4.au || (c$4.au = t$5=imba.createElement('div',4096,t$4,'item',null,'i73d2b83f'));
+				(v$5=gun.name,v$5===c$4.av || (c$4.av_ = t$5.insert$(c$4.av=v$5,0,c$4.av_)));
+				t$5 = (b$5=d$5=1,c$4.aw) || (b$5=d$5=0,c$4.aw=t$5=imba.createElement('div',0,t$4,'action',"Equip",'i73d2b83f'));
+				v$5 = c$4.ax || (c$4.ax={equipGun: [null]});
 				v$5.equipGun[0]=gun;
 				b$5 || t$5.on$(`click`,v$5,this);
-				t$5 = (b$5=d$5=1,c$4.az) || (b$5=d$5=0,c$4.az=t$5=imba.createElement('div',0,t$4,'action',"Upgrade",'i73d2b83f'));
-				v$5 = c$4.ba || (c$4.ba={upgradeGun: [null]});
+				t$5 = (b$5=d$5=1,c$4.ay) || (b$5=d$5=0,c$4.ay=t$5=imba.createElement('div',0,t$4,'action',"Upgrade",'i73d2b83f'));
+				v$5 = c$4.az || (c$4.az={upgradeGun: [null]});
 				v$5.upgradeGun[0]=gun;
 				b$5 || t$5.on$(`click`,v$5,this);
 				k$3++;
 			}t$3.end$(k$3);
-			b$2 || (t$3=imba.createElement('div',0,w$$1,'row',null,'i73d2b83f'));
+			b$2 || (t$3=imba.createElement('div',0,v$$1,'row',null,'i73d2b83f'));
 			b$2 || (t$3.css$('margin-top',"5%"));
-			b$2 || (t$3=imba.createElement('div',0,w$$1,'row',null,'i73d2b83f'));
+			b$2 || (t$3=imba.createElement('div',0,v$$1,'row',null,'i73d2b83f'));
 			b$2 || (t$4=imba.createElement('div',0,t$3,'next-day',"Go to next day",'i73d2b83f'));
 			b$2 || (t$4.on$(`click`,{nextDay: true},this));
 			b$2 || (t$4=imba.createElement('div',0,t$3,'close',"Close",'i73d2b83f'));
 			b$2 || (t$4.on$(`click`,{toggleShop: true},this));
 		}
-		(c$0.w$$1_ = t$0.insert$(w$$1,1024,c$0.w$$1_));		t$0.close$(d$0);
+		(c$0.v$$1_ = t$0.insert$(v$$1,1024,c$0.v$$1_));		t$0.close$(d$0);
 		return t$0;
 	}
 } imba.tags.define('player-store',PlayerStoreComponent,{});
@@ -2044,7 +2406,6 @@ class PlayerStoreComponent extends imba.tags.get('component','ImbaElement') {
         z-index: 1;
         font-family: Typewriter;
         color: white;
-        background-color: rgba(0,0,0,0.55);
         border-color: white;
         border: 1px;
         cursor: pointer;
@@ -2072,44 +2433,40 @@ class PlayerStoreComponent extends imba.tags.get('component','ImbaElement') {
     }
 
     .buy-row:hover{
-        color: #5F5;
-        text-shadow: 2px 2px #A00;
         .prices {
             transform: translate(-1vw,0) scale(1.3,1.3);
         }
     }
+
     .action:hover{
-        text-shadow: 2px 2px #A00;
-        color: #5F5;
         transform: scale(1.3,1.3);
     }
+
     .next-day:hover {
-        text-shadow: 2px 2px #A00;
-        color: #5F5;
         transform: scale(1.3,1.3) translate(1vw,0)
     }
+
     .close:hover {
-        text-shadow: 2px 2px #A00;
-        color: #5F5;
         transform: scale(1.3,1.3) translate(-1vw,0)
     }
 
     .back:hover {
-        text-shadow: 2px 2px #A00;
-        color: #5F5;
         transform: scale(1.3,1.3)
+    }
+
+    .buy-row:hover, .action:hover, .next-day:hover, .close:hover, .back:hover {
+        text-shadow: 0px 0px 10px #A00;
     }
 
     .store {
         font-size: calc(10px + .6vw);
+        background-color: rgba(0,0,0,0.55);
     }
     .open-store {
         cursor: none;
         font-size: calc(15px + .8vw);
-    }
-
-    .open-store {
-        text-align: center
+        text-align: center;
+        top: 25%;
     }
 
 */
@@ -2117,6 +2474,11 @@ class PlayerStoreComponent extends imba.tags.get('component','ImbaElement') {
 imba.inlineStyles("body{margin:0px;-webkit-touch-callout:none;-webkit-user-select:none;-khtml-user-select:none;-moz-user-select:none;-ms-user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;cursor:none;}app-root{display:block;position:relative;background-color:black;}@font-face{font-family:MenofNihilist;src:url(fonts/MenofNihilist.otf) format(\"opentype\");}@font-face{font-family:Typewriter;src:url(\"fonts/JMH Typewriter-Black.otf\") format(\"opentype\");}@-webkit-keyframes fadeOut{0%{opacity:1;}to{opacity:0;}}@keyframes fadeOut{0%{opacity:1;}to{opacity:0;}}@-webkit-keyframes fadeIn{0%{opacity:0;}to{opacity:1;}}@keyframes fadeIn{0%{opacity:0;}to{opacity:1;}}.fadeOut{-webkit-animation-duration:1.5s;-webkit-animation-duration:1.5s;animation-duration:1.5s;-webkit-animation-fill-mode:both;-webkit-animation-fill-mode:both;animation-fill-mode:both;-webkit-animation-name:fadeOut;-webkit-animation-name:fadeOut;animation-name:fadeOut;}.fadeIn{-webkit-animation-duration:1.5s;-webkit-animation-duration:1.5s;animation-duration:1.5s;-webkit-animation-fill-mode:both;-webkit-animation-fill-mode:both;animation-fill-mode:both;-webkit-animation-name:fadeIn;-webkit-animation-name:fadeIn;animation-name:fadeIn;}.ui{position:fixed;z-index:10;}\n");
 function iter$$9(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
 class AppRootComponent extends imba.tags.get('component','ImbaElement') {
+	
+	build(){
+		this.animations = [];
+		return this.loadAnimations();
+	}
 	
 	mount(){
 		return new (state.game)(this);
@@ -2156,8 +2518,39 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		return ("translate(" + (obs.position.x) + ", " + (obs.position.y) + ") rotate(" + (obs.rotation) + ")");
 	}
 	
+	
+	transformShopArrow(){
+		let pos = state.player.position;
+		let rotation = -(Math.atan2(pos.x,pos.y) / 0.01745 + 180) % 360;
+		return ("translate(" + (pos.x) + ", " + (pos.y) + ") rotate(" + rotation + ")");
+		
+		
+		
+		// for own name, anim of state.animations.feet
+		//     for a, i in Array.from(Array.new(anim.size))
+		//         <svg:defs>
+		//             <svg:pattern id="{anim.name}-{i}" patternUnits="userSpaceOnUse" width="100" height="100" patternContentUnits="userSpaceOnUse">
+		//                 <svg:image href="{anim.path}{i}.png" width="100" height="100">
+	}
+	
+	loadAnimations(){
+		let res = [];
+		for (let o = state.animations.player, anims, i = 0, keys = Object.keys(o), l = keys.length, gun; i < l; i++){
+			gun = keys[i];anims = o[gun];let res1 = [];
+			for (let anim, j = 0, keys1 = Object.keys(anims), l = keys1.length, action; j < l; j++){
+				action = keys1[j];anim = anims[action];let res2 = [];
+				for (let len = anim.size, a = 0, i = 0, rd = len - a; (rd > 0) ? (a < len) : (a > len); (rd > 0) ? (a++) : (a--),i++) {
+					res2.push(this.animations.push({
+						name: ("" + (anim.name) + "-" + i),
+						path: ("" + (anim.path) + i)
+					}));
+				}				res1.push(res2);
+			}			res.push(res1);
+		}		return res;
+	}
+	
 	render(){
-		var t$0, c$0, b$0, d$0, t$1, t$2, b$2, d$2, v$2, t$3, k$3, c$3, t$4, b$4, d$4, c$4, v$4, t$5, b$5, d$5, v$5, b$3, d$3, v$3;
+		var t$0, c$0, b$0, d$0, t$1, t$2, b$2, d$2, b$1, d$1, k$2, c$2, t$3, b$3, d$3, c$3, t$4, b$4, d$4, v$4, t$5, b$5, d$5, v$5, v$2, k$3, c$4, v$$3, t$6, v$3;
 		t$0=this;
 		t$0.open$();
 		c$0 = (b$0=d$0=1,t$0.$) || (b$0=d$0=0,t$0.$={});
@@ -2170,12 +2563,32 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		b$2 || !t$2.setup || t$2.setup(d$2);
 		t$2.end$(d$2);
 		b$2 || t$2.insertInto$(t$1);
-		b$0 || (t$1=imba.createSVGElement('svg',0,t$0,null,null,null));
-		b$0 || (t$1.set$('transform',"scale(1,-1)"));
-		b$0 || (t$1.set$('height',"100%"));
-		b$0 || (t$1.set$('width',"100%"));
-		t$2 = (b$2=d$2=1,c$0.d) || (b$2=d$2=0,c$0.d=t$2=imba.createSVGElement('g',0,t$1,null,null,null));
-		(v$2=("translate(" + (state.mouse.x) + ", " + (state.mouse.y) + ")"),v$2===c$0.e || (t$2.set$('transform',c$0.e=v$2)));
+		t$1 = (b$1=d$1=1,c$0.d) || (b$1=d$1=0,c$0.d=t$1=imba.createSVGElement('svg',2048,t$0,null,null,null));
+		b$1 || (t$1.set$('transform',"scale(1,-1)"));
+		b$1 || (t$1.set$('height',"100%"));
+		b$1 || (t$1.set$('width',"100%"));
+		t$2 = c$0.e || (c$0.e = t$2 = imba.createIndexedFragment(0,t$1));
+		k$2 = 0;
+		c$2=t$2.$;
+		for (let i = 0, items = iter$$9(this.animations), len = items.length, animation; i < len; i++) {
+			animation = items[i];
+			t$3 = (b$3=d$3=1,c$2[k$2]) || (b$3=d$3=0,c$2[k$2] = t$3=imba.createSVGElement('defs',0,t$2,null,null,null));
+			b$3||(t$3.up$=t$2);
+			c$3=t$3.$f || (t$3.$f={});
+			t$4 = (b$4=d$4=1,c$3.g) || (b$4=d$4=0,c$3.g=t$4=imba.createSVGElement('pattern',0,t$3,null,null,null));
+			(v$4=("" + (animation.name)),v$4===c$3.h || (t$4.set$('id',c$3.h=v$4)));
+			b$4 || (t$4.set$('patternUnits',"userSpaceOnUse"));
+			b$4 || (t$4.set$('width',"100"));
+			b$4 || (t$4.set$('height',"100"));
+			b$4 || (t$4.set$('patternContentUnits',"userSpaceOnUse"));
+			t$5 = (b$5=d$5=1,c$3.i) || (b$5=d$5=0,c$3.i=t$5=imba.createSVGElement('image',0,t$4,null,null,null));
+			(v$5=("" + (animation.path) + ".png"),v$5===c$3.j || (t$5.set$('href',c$3.j=v$5)));
+			b$5 || (t$5.set$('width',"100"));
+			b$5 || (t$5.set$('height',"100"));
+			k$2++;
+		}t$2.end$(k$2);
+		t$2 = (b$2=d$2=1,c$0.k) || (b$2=d$2=0,c$0.k=t$2=imba.createSVGElement('g',0,t$1,null,null,null));
+		(v$2=("translate(" + (state.mouse.x) + ", " + (state.mouse.y) + ")"),v$2===c$0.l || (t$2.set$('transform',c$0.l=v$2)));
 		b$2 || (t$3=imba.createSVGElement('line',0,t$2,null,null,null));
 		b$2 || (t$3.set$('y1',4));
 		b$2 || (t$3.set$('y2',10));
@@ -2192,91 +2605,106 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		b$2 || (t$3.set$('x1',-4));
 		b$2 || (t$3.set$('x2',-10));
 		b$2 || (t$3.set$('stroke','#5F5'));
-		t$2 = (b$2=d$2=1,c$0.f) || (b$2=d$2=0,c$0.f=t$2=imba.createSVGElement('g',2560,t$1,null,null,null));
-		(v$2=this.transformCamera(),v$2===c$0.g || (t$2.set$('transform',c$0.g=v$2)));
-		(v$2=(state.player.dead||undefined),v$2===c$0.i||(d$2|=2,c$0.i=v$2));
-		(d$2&2 && t$2.flag$((c$0.i ? `fadeOut` : '')));
-		t$3 = c$0.j || (c$0.j = t$3 = imba.createIndexedFragment(0,t$2));
+		t$2 = (b$2=d$2=1,c$0.m) || (b$2=d$2=0,c$0.m=t$2=imba.createSVGElement('g',3584,t$1,null,null,null));
+		(v$2=this.transformCamera(),v$2===c$0.n || (t$2.set$('transform',c$0.n=v$2)));
+		(v$2=(state.player.dead||undefined),v$2===c$0.p||(d$2|=2,c$0.p=v$2));
+		(d$2&2 && t$2.flag$((c$0.p ? `fadeOut` : '')));
+		t$3 = c$0.q || (c$0.q = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
 		for (let obs of iter$$9(state.player.nearObstacles)){
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,null,null,null));
 			b$4||(t$4.up$=t$3);
-			c$4=t$4.$k || (t$4.$k={});
-			(v$4=this.transformObstacle(obs),v$4===c$4.l || (t$4.set$('transform',c$4.l=v$4)));
-			t$5 = (b$5=d$5=1,c$4.m) || (b$5=d$5=0,c$4.m=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
-			(v$5=obs.size,v$5===c$4.n || (t$5.set$('r',c$4.n=v$5)));
+			c$4=t$4.$r || (t$4.$r={});
+			(v$4=this.transformObstacle(obs),v$4===c$4.s || (t$4.set$('transform',c$4.s=v$4)));
+			t$5 = (b$5=d$5=1,c$4.t) || (b$5=d$5=0,c$4.t=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
+			(v$5=obs.size,v$5===c$4.u || (t$5.set$('r',c$4.u=v$5)));
 			b$5 || (t$5.set$('fill',"grey"));
 			k$3++;
 		}t$3.end$(k$3);
-		t$3 = (b$3=d$3=1,c$0.o) || (b$3=d$3=0,c$0.o=t$3=imba.createSVGElement('g',0,t$2,null,null,null));
-		(v$3=this.transformPlayer(),v$3===c$0.p || (t$3.set$('transform',c$0.p=v$3)));
+		if (state.player.distanceTo(0,0) > 600) {
+			v$$3 = (b$4=d$4=1,c$0.v) || (b$4=d$4=0,c$0.v=v$$3=imba.createSVGElement('g',0,null,'fadeIn',null,null));
+			b$4||(v$$3.up$=t$2);
+			(v$4=this.transformShopArrow(),v$4===c$0.w || (v$$3.set$('transform',c$0.w=v$4)));
+			b$4 || (t$5=imba.createSVGElement('g',0,v$$3,null,null,null));
+			b$4 || (t$5.set$('transform',"translate(0,250) scale(2,2)"));
+			b$4 || (t$6=imba.createSVGElement('path',0,t$5,null,null,null));
+			b$4 || (t$6.set$('fill',"rgba(0,255,0,0.4)"));
+			b$4 || (t$6.set$('d',"M0 0l0.93 0 0 21.69c1.42,-0.19 2.96,-1.19 5.18,-3l-5.68 9.66 -5.61 -9.78c2.2,1.91 3.7,2.97 5.18,3.13l0 -21.7z"));
+		}
+		(c$0.v$$3_ = t$2.insert$(v$$3,1024,c$0.v$$3_));		t$3 = (b$3=d$3=1,c$0.x) || (b$3=d$3=0,c$0.x=t$3=imba.createSVGElement('g',0,t$2,null,null,null));
+		(v$3=this.transformPlayer(),v$3===c$0.y || (t$3.set$('transform',c$0.y=v$3)));
 		b$3 || (t$4=imba.createSVGElement('circle',0,t$3,null,null,null));
-		b$3 || (t$4.set$('r',"10"));
+		b$3 || (t$4.set$('r',10));
 		b$3 || (t$4.set$('fill',"white"));
+		b$3 || (t$4=imba.createSVGElement('rect',0,t$3,null,null,null));
+		b$3 || (t$4.set$('width',100));
+		b$3 || (t$4.set$('height',100));
+		b$3 || (t$4.set$('transform',"scale(-.7,.7) rotate(90) translate(-50,-50)"));
+		b$3 || (t$4.set$('fill',"url(#handgun-idle-0)"));
 		b$3 || (t$4=imba.createSVGElement('g',0,t$3,null,null,null));
 		b$3 || (t$4.set$('transform','translate(5, 5)'));
 		b$3 || (t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
 		b$3 || (t$5.set$('height',"13"));
 		b$3 || (t$5.set$('width',"2"));
 		b$3 || (t$5.set$('fill',"white"));
-		t$3 = c$0.q || (c$0.q = t$3 = imba.createIndexedFragment(0,t$2));
+		t$3 = c$0.z || (c$0.z = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
 		for (let bullet of iter$$9(state.bullets)){
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,null,null,null));
 			b$4||(t$4.up$=t$3);
-			c$4=t$4.$r || (t$4.$r={});
-			(v$4=this.transformBullet(bullet),v$4===c$4.s || (t$4.set$('transform',c$4.s=v$4)));
+			c$4=t$4.$aa || (t$4.$aa={});
+			(v$4=this.transformBullet(bullet),v$4===c$4.ab || (t$4.set$('transform',c$4.ab=v$4)));
 			b$4 || (t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
 			b$4 || (t$5.set$('width',"50"));
 			b$4 || (t$5.set$('height',"1"));
 			b$4 || (t$5.set$('fill',"yellow"));
 			k$3++;
 		}t$3.end$(k$3);
-		t$3 = c$0.t || (c$0.t = t$3 = imba.createIndexedFragment(0,t$2));
+		t$3 = c$0.ac || (c$0.ac = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
 		for (let zombie of iter$$9(state.player.nearZombies)){
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,null,null,null));
 			b$4||(t$4.up$=t$3);
-			c$4=t$4.$u || (t$4.$u={});
-			(v$4=this.transformZombie(zombie),v$4===c$4.v || (t$4.set$('transform',c$4.v=v$4)));
-			t$5 = (b$5=d$5=1,c$4.w) || (b$5=d$5=0,c$4.w=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
-			(v$5=zombie.size,v$5===c$4.x || (t$5.set$('r',c$4.x=v$5)));
-			b$5 || (t$5.set$('fill',"red"));
-			b$5 || (t$5.set$('stroke','black'));
-			t$5 = (b$5=d$5=1,c$4.y) || (b$5=d$5=0,c$4.y=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-			(v$5=zombie.size * 2,v$5===c$4.z || (t$5.set$('width',c$4.z=v$5)));
-			b$5 || (t$5.set$('height',"4"));
-			b$5 || (t$5.set$('y',"6"));
-			b$5 || (t$5.set$('fill',"red"));
-			t$5 = (b$5=d$5=1,c$4.aa) || (b$5=d$5=0,c$4.aa=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-			(v$5=zombie.size * 2,v$5===c$4.ab || (t$5.set$('width',c$4.ab=v$5)));
-			b$5 || (t$5.set$('height',"4"));
-			b$5 || (t$5.set$('y',"-10"));
-			b$5 || (t$5.set$('fill',"red"));
-			k$3++;
-		}t$3.end$(k$3);
-		t$3 = c$0.ac || (c$0.ac = t$3 = imba.createIndexedFragment(0,t$2));
-		k$3 = 0;
-		c$3=t$3.$;
-		for (let zombie of iter$$9(state.killed)){
-			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,'fadeOut',null,null));
-			b$4||(t$4.up$=t$3);
 			c$4=t$4.$ad || (t$4.$ad={});
 			(v$4=this.transformZombie(zombie),v$4===c$4.ae || (t$4.set$('transform',c$4.ae=v$4)));
 			t$5 = (b$5=d$5=1,c$4.af) || (b$5=d$5=0,c$4.af=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
 			(v$5=zombie.size,v$5===c$4.ag || (t$5.set$('r',c$4.ag=v$5)));
-			b$5 || (t$5.set$('fill',"grey"));
+			b$5 || (t$5.set$('fill',"red"));
 			b$5 || (t$5.set$('stroke','black'));
 			t$5 = (b$5=d$5=1,c$4.ah) || (b$5=d$5=0,c$4.ah=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
 			(v$5=zombie.size * 2,v$5===c$4.ai || (t$5.set$('width',c$4.ai=v$5)));
 			b$5 || (t$5.set$('height',"4"));
 			b$5 || (t$5.set$('y',"6"));
-			b$5 || (t$5.set$('fill',"grey"));
+			b$5 || (t$5.set$('fill',"red"));
 			t$5 = (b$5=d$5=1,c$4.aj) || (b$5=d$5=0,c$4.aj=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
 			(v$5=zombie.size * 2,v$5===c$4.ak || (t$5.set$('width',c$4.ak=v$5)));
+			b$5 || (t$5.set$('height',"4"));
+			b$5 || (t$5.set$('y',"-10"));
+			b$5 || (t$5.set$('fill',"red"));
+			k$3++;
+		}t$3.end$(k$3);
+		t$3 = c$0.al || (c$0.al = t$3 = imba.createIndexedFragment(0,t$2));
+		k$3 = 0;
+		c$3=t$3.$;
+		for (let zombie of iter$$9(state.killed)){
+			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,'fadeOut',null,null));
+			b$4||(t$4.up$=t$3);
+			c$4=t$4.$am || (t$4.$am={});
+			(v$4=this.transformZombie(zombie),v$4===c$4.an || (t$4.set$('transform',c$4.an=v$4)));
+			t$5 = (b$5=d$5=1,c$4.ao) || (b$5=d$5=0,c$4.ao=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
+			(v$5=zombie.size,v$5===c$4.ap || (t$5.set$('r',c$4.ap=v$5)));
+			b$5 || (t$5.set$('fill',"grey"));
+			b$5 || (t$5.set$('stroke','black'));
+			t$5 = (b$5=d$5=1,c$4.aq) || (b$5=d$5=0,c$4.aq=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
+			(v$5=zombie.size * 2,v$5===c$4.ar || (t$5.set$('width',c$4.ar=v$5)));
+			b$5 || (t$5.set$('height',"4"));
+			b$5 || (t$5.set$('y',"6"));
+			b$5 || (t$5.set$('fill',"grey"));
+			t$5 = (b$5=d$5=1,c$4.as) || (b$5=d$5=0,c$4.as=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
+			(v$5=zombie.size * 2,v$5===c$4.at || (t$5.set$('width',c$4.at=v$5)));
 			b$5 || (t$5.set$('height',"4"));
 			b$5 || (t$5.set$('y',"-10"));
 			b$5 || (t$5.set$('fill',"grey"));

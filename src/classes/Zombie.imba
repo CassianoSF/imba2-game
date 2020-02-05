@@ -66,7 +66,7 @@ export class Zombie < GameObject
         if @playerIsClose(@size * 2.1)
             @state = ATTACK
         @speed += 0.01 unless @speed >= @max_speed
-        @rotation = @angleToPlayer()
+        @rotation = @angleToObject(@player)
         @moveForward()
 
     def findColision obj-sectors
@@ -76,13 +76,8 @@ export class Zombie < GameObject
                 return obj unless obj is self
         return no
 
-    def angleToPlayer
-        let dx = @player.position.x - @position.x
-        let dy = @player.position.y - @position.y
-        -(Math.atan2(dx, dy)/0.01745 - 90) % 360
-
     def playerOnSight
-        Math.abs((@angleToPlayer() - @rotation) % 360) < 30
+        Math.abs((@angleToObject(@player) - @rotation) % 360) < 30
 
     def playerIsClose distance
         @distanceToObjectX(@player) < distance and @distanceToObjectY(@player) < distance
@@ -106,7 +101,6 @@ export class Zombie < GameObject
             let dy = Math.cos((@angleToObject(obj) + 90) * 0.01745) * @speed * state.delta
             @position.x -= dx * 1.5
             @position.y += dy * 1.5
-            return
         let zom_col = @findColision(state.zombies)
         if zom_col
             let dx = Math.sin((@angleToObject(zom_col) + 90) * 0.01745) * @speed * state.delta

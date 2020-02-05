@@ -34,29 +34,35 @@ tag player-store
 
 
     def healPlayer
+        return unless state.player.score >= state.day * 40
         state.player.score -= state.day * 40
         state.player.life = state.player.max-life
 
     def buyAmmo
+        return unless state.player.score >= state.day * 200
         state.player.score -= state.day * 200
         state.player.life = state.player.max-life
 
     def upgradeHealth
+        return unless state.player.score >= state.shop.health
         state.player.score -= state.shop.health
         state.player.max-life += 10 
         state.shop.health *= 2
 
     def upgradeSpeed
+        return unless state.player.score >= state.shop.speed
         state.player.score -= state.shop.speed
         state.player.max-speed += 0.05
         state.shop.speed *= 2
 
     def upgradeStamina
+        return unless state.player.score >= state.shop.stamina
         state.player.score -= state.shop.stamina
         state.player.max-stamina += 300 
         state.shop.max-stamina *= 10 
 
     def upgradeHolster
+        return unless state.player.score >= state.shop.slots
         state.player.score -= state.shop.slots
         state.player.slots += 1
         state.shop.slots *= 2
@@ -79,15 +85,14 @@ tag player-store
         upgrade[stat]()
 
     def render
-        <self.hud .{state.player.inSafeZone() ? "fadeIn" : "fadeOut"}>
-            <upgrade-gun> 
+        <self .{state.player.inSafeZone() ? "fadeIn" : "fadeOut"}>
             if not state.shop.open
-                <.open-store .fadeOut=(state.player.dead)>
+                <.hud .open-store  .fadeOut=(state.player.dead)>
                     <.buy-row :click.toggleShop>
-                        <.item>
+                        <.back>
                             "Open shop"
             if state.shop.open and state.shop.upgrade-gun
-                <.store>
+                <.hud .store>
                     <h1>
                         "UPGRADES"
                     <h3>
@@ -128,7 +133,7 @@ tag player-store
                         <.back :click.back>
                             "Back"
             if state.shop.open and not state.shop.upgrade-gun
-                <.store .fadeOut=(state.player.dead)>
+                <.hud .store .fadeOut=(state.player.dead)>
                     <h1>
                         "SHOP"
                     <.buy-row>
@@ -162,7 +167,7 @@ tag player-store
                         <.item>
                             "Upgrade stamina"
                         <.prices>
-                            state.shop.stamina
+                            state.shop.max-stamina
                     if state.player.slots < 6
                         <.buy-row :click.upgradeHolster>
                             <.item>
@@ -200,7 +205,6 @@ tag player-store
         z-index: 1;
         font-family: Typewriter;
         color: white;
-        background-color: rgba(0,0,0,0.55);
         border-color: white;
         border: 1px;
         cursor: pointer;
@@ -228,44 +232,40 @@ tag player-store
     }
 
     .buy-row:hover{
-        color: #5F5;
-        text-shadow: 2px 2px #A00;
         .prices {
             transform: translate(-1vw,0) scale(1.3,1.3);
         }
     }
+
     .action:hover{
-        text-shadow: 2px 2px #A00;
-        color: #5F5;
         transform: scale(1.3,1.3);
     }
+
     .next-day:hover {
-        text-shadow: 2px 2px #A00;
-        color: #5F5;
         transform: scale(1.3,1.3) translate(1vw,0)
     }
+
     .close:hover {
-        text-shadow: 2px 2px #A00;
-        color: #5F5;
         transform: scale(1.3,1.3) translate(-1vw,0)
     }
 
     .back:hover {
-        text-shadow: 2px 2px #A00;
-        color: #5F5;
         transform: scale(1.3,1.3)
+    }
+
+    .buy-row:hover, .action:hover, .next-day:hover, .close:hover, .back:hover {
+        text-shadow: 0px 0px 10px #A00;
     }
 
     .store {
         font-size: calc(10px + .6vw);
+        background-color: rgba(0,0,0,0.55);
     }
     .open-store {
         cursor: none;
         font-size: calc(15px + .8vw);
-    }
-
-    .open-store {
-        text-align: center
+        text-align: center;
+        top: 25%;
     }
 
 ###
