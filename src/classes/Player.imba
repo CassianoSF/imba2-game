@@ -2,25 +2,32 @@ import {GameObject} from '../engine/GameObject'
 import {state} from '../state'
 
 export class Player < GameObject
-    def constructor inventory
+    def constructor inventory, animations, feet-animations
         super
         @position = {x:0,y:0}
         @rotation = 0
-        @size = 10
+        @size = 20
         @inventory = inventory
         @score = 100000
         @gun = @inventory[0]
-        @holsters = [@gun]
+        @holsters = inventory
         @speed = 0
         @max-speed = .8
         @nearZombies = Set.new
         @nearObstacles = Set.new
         @max-life = 100
         @life = 100
-        @slots = 1
+        @slots = 3
         @safe = true
         @stamina = 300
         @max-stamina = 500
+        @animations = animations
+        @animation = animations.rifle.idle
+        @animation-state = 'idle'
+
+        @feet-animations = feet-animations
+        @feet-animation = feet-animations.idle
+        @feet-animation-state = 'idle'
 
     def checkShop
         state.shop.open = false unless @inSafeZone()
@@ -36,6 +43,10 @@ export class Player < GameObject
         @checkColision(state.obstacles)
         @checkColision(state.zombies)
         @checkShop()
+        if @gun.reloading
+            @animation-state = 'reload'
+        @animation = @animations[@gun.name][@animation-state]
+        @feet-animation = @feet-animations[@feet-animation-state]
 
     def updateNearObjects obj-sectors,prop-set
         let x = ~~((@position.x) / 1000)
@@ -63,13 +74,19 @@ export class Player < GameObject
         if key-count and state.keys.ShiftLeft and @stamina
             @stamina--
             @speed += (@max-speed/50) unless @speed >= @max-speed 
+            @animation-state = 'move'
+            @feet-animation-state = 'run'
         elif key-count
             @stamina++ unless (@stamina >= @max-stamina or state.keys.ShiftLeft)
             @speed += (@max-speed/50) unless @speed >= @max-speed / 2
             @speed -= (@max-speed/50) if     @speed >= @max-speed / 2
+            @animation-state = 'move'
+            @feet-animation-state = 'walk'
         else
             @stamina++ unless (@stamina >= @max-stamina or state.keys.ShiftLeft)
             @speed = 0
+            @feet-animation-state = 'idle'
+            @animation-state = 'idle'
 
         # Diagonal correction
         if ((state.keys.KeyA or 0) + (state.keys.KeyD or 0) + (state.keys.KeyW or 0) + (state.keys.KeyS or 0)) > 1
@@ -112,7 +129,7 @@ export class Player < GameObject
             @dead = true
 
     def inSafeZone
-        Math.abs(@position.x) < 50 and Math.abs(@position.y) < 50
+        Math.abs(@position.x) < 100 and Math.abs(@position.y) < 100
 
     def usingGun gun
         @holsters.find(do |g| g == gun)

@@ -1,5 +1,3 @@
-import {Animation} from './engine/Animation'
-
 import {Game} from './classes/Game'
 import {Gun} from './classes/Gun'
 import {Player} from './classes/Player'
@@ -9,7 +7,7 @@ import {Obstacle} from './classes/Obstacle'
 let animations = 
     player:
         knife:
-            idle:   Animation.new
+            idle:
                 path: "textures/knife/idle/survivor-idle_knife_"
                 name: "knife-idle"
                 size: 19
@@ -18,7 +16,7 @@ let animations =
                     scale: "1.15,1.15"
                     translate: "-5,0"
 
-            move:   Animation.new
+            move:
                 path: "textures/knife/move/survivor-move_knife_"
                 name: "knife-move"
                 size: 19
@@ -27,7 +25,7 @@ let animations =
                     scale: "1.15,1.15"
                     translate: "-5,0"
 
-            attack: Animation.new
+            attack:
                 path: "textures/knife/meleeattack/survivor-meleeattack_knife_"
                 name: "knife-meleeattack"
                 size: 14
@@ -37,144 +35,144 @@ let animations =
                     translate: "-5,5"
 
         handgun:
-            idle:   Animation.new
+            idle:
                 path: "textures/handgun/idle/survivor-idle_handgun_"
                 name: "handgun-idle"
                 size: 19
                 frame-length: 3
                 adjust: 
-                    scale: "1,1"
-                    translate: "0,0"
+                    scale: "-0.8,0.8"
+                    translate: "-5,5"
 
-            move:   Animation.new
+            move:
                 path: "textures/handgun/move/survivor-move_handgun_"
                 name: "handgun-move"
                 size: 19
                 frame-length: 3
                 adjust: 
-                    scale: "1,1"
-                    translate: "0,0"
+                    scale: "-0.8,0.8"
+                    translate: "-5,5"
 
-            attack: Animation.new
+            attack:
                 path: "textures/handgun/meleeattack/survivor-meleeattack_handgun_"
                 name: "handgun-meleeattack"
                 size: 14
                 frame-length: 2
                 adjust: 
-                    scale: "1.2,1.2"
-                    translate: "0,-5"
+                    scale: "-0.8,0.8"
+                    translate: "-5,5"
 
-            shoot:  Animation.new
+            shoot:
                 path: "textures/handgun/shoot/survivor-shoot_handgun_"
                 name: "handgun-shoot"
                 size: 2
                 frame-length: 3
                 adjust: 
-                    scale: "1,1"
-                    translate: "0,0"
+                    scale: "-0.8,0.8"
+                    translate: "-5,5"
 
-            reload: Animation.new
+            reload:
                 path: "textures/handgun/reload/survivor-reload_handgun_"
                 name: "handgun-reload"
                 size: 14
                 frame-length: 3
                 adjust: 
-                    scale: "1,1"
-                    translate: "0,0"
+                    scale: "-0.8,0.8"
+                    translate: "-5,5"
 
         rifle:
-            idle:   Animation.new
+            idle:
                 path: "textures/rifle/idle/survivor-idle_rifle_"
                 name: "rifle-idle"
                 size: 19
                 frame-length: 3
                 adjust: 
-                    scale: "1.25,1.25"
-                    translate: "0,-10"
+                    scale: "-1,1"
+                    translate: "0,16"
 
-            move:   Animation.new
+            move:
                 path: "textures/rifle/move/survivor-move_rifle_"
                 name: "rifle-move"
                 size: 19
                 frame-length: 3
                 adjust: 
-                    scale: "1.25,1.25"
-                    translate: "0,-10"
+                    scale: "-1,1"
+                    translate: "0,16"
 
-            attack: Animation.new
+            attack:
                 path: "textures/rifle/meleeattack/survivor-meleeattack_rifle_"
                 name: "rifle-meleeattack"
                 size: 14
                 frame-length: 2
                 adjust: 
-                    scale: "1.45,1.45"
-                    translate: "-5,-20"
+                    scale: "-1,1"
+                    translate: "0,16"
 
-            shoot:  Animation.new
+            shoot:
                 path: "textures/rifle/shoot/survivor-shoot_rifle_"
                 name: "rifle-shoot"
                 size: 2
                 frame-length: 3
                 adjust: 
-                    scale: "1.25,1.25"
-                    translate: "0,-10"
+                    scale: "-1,1"
+                    translate: "0,16"
 
-            reload: Animation.new
+            reload:
                 path: "textures/rifle/reload/survivor-reload_rifle_"
                 name: "rifle-reload"
                 size: 14
                 frame-length: 3
                 adjust: 
-                    scale: "1.25,1.25"
-                    translate: "0,-10"
+                    scale: "-1,1"
+                    translate: "0,16"
         shotgun:
-            idle:   Animation.new
+            idle:
                 path: "textures/shotgun/idle/survivor-idle_shotgun_"
                 name: "shotgun-idle"
                 size: 19
                 frame-length: 3
                 adjust: 
-                    scale: "1.25,1.25"
-                    translate: "0,-10"
+                    scale: "-1,1"
+                    translate: "0,16"
 
-            move:   Animation.new
+            move:
                 path: "textures/shotgun/move/survivor-move_shotgun_"
                 name: "shotgun-move"
                 size: 19
                 frame-length: 3
                 adjust: 
-                    scale: "1.25,1.25"
-                    translate: "0,-10"
+                    scale: "-1,1"
+                    translate: "0,16"
 
-            attack: Animation.new
+            attack:
                 path: "textures/shotgun/meleeattack/survivor-meleeattack_shotgun_"
                 name: "shotgun-meleeattack"
                 size: 14
                 frame-length: 2
                 adjust: 
-                    scale: "1.45,1.45"
-                    translate: "-5,-20"
+                    scale: "-1,1"
+                    translate: "0,16"
 
-            shoot:  Animation.new
+            shoot:
                 path: "textures/shotgun/shoot/survivor-shoot_shotgun_"
                 name: "shotgun-shoot"
                 size: 2
                 frame-length: 3
                 adjust: 
-                    scale: "1.25,1.25"
-                    translate: "0,-10"
+                    scale: "-1,1"
+                    translate: "0,16"
 
-            reload: Animation.new
+            reload:
                 path: "textures/shotgun/reload/survivor-reload_shotgun_"
                 name: "shotgun-reload"
                 size: 14
                 frame-length: 3
                 adjust: 
-                    scale: "1.25,1.25"
-                    translate: "0,-10"
+                    scale: "-1,1"
+                    translate: "0,16"
 
         flashlight:
-            idle:   Animation.new
+            idle:
                 path: "textures/flashlight/idle/survivor-idle_flashlight_"
                 name: "flashlight-idle"
                 size: 19
@@ -183,7 +181,7 @@ let animations =
                     scale: "1.25,1.25"
                     translate: "0,-10"
 
-            move:   Animation.new
+            move:
                 path: "textures/flashlight/move/survivor-move_flashlight_"
                 name: "flashlight-move"
                 size: 19
@@ -192,7 +190,7 @@ let animations =
                     scale: "1.25,1.25"
                     translate: "0,-10"
 
-            attack: Animation.new
+            attack:
                 path: "textures/flashlight/meleeattack/survivor-meleeattack_flashlight_"
                 name: "flashlight-meleeattack"
                 size: 14
@@ -202,75 +200,78 @@ let animations =
                     translate: "-5,-10"
 
     feet:
-        idle:         Animation.new
+        idle:
             path: "textures/feet/idle/survivor-idle_"
             name: "feet-idle"
             size: 1
             frame-length: 3
             adjust: 
-                scale: "0.9,0.9"
-                translate: "0,10"
+                scale: "-0.7,0.7"
+                translate: "3,0"
 
-        run:          Animation.new
+        run:
             path: "textures/feet/run/survivor-run_"
             name: "feet-run"
             size: 19
             frame-length: 3
             adjust: 
-                scale: "0.9,0.9"
-                translate: "0,10"
+                scale: "-0.7,0.7"
+                translate: "3,0"
 
-        walk:         Animation.new
+        walk:
             path: "textures/feet/walk/survivor-walk_"
             name: "feet-walk"
             size: 19
             frame-length: 3
             adjust: 
-                scale: "0.9,0.9"
-                translate: "0,10"
+                scale: "-0.7,0.7"
+                translate: "3,0"
 
-        strafe_left:  Animation.new
+        strafe_left:
             path: "textures/feet/strafe_left/survivor-strafe_left_"
             name: "feet-strafe_left"
             size: 19
             frame-length: 3
             adjust: 
-                scale: "0.9,0.9"
-                translate: "0,10"
+                scale: "-0.7,0.7"
+                translate: "3,0"
 
-        strafe_right: Animation.new
+        strafe_right:
             path: "textures/feet/strafe_right/survivor-strafe_right_"
             name: "feet-strafe_right"
             size: 19
             frame-length: 3
             adjust: 
-                scale: "0.9,0.9"
-                translate: "0,10"
+                scale: "-0.7,0.7"
+                translate: "3,0"
 
     zombie:
-        idle:    Animation.new
-            path: "idle"
+        idle:
+            path: "textures/zombie/idle/skeleton-idle_"
+            name: "idle"
             size: 16
-            frame-length: 3
+            frame-length: 5
             adjust: 
-                scale: "1,1"
-                translate: "0,0"
+                scale: ".85,.85"
+                translate: "6,-1"
 
-        attack:  Animation.new
-            path: "attack"
+        attack:
+            path: "textures/zombie/attack/skeleton-attack_"
+            name: "attack"
             size: 8
-            frame-length: 2
+            frame-length: 5
             adjust: 
-                scale: "1.3,1.3"
-                translate: "0,0"
+                scale: ".9,.9"
+                translate: "6,-1"
 
-        move:    Animation.new
-            path: "move"
+        move:
+            path: "textures/zombie/move/skeleton-move_"
+            name: "move"
             size: 16
-            frame-length: 3
+            frame-length: 5
             adjust: 
-                scale: "1.3,1.3"
-                translate: "0,0"
+                scale: ".85,.85"
+                translate: "6,-1"
 
 
 
@@ -279,21 +280,26 @@ let animations =
 
 
 
-var guns = 
-    [   #       cap,   rate,  spread, damage, power, projectiles, speed, reload_time,  name,               price
-        Gun.new(6,     150,   6,      30,     15,    1,           8,     2000,         'revolver',         0)
-        Gun.new(12,    280,   10,     13,     15,    1,           7,     1000,         'usp45',            500)
-        Gun.new(7,     100,   20,     50,     30,    1,           8,     1400,         'desert eagle',     5000)
-        Gun.new(30,    1000,  15,     13,     5,     1,           8,     1000,         'mp5',              10000)
-        Gun.new(5,     60,    25,     12,     16,    6,           8,     2200,         'pump shotgun',     20000)
-        Gun.new(15,    600,   20,     40,     20,    1,           12,    1500,         'ak47',             30000)
-        Gun.new(25,    800,   15,     30,     15,    1,           13,    1200,         'm4a1',             33000)
-        Gun.new(5,     60,    4,      100,    20,    1,           15,    1600,         'm95',              18000)
-    ]
-var player = Player.new([guns[0]])
+var guns = [   
+    #       cap,   rate,  spread, damage, power, projectiles, speed, reload_time,  name,               price
+    Gun.new(12,    280,   8,     13,     15,    1,           7,     1000,         'handgun',   500)
+    Gun.new(5,     60,    25,     12,     16,    6,           8,     2200,         'shotgun',   20000)
+    Gun.new(15,    600,   15,     40,     20,    1,           12,    1500,         'rifle',     30000)
+]
+# [   #       cap,   rate,  spread, damage, power, projectiles, speed, reload_time,  name,               price
+#     Gun.new(6,     150,   6,      30,     15,    1,           8,     2000,         'revolver',         0)
+#     Gun.new(12,    280,   10,     13,     15,    1,           7,     1000,         'usp45',            500)
+#     Gun.new(7,     100,   20,     50,     30,    1,           8,     1400,         'desert eagle',     5000)
+#     Gun.new(30,    1000,  15,     13,     5,     1,           8,     1000,         'mp5',              10000)
+#     Gun.new(5,     60,    25,     12,     16,    6,           8,     2200,         'pump shotgun',     20000)
+#     Gun.new(15,    600,   20,     40,     20,    1,           12,    1500,         'ak47',             30000)
+#     Gun.new(25,    800,   15,     30,     15,    1,           13,    1200,         'm4a1',             33000)
+#     Gun.new(5,     60,    4,      100,    20,    1,           15,    1600,         'm95',              18000)
+# ]
+var player = Player.new(guns, animations.player, animations.feet)
 let zombies = {} 
 for i in [0..5000]
-    let zombie = Zombie.new(player, 1)
+    let zombie = Zombie.new(player, 1, animations.zombie)
     zombies[zombie.currentSector()] ||= Set.new
     zombies[zombie.currentSector()].add(zombie)
 
@@ -320,7 +326,7 @@ export var state =
     svg: 
         height: 1
         width: 1
-    store: guns.slice(1,-1)
+    store: guns.slice(1,guns.len)
     shop: {
         guns: []
         upgrade-gun: null

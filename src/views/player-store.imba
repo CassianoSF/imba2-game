@@ -26,7 +26,7 @@ tag player-store
             sector.clear()
 
         for i in [0..(5000 + 1000 * (state.day ** 1.4))]
-            let zombie = Zombie.new(state.player, state.day)
+            let zombie = Zombie.new(state.player, state.day, state.animations.zombie)
             state.zombies[zombie.currentSector()] ||= Set.new
             state.zombies[zombie.currentSector()].add(zombie)
 

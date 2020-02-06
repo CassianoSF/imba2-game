@@ -10,8 +10,8 @@ export class Bullet < GameObject
         @speed = speed
         @penetration = penetration
         @position = {
-            x: state.player.position.x + Math.cos((state.player.rotation) * 0.01745) * 5
-            y: state.player.position.y + Math.sin((state.player.rotation) * 0.01745) * 5
+            x: state.player.position.x + Math.cos((state.player.rotation + 60) * 0.01745) * 30
+            y: state.player.position.y + Math.sin((state.player.rotation + 60) * 0.01745) * 30
         }
         @rotation = state.player.rotation + 90 + (Math.random() * spread - (spread/2))
 
@@ -24,7 +24,7 @@ export class Bullet < GameObject
 
     def checkColision
         for zombie of state.zombies[@currentSector()]
-            if @distanceToObjectX(zombie) < (zombie.size * 2) and @distanceToObjectY(zombie) < (zombie.size * 2)
+            if @distanceToObjectX(zombie) < (zombie.size) and @distanceToObjectY(zombie) < (zombie.size)
                 zombie.takeHit(self)
                 @penetration--
                 if @penetration <= 0

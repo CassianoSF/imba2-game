@@ -7,7 +7,7 @@ let ATTACK = 2
 let DEAD = 3
 
 export class Zombie < GameObject
-    def constructor player, day
+    def constructor player, day, animations
         super
         @player = player
         @position = GameObject.randomPosition(@player) 
@@ -17,18 +17,22 @@ export class Zombie < GameObject
         @speed = .2
         @base_speed = .2
         @max_speed = .6 + (day / 20)
-        @size = 10
+        @size = 20
         @turn = 0
         @life = 50 + (day*3)
         @death = 0
+        @animations = animations
+        @animation = animations.idle
+        @animation-state = 'idle'
 
     def update
         @updateSector()
         @checkColisions()
-        if @state is DEAD   then return @execDead()
-        if @state is DRIFT  then return @execDrift()
-        if @state is AGGRO  then return @execAggro()
-        if @state is ATTACK then return @execAttack()
+        if @state is DEAD   then @execDead()
+        if @state is DRIFT  then @execDrift()
+        if @state is AGGRO  then @execAggro()
+        if @state is ATTACK then @execAttack()
+        @animation = @animations[@animation-state]
 
     def execDead
         if state.time - @death > 5000
@@ -36,6 +40,7 @@ export class Zombie < GameObject
             delete self
 
     def execAttack
+        @animation-state = 'attack'
         if not @start_attack
             @start_attack = state.time
         if state.time - @start_attack > 100 and @playerIsClose(@size * 2) and not @player_beaten
@@ -48,6 +53,7 @@ export class Zombie < GameObject
             @state = AGGRO
 
     def execDrift
+        @animation-state = 'move'
         if @playerDetected()
             @state = AGGRO
         if state.time % 200 == 0
@@ -61,6 +67,7 @@ export class Zombie < GameObject
         @moveForward()
 
     def execAggro
+        @animation-state = 'move'
         if @player.inSafeZone()
             @state = DRIFT
         if @playerIsClose(@size * 2.1)

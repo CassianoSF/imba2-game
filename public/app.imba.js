@@ -1104,13 +1104,6 @@ imba$1.createSVGElement = function (name,bitflags,parent,flags,text,sfc){
 
 // import './intersect'
 
-class Animation {
-	constructor(obj){
-		for (let value, i = 0, keys = Object.keys(obj), l = keys.length, key; i < l; i++){
-			key = keys[i];value = obj[key];this[key] = value;
-		}	}
-}
-
 function iter$$4(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }var global$ = (typeof window !== 'undefined' ? window : (typeof global !== 'undefined' ? global : null));
 
 class Game {
@@ -1243,8 +1236,8 @@ class Bullet extends GameObject {
 		this.speed = speed;
 		this.penetration = penetration;
 		this.position = {
-			x: state.player.position.x + Math.cos((state.player.rotation) * 0.01745) * 5,
-			y: state.player.position.y + Math.sin((state.player.rotation) * 0.01745) * 5
+			x: state.player.position.x + Math.cos((state.player.rotation + 60) * 0.01745) * 30,
+			y: state.player.position.y + Math.sin((state.player.rotation + 60) * 0.01745) * 30
 		};
 		this.rotation = state.player.rotation + 90 + (Math.random() * spread - (spread / 2));
 	}
@@ -1260,7 +1253,7 @@ class Bullet extends GameObject {
 	checkColision(){
 		let res = [];
 		for (let zombie of iter$$5(state.zombies[this.currentSector()])){
-			res.push((this.distanceToObjectX(zombie) < (zombie.size * 2) && this.distanceToObjectY(zombie) < (zombie.size * 2)) && (
+			res.push((this.distanceToObjectX(zombie) < (zombie.size) && this.distanceToObjectY(zombie) < (zombie.size)) && (
 				zombie.takeHit(this),
 				this.penetration--,
 				(this.penetration <= 0) && (
@@ -1327,25 +1320,32 @@ class Player extends GameObject {
 	static init$(){
 		return super.inherited instanceof Function && super.inherited(this);
 	}
-	constructor(inventory){
+	constructor(inventory,animations,feetAnimations){
 		super(...arguments);
 		this.position = {x: 0,y: 0};
 		this.rotation = 0;
-		this.size = 10;
+		this.size = 20;
 		this.inventory = inventory;
 		this.score = 100000;
 		this.gun = this.inventory[0];
-		this.holsters = [this.gun];
+		this.holsters = inventory;
 		this.speed = 0;
 		this.maxSpeed = .8;
 		this.nearZombies = new Set();
 		this.nearObstacles = new Set();
 		this.maxLife = 100;
 		this.life = 100;
-		this.slots = 1;
+		this.slots = 3;
 		this.safe = true;
 		this.stamina = 300;
 		this.maxStamina = 500;
+		this.animations = animations;
+		this.animation = animations.rifle.idle;
+		this.animationState = 'idle';
+		
+		this.feetAnimations = feetAnimations;
+		this.feetAnimation = feetAnimations.idle;
+		this.feetAnimationState = 'idle';
 	}
 	
 	checkShop(){
@@ -1360,7 +1360,11 @@ class Player extends GameObject {
 		this.updateNearObjects(state.zombies,this.nearZombies);
 		this.checkColision(state.obstacles);
 		this.checkColision(state.zombies);
-		return this.checkShop();
+		this.checkShop();
+		if (this.gun.reloading) {
+			this.animationState = 'reload';
+		}		this.animation = this.animations[this.gun.name][this.animationState];
+		return this.feetAnimation = this.feetAnimations[this.feetAnimationState];
 	}
 	
 	updateNearObjects(objSectors,propSet){
@@ -1394,9 +1398,15 @@ class Player extends GameObject {
 		// Aceleration
 		if (keyCount && state.keys.ShiftLeft && this.stamina) {
 			this.stamina--;
-			if (this.speed < this.maxSpeed) { this.speed += (this.maxSpeed / 50); }		} else if (keyCount) {
-			if (!(this.stamina >= this.maxStamina || state.keys.ShiftLeft)) { this.stamina++; }			if (this.speed < this.maxSpeed / 2) { this.speed += (this.maxSpeed / 50); }			if (this.speed >= this.maxSpeed / 2) { this.speed -= (this.maxSpeed / 50); }		} else {
+			if (this.speed < this.maxSpeed) { this.speed += (this.maxSpeed / 50); }			this.animationState = 'move';
+			this.feetAnimationState = 'run';
+		} else if (keyCount) {
+			if (!(this.stamina >= this.maxStamina || state.keys.ShiftLeft)) { this.stamina++; }			if (this.speed < this.maxSpeed / 2) { this.speed += (this.maxSpeed / 50); }			if (this.speed >= this.maxSpeed / 2) { this.speed -= (this.maxSpeed / 50); }			this.animationState = 'move';
+			this.feetAnimationState = 'walk';
+		} else {
 			if (!(this.stamina >= this.maxStamina || state.keys.ShiftLeft)) { this.stamina++; }			this.speed = 0;
+			this.feetAnimationState = 'idle';
+			this.animationState = 'idle';
 		}		
 		// Diagonal correction
 		if (((state.keys.KeyA || 0) + (state.keys.KeyD || 0) + (state.keys.KeyW || 0) + (state.keys.KeyS || 0)) > 1) {
@@ -1447,7 +1457,7 @@ class Player extends GameObject {
 		}	}
 	
 	inSafeZone(){
-		return Math.abs(this.position.x) < 50 && Math.abs(this.position.y) < 50;
+		return Math.abs(this.position.x) < 100 && Math.abs(this.position.y) < 100;
 	}
 	
 	usingGun(gun){
@@ -1472,7 +1482,7 @@ class Zombie extends GameObject {
 	static init$(){
 		return super.inherited instanceof Function && super.inherited(this);
 	}
-	constructor(player,day){
+	constructor(player,day,animations){
 		super(...arguments);
 		this.player = player;
 		this.position = GameObject.randomPosition(this.player);
@@ -1482,16 +1492,20 @@ class Zombie extends GameObject {
 		this.speed = .2;
 		this.base_speed = .2;
 		this.max_speed = .6 + (day / 20);
-		this.size = 10;
+		this.size = 20;
 		this.turn = 0;
 		this.life = 50 + (day * 3);
 		this.death = 0;
+		this.animations = animations;
+		this.animation = animations.idle;
+		this.animationState = 'idle';
 	}
 	
 	update(){
 		this.updateSector();
 		this.checkColisions();
-		if (this.state === DEAD) { return this.execDead() }		if (this.state === DRIFT) { return this.execDrift() }		if (this.state === AGGRO) { return this.execAggro() }		if (this.state === ATTACK) { return this.execAttack() }	}
+		if (this.state === DEAD) { this.execDead(); }		if (this.state === DRIFT) { this.execDrift(); }		if (this.state === AGGRO) { this.execAggro(); }		if (this.state === ATTACK) { this.execAttack(); }		return this.animation = this.animations[this.animationState];
+	}
 	
 	execDead(){
 		var v_;
@@ -1501,6 +1515,7 @@ class Zombie extends GameObject {
 		}	}
 	
 	execAttack(){
+		this.animationState = 'attack';
 		if (!this.start_attack) {
 			this.start_attack = state.time;
 		}		if (state.time - this.start_attack > 100 && this.playerIsClose(this.size * 2) && !this.player_beaten) {
@@ -1514,6 +1529,7 @@ class Zombie extends GameObject {
 		}	}
 	
 	execDrift(){
+		this.animationState = 'move';
 		if (this.playerDetected()) {
 			this.state = AGGRO;
 		}		if (state.time % 200 == 0) {
@@ -1528,6 +1544,7 @@ class Zombie extends GameObject {
 	}
 	
 	execAggro(){
+		this.animationState = 'move';
 		if (this.player.inSafeZone()) {
 			this.state = DRIFT;
 		}		if (this.playerIsClose(this.size * 2.1)) {
@@ -1615,333 +1632,336 @@ var $1, $2;
 let animations = {
 	player: {
 		knife: {
-			idle: new Animation(
-				{path: "textures/knife/idle/survivor-idle_knife_",
+			idle: {
+				path: "textures/knife/idle/survivor-idle_knife_",
 				name: "knife-idle",
 				size: 19,
 				frameLength: 3,
 				adjust: {
 					scale: "1.15,1.15",
 					translate: "-5,0"
-				}}
-			),
+				}
+			},
 			
-			move: new Animation(
-				{path: "textures/knife/move/survivor-move_knife_",
+			move: {
+				path: "textures/knife/move/survivor-move_knife_",
 				name: "knife-move",
 				size: 19,
 				frameLength: 3,
 				adjust: {
 					scale: "1.15,1.15",
 					translate: "-5,0"
-				}}
-			),
+				}
+			},
 			
-			attack: new Animation(
-				{path: "textures/knife/meleeattack/survivor-meleeattack_knife_",
+			attack: {
+				path: "textures/knife/meleeattack/survivor-meleeattack_knife_",
 				name: "knife-meleeattack",
 				size: 14,
 				frameLength: 2,
 				adjust: {
 					scale: "1.3,1.3",
 					translate: "-5,5"
-				}}
-			)
+				}
+			}
 		},
 		
 		handgun: {
-			idle: new Animation(
-				{path: "textures/handgun/idle/survivor-idle_handgun_",
+			idle: {
+				path: "textures/handgun/idle/survivor-idle_handgun_",
 				name: "handgun-idle",
 				size: 19,
 				frameLength: 3,
 				adjust: {
-					scale: "1,1",
-					translate: "0,0"
-				}}
-			),
+					scale: "-0.8,0.8",
+					translate: "-5,5"
+				}
+			},
 			
-			move: new Animation(
-				{path: "textures/handgun/move/survivor-move_handgun_",
+			move: {
+				path: "textures/handgun/move/survivor-move_handgun_",
 				name: "handgun-move",
 				size: 19,
 				frameLength: 3,
 				adjust: {
-					scale: "1,1",
-					translate: "0,0"
-				}}
-			),
+					scale: "-0.8,0.8",
+					translate: "-5,5"
+				}
+			},
 			
-			attack: new Animation(
-				{path: "textures/handgun/meleeattack/survivor-meleeattack_handgun_",
+			attack: {
+				path: "textures/handgun/meleeattack/survivor-meleeattack_handgun_",
 				name: "handgun-meleeattack",
 				size: 14,
 				frameLength: 2,
 				adjust: {
-					scale: "1.2,1.2",
-					translate: "0,-5"
-				}}
-			),
+					scale: "-0.8,0.8",
+					translate: "-5,5"
+				}
+			},
 			
-			shoot: new Animation(
-				{path: "textures/handgun/shoot/survivor-shoot_handgun_",
+			shoot: {
+				path: "textures/handgun/shoot/survivor-shoot_handgun_",
 				name: "handgun-shoot",
 				size: 2,
 				frameLength: 3,
 				adjust: {
-					scale: "1,1",
-					translate: "0,0"
-				}}
-			),
+					scale: "-0.8,0.8",
+					translate: "-5,5"
+				}
+			},
 			
-			reload: new Animation(
-				{path: "textures/handgun/reload/survivor-reload_handgun_",
+			reload: {
+				path: "textures/handgun/reload/survivor-reload_handgun_",
 				name: "handgun-reload",
 				size: 14,
 				frameLength: 3,
 				adjust: {
-					scale: "1,1",
-					translate: "0,0"
-				}}
-			)
+					scale: "-0.8,0.8",
+					translate: "-5,5"
+				}
+			}
 		},
 		
 		rifle: {
-			idle: new Animation(
-				{path: "textures/rifle/idle/survivor-idle_rifle_",
+			idle: {
+				path: "textures/rifle/idle/survivor-idle_rifle_",
 				name: "rifle-idle",
 				size: 19,
 				frameLength: 3,
 				adjust: {
-					scale: "1.25,1.25",
-					translate: "0,-10"
-				}}
-			),
+					scale: "-1,1",
+					translate: "0,16"
+				}
+			},
 			
-			move: new Animation(
-				{path: "textures/rifle/move/survivor-move_rifle_",
+			move: {
+				path: "textures/rifle/move/survivor-move_rifle_",
 				name: "rifle-move",
 				size: 19,
 				frameLength: 3,
 				adjust: {
-					scale: "1.25,1.25",
-					translate: "0,-10"
-				}}
-			),
+					scale: "-1,1",
+					translate: "0,16"
+				}
+			},
 			
-			attack: new Animation(
-				{path: "textures/rifle/meleeattack/survivor-meleeattack_rifle_",
+			attack: {
+				path: "textures/rifle/meleeattack/survivor-meleeattack_rifle_",
 				name: "rifle-meleeattack",
 				size: 14,
 				frameLength: 2,
 				adjust: {
-					scale: "1.45,1.45",
-					translate: "-5,-20"
-				}}
-			),
+					scale: "-1,1",
+					translate: "0,16"
+				}
+			},
 			
-			shoot: new Animation(
-				{path: "textures/rifle/shoot/survivor-shoot_rifle_",
+			shoot: {
+				path: "textures/rifle/shoot/survivor-shoot_rifle_",
 				name: "rifle-shoot",
 				size: 2,
 				frameLength: 3,
 				adjust: {
-					scale: "1.25,1.25",
-					translate: "0,-10"
-				}}
-			),
+					scale: "-1,1",
+					translate: "0,16"
+				}
+			},
 			
-			reload: new Animation(
-				{path: "textures/rifle/reload/survivor-reload_rifle_",
+			reload: {
+				path: "textures/rifle/reload/survivor-reload_rifle_",
 				name: "rifle-reload",
 				size: 14,
 				frameLength: 3,
 				adjust: {
-					scale: "1.25,1.25",
-					translate: "0,-10"
-				}}
-			)
+					scale: "-1,1",
+					translate: "0,16"
+				}
+			}
 		},
 		shotgun: {
-			idle: new Animation(
-				{path: "textures/shotgun/idle/survivor-idle_shotgun_",
+			idle: {
+				path: "textures/shotgun/idle/survivor-idle_shotgun_",
 				name: "shotgun-idle",
 				size: 19,
 				frameLength: 3,
 				adjust: {
-					scale: "1.25,1.25",
-					translate: "0,-10"
-				}}
-			),
+					scale: "-1,1",
+					translate: "0,16"
+				}
+			},
 			
-			move: new Animation(
-				{path: "textures/shotgun/move/survivor-move_shotgun_",
+			move: {
+				path: "textures/shotgun/move/survivor-move_shotgun_",
 				name: "shotgun-move",
 				size: 19,
 				frameLength: 3,
 				adjust: {
-					scale: "1.25,1.25",
-					translate: "0,-10"
-				}}
-			),
+					scale: "-1,1",
+					translate: "0,16"
+				}
+			},
 			
-			attack: new Animation(
-				{path: "textures/shotgun/meleeattack/survivor-meleeattack_shotgun_",
+			attack: {
+				path: "textures/shotgun/meleeattack/survivor-meleeattack_shotgun_",
 				name: "shotgun-meleeattack",
 				size: 14,
 				frameLength: 2,
 				adjust: {
-					scale: "1.45,1.45",
-					translate: "-5,-20"
-				}}
-			),
+					scale: "-1,1",
+					translate: "0,16"
+				}
+			},
 			
-			shoot: new Animation(
-				{path: "textures/shotgun/shoot/survivor-shoot_shotgun_",
+			shoot: {
+				path: "textures/shotgun/shoot/survivor-shoot_shotgun_",
 				name: "shotgun-shoot",
 				size: 2,
 				frameLength: 3,
 				adjust: {
-					scale: "1.25,1.25",
-					translate: "0,-10"
-				}}
-			),
+					scale: "-1,1",
+					translate: "0,16"
+				}
+			},
 			
-			reload: new Animation(
-				{path: "textures/shotgun/reload/survivor-reload_shotgun_",
+			reload: {
+				path: "textures/shotgun/reload/survivor-reload_shotgun_",
 				name: "shotgun-reload",
 				size: 14,
 				frameLength: 3,
 				adjust: {
-					scale: "1.25,1.25",
-					translate: "0,-10"
-				}}
-			)
+					scale: "-1,1",
+					translate: "0,16"
+				}
+			}
 		},
 		
 		flashlight: {
-			idle: new Animation(
-				{path: "textures/flashlight/idle/survivor-idle_flashlight_",
+			idle: {
+				path: "textures/flashlight/idle/survivor-idle_flashlight_",
 				name: "flashlight-idle",
 				size: 19,
 				frameLength: 3,
 				adjust: {
 					scale: "1.25,1.25",
 					translate: "0,-10"
-				}}
-			),
+				}
+			},
 			
-			move: new Animation(
-				{path: "textures/flashlight/move/survivor-move_flashlight_",
+			move: {
+				path: "textures/flashlight/move/survivor-move_flashlight_",
 				name: "flashlight-move",
 				size: 19,
 				frameLength: 3,
 				adjust: {
 					scale: "1.25,1.25",
 					translate: "0,-10"
-				}}
-			),
+				}
+			},
 			
-			attack: new Animation(
-				{path: "textures/flashlight/meleeattack/survivor-meleeattack_flashlight_",
+			attack: {
+				path: "textures/flashlight/meleeattack/survivor-meleeattack_flashlight_",
 				name: "flashlight-meleeattack",
 				size: 14,
 				frameLength: 2,
 				adjust: {
 					scale: "1.25,1.25",
 					translate: "-5,-10"
-				}}
-			)
+				}
+			}
 		}
 	},
 	
 	feet: {
-		idle: new Animation(
-			{path: "textures/feet/idle/survivor-idle_",
+		idle: {
+			path: "textures/feet/idle/survivor-idle_",
 			name: "feet-idle",
 			size: 1,
 			frameLength: 3,
 			adjust: {
-				scale: "0.9,0.9",
-				translate: "0,10"
-			}}
-		),
+				scale: "-0.7,0.7",
+				translate: "3,0"
+			}
+		},
 		
-		run: new Animation(
-			{path: "textures/feet/run/survivor-run_",
+		run: {
+			path: "textures/feet/run/survivor-run_",
 			name: "feet-run",
 			size: 19,
 			frameLength: 3,
 			adjust: {
-				scale: "0.9,0.9",
-				translate: "0,10"
-			}}
-		),
+				scale: "-0.7,0.7",
+				translate: "3,0"
+			}
+		},
 		
-		walk: new Animation(
-			{path: "textures/feet/walk/survivor-walk_",
+		walk: {
+			path: "textures/feet/walk/survivor-walk_",
 			name: "feet-walk",
 			size: 19,
 			frameLength: 3,
 			adjust: {
-				scale: "0.9,0.9",
-				translate: "0,10"
-			}}
-		),
+				scale: "-0.7,0.7",
+				translate: "3,0"
+			}
+		},
 		
-		strafe_left: new Animation(
-			{path: "textures/feet/strafe_left/survivor-strafe_left_",
+		strafe_left: {
+			path: "textures/feet/strafe_left/survivor-strafe_left_",
 			name: "feet-strafe_left",
 			size: 19,
 			frameLength: 3,
 			adjust: {
-				scale: "0.9,0.9",
-				translate: "0,10"
-			}}
-		),
+				scale: "-0.7,0.7",
+				translate: "3,0"
+			}
+		},
 		
-		strafe_right: new Animation(
-			{path: "textures/feet/strafe_right/survivor-strafe_right_",
+		strafe_right: {
+			path: "textures/feet/strafe_right/survivor-strafe_right_",
 			name: "feet-strafe_right",
 			size: 19,
 			frameLength: 3,
 			adjust: {
-				scale: "0.9,0.9",
-				translate: "0,10"
-			}}
-		)
+				scale: "-0.7,0.7",
+				translate: "3,0"
+			}
+		}
 	},
 	
 	zombie: {
-		idle: new Animation(
-			{path: "idle",
+		idle: {
+			path: "textures/zombie/idle/skeleton-idle_",
+			name: "idle",
 			size: 16,
-			frameLength: 3,
+			frameLength: 5,
 			adjust: {
-				scale: "1,1",
-				translate: "0,0"
-			}}
-		),
+				scale: ".85,.85",
+				translate: "6,-1"
+			}
+		},
 		
-		attack: new Animation(
-			{path: "attack",
+		attack: {
+			path: "textures/zombie/attack/skeleton-attack_",
+			name: "attack",
 			size: 8,
-			frameLength: 2,
+			frameLength: 5,
 			adjust: {
-				scale: "1.3,1.3",
-				translate: "0,0"
-			}}
-		),
+				scale: ".9,.9",
+				translate: "6,-1"
+			}
+		},
 		
-		move: new Animation(
-			{path: "move",
+		move: {
+			path: "textures/zombie/move/skeleton-move_",
+			name: "move",
 			size: 16,
-			frameLength: 3,
+			frameLength: 5,
 			adjust: {
-				scale: "1.3,1.3",
-				translate: "0,0"
-			}}
-		)
+				scale: ".85,.85",
+				translate: "6,-1"
+			}
+		}
 	}
 };
 
@@ -1952,20 +1972,26 @@ let animations = {
 
 
 
-var guns = [ //       cap,   rate,  spread, damage, power, projectiles, speed, reload_time,  name,               price
-	new Gun(6,150,6,30,15,1,8,2000,'revolver',0),
-	new Gun(12,280,10,13,15,1,7,1000,'usp45',500),
-	new Gun(7,100,20,50,30,1,8,1400,'desert eagle',5000),
-	new Gun(30,1000,15,13,5,1,8,1000,'mp5',10000),
-	new Gun(5,60,25,12,16,6,8,2200,'pump shotgun',20000),
-	new Gun(15,600,20,40,20,1,12,1500,'ak47',30000),
-	new Gun(25,800,15,30,15,1,13,1200,'m4a1',33000),
-	new Gun(5,60,4,100,20,1,15,1600,'m95',18000)
+var guns = [
+	//       cap,   rate,  spread, damage, power, projectiles, speed, reload_time,  name,               price
+	new Gun(12,280,8,13,15,1,7,1000,'handgun',500),
+	new Gun(5,60,25,12,16,6,8,2200,'shotgun',20000),
+	new Gun(15,600,15,40,20,1,12,1500,'rifle',30000)
 ];
-var player = new Player([guns[0]]);
+// [   #       cap,   rate,  spread, damage, power, projectiles, speed, reload_time,  name,               price
+//     Gun.new(6,     150,   6,      30,     15,    1,           8,     2000,         'revolver',         0)
+//     Gun.new(12,    280,   10,     13,     15,    1,           7,     1000,         'usp45',            500)
+//     Gun.new(7,     100,   20,     50,     30,    1,           8,     1400,         'desert eagle',     5000)
+//     Gun.new(30,    1000,  15,     13,     5,     1,           8,     1000,         'mp5',              10000)
+//     Gun.new(5,     60,    25,     12,     16,    6,           8,     2200,         'pump shotgun',     20000)
+//     Gun.new(15,    600,   20,     40,     20,    1,           12,    1500,         'ak47',             30000)
+//     Gun.new(25,    800,   15,     30,     15,    1,           13,    1200,         'm4a1',             33000)
+//     Gun.new(5,     60,    4,      100,    20,    1,           15,    1600,         'm95',              18000)
+// ]
+var player = new Player(guns,animations.player,animations.feet);
 let zombies = {};
 for (let i = 0; i <= 5000; i++) {
-	let zombie = new Zombie(player,1);
+	let zombie = new Zombie(player,1,animations.zombie);
 	zombies[$1 = zombie.currentSector()] || (zombies[$1] = new Set());
 	zombies[zombie.currentSector()].add(zombie);
 }
@@ -1993,7 +2019,7 @@ var state = {
 		height: 1,
 		width: 1
 	},
-	store: guns.slice(1,-1),
+	store: guns.slice(1,guns.len),
 	shop: {
 		guns: [],
 		upgradeGun: null,
@@ -2170,7 +2196,7 @@ class PlayerStoreComponent extends imba.tags.get('component','ImbaElement') {
 			key = keys[i];sector = o[key];sector.clear();
 		}		
 		for (let len = (5000 + 1000 * (state.day ** 1.4)), i = 0, rd = len - i; (rd > 0) ? (i <= len) : (i >= len); (rd > 0) ? (i++) : (i--)) {
-			let zombie = new Zombie(state.player,state.day);
+			let zombie = new Zombie(state.player,state.day,state.animations.zombie);
 			(zombies_ = state.zombies)[$1 = zombie.currentSector()] || (zombies_[$1] = new Set());
 			state.zombies[zombie.currentSector()].add(zombie);
 		}		
@@ -2476,6 +2502,8 @@ function iter$$9(a){ return a ? (a.toIterable ? a.toIterable() : a) : []; }
 class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 	
 	build(){
+		this.arrow_path = "M0 0l254.38 454.78c-230.68,-167.78 -274.65,-164.19 -508.77,0l254.38 -454.78z";
+		this.player = state.player;
 		this.animations = [];
 		return this.loadAnimations();
 	}
@@ -2485,16 +2513,16 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 	}
 	
 	cameraPosX(){
-		return window.innerWidth / 2 - state.player.position.x;
+		return window.innerWidth / 2 - this.player.position.x;
 	}
 	
 	cameraPosY(){
-		return window.innerHeight / 2 - state.player.position.y;
+		return window.innerHeight / 2 - this.player.position.y;
 	}
 	
 	transformCamera(){
-		if (state.time - state.player.gun.last_shot < 30) {
-			let power = state.player.gun.power / 2;
+		if (state.time - this.player.gun.last_shot < 30) {
+			let power = this.player.gun.power / 2;
 			let x = this.cameraPosX() + Math.random() * power - power / 2;
 			let y = this.cameraPosY() + Math.random() * power - power / 2;
 			return ("translate(" + x + ", " + y + ")");
@@ -2503,7 +2531,7 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		}	}
 	
 	transformPlayer(){
-		return ("translate(" + (state.player.position.x) + ", " + (state.player.position.y) + ") rotate(" + (state.player.rotation) + ")");
+		return ("translate(" + (this.player.position.x) + ", " + (this.player.position.y) + ") rotate(" + (this.player.rotation) + ")");
 	}
 	
 	transformBullet(bullet){
@@ -2518,39 +2546,76 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		return ("translate(" + (obs.position.x) + ", " + (obs.position.y) + ") rotate(" + (obs.rotation) + ")");
 	}
 	
-	
 	transformShopArrow(){
-		let pos = state.player.position;
+		let pos = this.player.position;
 		let rotation = -(Math.atan2(pos.x,pos.y) / 0.01745 + 180) % 360;
 		return ("translate(" + (pos.x) + ", " + (pos.y) + ") rotate(" + rotation + ")");
-		
-		
-		
-		// for own name, anim of state.animations.feet
-		//     for a, i in Array.from(Array.new(anim.size))
-		//         <svg:defs>
-		//             <svg:pattern id="{anim.name}-{i}" patternUnits="userSpaceOnUse" width="100" height="100" patternContentUnits="userSpaceOnUse">
-		//                 <svg:image href="{anim.path}{i}.png" width="100" height="100">
+	}
+	
+	playerTexture(){
+		let time = state.time / 16;
+		let anim = this.player.animation;
+		return ("url(#" + (anim.name) + "-" + (~~(time / anim.frameLength % anim.size)) + ")");
+	}
+	
+	feetTexture(){
+		let time = state.time / 16;
+		let anim = this.player.feetAnimation;
+		return ("url(#" + (anim.name) + "-" + (~~(time / anim.frameLength % anim.size)) + ")");
+	}
+	
+	zombieTexture(zombie){
+		let time = state.time / 16;
+		let anim = zombie.animation;
+		return ("url(#" + (anim.name) + "-" + (~~(time / anim.frameLength % anim.size)) + ")");
+	}
+	
+	animationAdjust(){
+		let adjust = this.player.animation.adjust;
+		return ("translate(" + (adjust.translate) + ") scale(" + (adjust.scale) + ")");
+	}
+	
+	feetAdjust(){
+		let adjust = this.player.feetAnimation.adjust;
+		return ("translate(" + (adjust.translate) + ") scale(" + (adjust.scale) + ")");
+	}
+	
+	zombieAdjust(zombie){
+		let adjust = zombie.animation.adjust;
+		return ("translate(" + (adjust.translate) + ") scale(" + (adjust.scale) + ")");
 	}
 	
 	loadAnimations(){
-		let res = [];
 		for (let o = state.animations.player, anims, i = 0, keys = Object.keys(o), l = keys.length, gun; i < l; i++){
-			gun = keys[i];anims = o[gun];let res1 = [];
-			for (let anim, j = 0, keys1 = Object.keys(anims), l = keys1.length, action; j < l; j++){
-				action = keys1[j];anim = anims[action];let res2 = [];
-				for (let len = anim.size, a = 0, i = 0, rd = len - a; (rd > 0) ? (a < len) : (a > len); (rd > 0) ? (a++) : (a--),i++) {
-					res2.push(this.animations.push({
+			gun = keys[i];anims = o[gun];for (let anim, j = 0, keys1 = Object.keys(anims), l = keys1.length, action; j < l; j++){
+				action = keys1[j];anim = anims[action];for (let len = anim.size, a = 0, i = 0, rd = len - a; (rd > 0) ? (a < len) : (a > len); (rd > 0) ? (a++) : (a--),i++) {
+					this.animations.push({
 						name: ("" + (anim.name) + "-" + i),
 						path: ("" + (anim.path) + i)
-					}));
-				}				res1.push(res2);
+					});
+				}			}		}		for (let o = state.animations.feet, anim, i = 0, keys = Object.keys(o), l = keys.length, action; i < l; i++){
+			action = keys[i];anim = o[action];for (let len = anim.size, a = 0, i = 0, rd = len - a; (rd > 0) ? (a < len) : (a > len); (rd > 0) ? (a++) : (a--),i++) {
+				this.animations.push({
+					name: ("" + (anim.name) + "-" + i),
+					path: ("" + (anim.path) + i)
+				});
+			}		}		let res = [];
+		for (let o = state.animations.zombie, anim, i = 0, keys = Object.keys(o), l = keys.length, action; i < l; i++){
+			action = keys[i];anim = o[action];let res1 = [];
+			for (let len = anim.size, a = 0, i = 0, rd = len - a; (rd > 0) ? (a < len) : (a > len); (rd > 0) ? (a++) : (a--),i++) {
+				res1.push(this.animations.push({
+					name: ("" + (anim.name) + "-" + i),
+					path: ("" + (anim.path) + i)
+				}));
 			}			res.push(res1);
 		}		return res;
 	}
 	
+	
+	
+	
 	render(){
-		var t$0, c$0, b$0, d$0, t$1, t$2, b$2, d$2, b$1, d$1, k$2, c$2, t$3, b$3, d$3, c$3, t$4, b$4, d$4, v$4, t$5, b$5, d$5, v$5, v$2, k$3, c$4, v$$3, t$6, v$3;
+		var t$0, c$0, b$0, d$0, t$1, t$2, b$2, d$2, t$3, k$3, c$3, t$4, b$4, d$4, c$4, v$4, t$5, b$5, d$5, v$5, v$2, u$$3, t$6, b$6, d$6, v$6, v$3;
 		t$0=this;
 		t$0.open$();
 		c$0 = (b$0=d$0=1,t$0.$) || (b$0=d$0=0,t$0.$={});
@@ -2563,32 +2628,32 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		b$2 || !t$2.setup || t$2.setup(d$2);
 		t$2.end$(d$2);
 		b$2 || t$2.insertInto$(t$1);
-		t$1 = (b$1=d$1=1,c$0.d) || (b$1=d$1=0,c$0.d=t$1=imba.createSVGElement('svg',2048,t$0,null,null,null));
-		b$1 || (t$1.set$('transform',"scale(1,-1)"));
-		b$1 || (t$1.set$('height',"100%"));
-		b$1 || (t$1.set$('width',"100%"));
-		t$2 = c$0.e || (c$0.e = t$2 = imba.createIndexedFragment(0,t$1));
-		k$2 = 0;
-		c$2=t$2.$;
+		b$0 || (t$1=imba.createSVGElement('svg',0,t$0,null,null,null));
+		b$0 || (t$1.set$('transform',"scale(1,-1)"));
+		b$0 || (t$1.set$('height',"100%"));
+		b$0 || (t$1.set$('width',"100%"));
+		t$2 = c$0.d || (c$0.d = t$2=imba.createSVGElement('defs',2048,t$1,null,null,null));
+		t$3 = c$0.e || (c$0.e = t$3 = imba.createIndexedFragment(0,t$2));
+		k$3 = 0;
+		c$3=t$3.$;
 		for (let i = 0, items = iter$$9(this.animations), len = items.length, animation; i < len; i++) {
 			animation = items[i];
-			t$3 = (b$3=d$3=1,c$2[k$2]) || (b$3=d$3=0,c$2[k$2] = t$3=imba.createSVGElement('defs',0,t$2,null,null,null));
-			b$3||(t$3.up$=t$2);
-			c$3=t$3.$f || (t$3.$f={});
-			t$4 = (b$4=d$4=1,c$3.g) || (b$4=d$4=0,c$3.g=t$4=imba.createSVGElement('pattern',0,t$3,null,null,null));
-			(v$4=("" + (animation.name)),v$4===c$3.h || (t$4.set$('id',c$3.h=v$4)));
+			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('pattern',0,t$3,null,null,null));
+			b$4||(t$4.up$=t$3);
+			c$4=t$4.$f || (t$4.$f={});
+			(v$4=("" + (animation.name)),v$4===c$4.g || (t$4.set$('id',c$4.g=v$4)));
 			b$4 || (t$4.set$('patternUnits',"userSpaceOnUse"));
 			b$4 || (t$4.set$('width',"100"));
 			b$4 || (t$4.set$('height',"100"));
 			b$4 || (t$4.set$('patternContentUnits',"userSpaceOnUse"));
-			t$5 = (b$5=d$5=1,c$3.i) || (b$5=d$5=0,c$3.i=t$5=imba.createSVGElement('image',0,t$4,null,null,null));
-			(v$5=("" + (animation.path) + ".png"),v$5===c$3.j || (t$5.set$('href',c$3.j=v$5)));
+			t$5 = (b$5=d$5=1,c$4.h) || (b$5=d$5=0,c$4.h=t$5=imba.createSVGElement('image',0,t$4,null,null,null));
+			(v$5=("" + (animation.path) + ".png"),v$5===c$4.i || (t$5.set$('href',c$4.i=v$5)));
 			b$5 || (t$5.set$('width',"100"));
 			b$5 || (t$5.set$('height',"100"));
-			k$2++;
-		}t$2.end$(k$2);
-		t$2 = (b$2=d$2=1,c$0.k) || (b$2=d$2=0,c$0.k=t$2=imba.createSVGElement('g',0,t$1,null,null,null));
-		(v$2=("translate(" + (state.mouse.x) + ", " + (state.mouse.y) + ")"),v$2===c$0.l || (t$2.set$('transform',c$0.l=v$2)));
+			k$3++;
+		}t$3.end$(k$3);
+		t$2 = (b$2=d$2=1,c$0.j) || (b$2=d$2=0,c$0.j=t$2=imba.createSVGElement('g',0,t$1,null,null,null));
+		(v$2=("translate(" + (state.mouse.x) + ", " + (state.mouse.y) + ")"),v$2===c$0.k || (t$2.set$('transform',c$0.k=v$2)));
 		b$2 || (t$3=imba.createSVGElement('line',0,t$2,null,null,null));
 		b$2 || (t$3.set$('y1',4));
 		b$2 || (t$3.set$('y2',10));
@@ -2605,116 +2670,105 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		b$2 || (t$3.set$('x1',-4));
 		b$2 || (t$3.set$('x2',-10));
 		b$2 || (t$3.set$('stroke','#5F5'));
-		t$2 = (b$2=d$2=1,c$0.m) || (b$2=d$2=0,c$0.m=t$2=imba.createSVGElement('g',3584,t$1,null,null,null));
-		(v$2=this.transformCamera(),v$2===c$0.n || (t$2.set$('transform',c$0.n=v$2)));
-		(v$2=(state.player.dead||undefined),v$2===c$0.p||(d$2|=2,c$0.p=v$2));
-		(d$2&2 && t$2.flag$((c$0.p ? `fadeOut` : '')));
-		t$3 = c$0.q || (c$0.q = t$3 = imba.createIndexedFragment(0,t$2));
+		t$2 = (b$2=d$2=1,c$0.l) || (b$2=d$2=0,c$0.l=t$2=imba.createSVGElement('g',3584,t$1,null,null,null));
+		(v$2=this.transformCamera(),v$2===c$0.m || (t$2.set$('transform',c$0.m=v$2)));
+		(v$2=(this.player.dead||undefined),v$2===c$0.o||(d$2|=2,c$0.o=v$2));
+		(d$2&2 && t$2.flag$((c$0.o ? `fadeOut` : '')));
+		t$3 = c$0.p || (c$0.p = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
-		for (let obs of iter$$9(state.player.nearObstacles)){
+		for (let obj of iter$$9(this.player.nearObstacles)){
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,null,null,null));
 			b$4||(t$4.up$=t$3);
-			c$4=t$4.$r || (t$4.$r={});
-			(v$4=this.transformObstacle(obs),v$4===c$4.s || (t$4.set$('transform',c$4.s=v$4)));
-			t$5 = (b$5=d$5=1,c$4.t) || (b$5=d$5=0,c$4.t=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
-			(v$5=obs.size,v$5===c$4.u || (t$5.set$('r',c$4.u=v$5)));
+			c$4=t$4.$q || (t$4.$q={});
+			(v$4=this.transformObstacle(obj),v$4===c$4.r || (t$4.set$('transform',c$4.r=v$4)));
+			t$5 = (b$5=d$5=1,c$4.s) || (b$5=d$5=0,c$4.s=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
+			(v$5=obj.size,v$5===c$4.t || (t$5.set$('r',c$4.t=v$5)));
 			b$5 || (t$5.set$('fill',"grey"));
 			k$3++;
 		}t$3.end$(k$3);
-		if (state.player.distanceTo(0,0) > 600) {
-			v$$3 = (b$4=d$4=1,c$0.v) || (b$4=d$4=0,c$0.v=v$$3=imba.createSVGElement('g',0,null,'fadeIn',null,null));
-			b$4||(v$$3.up$=t$2);
-			(v$4=this.transformShopArrow(),v$4===c$0.w || (v$$3.set$('transform',c$0.w=v$4)));
-			b$4 || (t$5=imba.createSVGElement('g',0,v$$3,null,null,null));
-			b$4 || (t$5.set$('transform',"translate(0,250) scale(2,2)"));
-			b$4 || (t$6=imba.createSVGElement('path',0,t$5,null,null,null));
-			b$4 || (t$6.set$('fill',"rgba(0,255,0,0.4)"));
-			b$4 || (t$6.set$('d',"M0 0l0.93 0 0 21.69c1.42,-0.19 2.96,-1.19 5.18,-3l-5.68 9.66 -5.61 -9.78c2.2,1.91 3.7,2.97 5.18,3.13l0 -21.7z"));
+		if (this.player.distanceTo(0,0) > 1000) {
+			u$$3 = (b$4=d$4=1,c$0.u) || (b$4=d$4=0,c$0.u=u$$3=imba.createSVGElement('g',0,null,'fadeIn',null,null));
+			b$4||(u$$3.up$=t$2);
+			(v$4=this.transformShopArrow(),v$4===c$0.v || (u$$3.set$('transform',c$0.v=v$4)));
+			b$4 || (t$5=imba.createSVGElement('g',0,u$$3,null,null,null));
+			b$4 || (t$5.set$('transform',"translate(0,350) rotate(180) scale(0.08,0.08)"));
+			t$6 = (b$6=d$6=1,c$0.w) || (b$6=d$6=0,c$0.w=t$6=imba.createSVGElement('path',0,t$5,null,null,null));
+			b$6 || (t$6.set$('fill',"rgba(0,255,0,0.4)"));
+			(v$6=this.arrow_path,v$6===c$0.x || (t$6.set$('d',c$0.x=v$6)));
 		}
-		(c$0.v$$3_ = t$2.insert$(v$$3,1024,c$0.v$$3_));		t$3 = (b$3=d$3=1,c$0.x) || (b$3=d$3=0,c$0.x=t$3=imba.createSVGElement('g',0,t$2,null,null,null));
-		(v$3=this.transformPlayer(),v$3===c$0.y || (t$3.set$('transform',c$0.y=v$3)));
-		b$3 || (t$4=imba.createSVGElement('circle',0,t$3,null,null,null));
-		b$3 || (t$4.set$('r',10));
-		b$3 || (t$4.set$('fill',"white"));
-		b$3 || (t$4=imba.createSVGElement('rect',0,t$3,null,null,null));
-		b$3 || (t$4.set$('width',100));
-		b$3 || (t$4.set$('height',100));
-		b$3 || (t$4.set$('transform',"scale(-.7,.7) rotate(90) translate(-50,-50)"));
-		b$3 || (t$4.set$('fill',"url(#handgun-idle-0)"));
-		b$3 || (t$4=imba.createSVGElement('g',0,t$3,null,null,null));
-		b$3 || (t$4.set$('transform','translate(5, 5)'));
-		b$3 || (t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-		b$3 || (t$5.set$('height',"13"));
-		b$3 || (t$5.set$('width',"2"));
-		b$3 || (t$5.set$('fill',"white"));
-		t$3 = c$0.z || (c$0.z = t$3 = imba.createIndexedFragment(0,t$2));
+		(c$0.u$$3_ = t$2.insert$(u$$3,1024,c$0.u$$3_));		t$3 = (c$0.y) || (c$0.y=t$3=imba.createSVGElement('g',0,t$2,null,null,null));
+		(v$3=this.transformPlayer(),v$3===c$0.z || (t$3.set$('transform',c$0.z=v$3)));
+		t$4 = (b$4=d$4=1,c$0.aa) || (b$4=d$4=0,c$0.aa=t$4=imba.createSVGElement('g',0,t$3,null,null,null));
+		(v$4=this.feetAdjust(),v$4===c$0.ab || (t$4.set$('transform',c$0.ab=v$4)));
+		t$5 = (b$5=d$5=1,c$0.ac) || (b$5=d$5=0,c$0.ac=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
+		b$5 || (t$5.set$('width',100));
+		b$5 || (t$5.set$('height',100));
+		b$5 || (t$5.set$('transform',"rotate(90) translate(-50,-50)"));
+		(v$5=this.feetTexture(),v$5===c$0.ad || (t$5.set$('fill',c$0.ad=v$5)));
+		t$4 = (b$4=d$4=1,c$0.ae) || (b$4=d$4=0,c$0.ae=t$4=imba.createSVGElement('g',0,t$3,null,null,null));
+		(v$4=this.animationAdjust(),v$4===c$0.af || (t$4.set$('transform',c$0.af=v$4)));
+		t$5 = (b$5=d$5=1,c$0.ag) || (b$5=d$5=0,c$0.ag=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
+		b$5 || (t$5.set$('width',100));
+		b$5 || (t$5.set$('height',100));
+		b$5 || (t$5.set$('transform',"rotate(90) translate(-50,-50)"));
+		(v$5=this.playerTexture(),v$5===c$0.ah || (t$5.set$('fill',c$0.ah=v$5)));
+		t$3 = c$0.ai || (c$0.ai = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
 		for (let bullet of iter$$9(state.bullets)){
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,null,null,null));
 			b$4||(t$4.up$=t$3);
-			c$4=t$4.$aa || (t$4.$aa={});
-			(v$4=this.transformBullet(bullet),v$4===c$4.ab || (t$4.set$('transform',c$4.ab=v$4)));
+			c$4=t$4.$aj || (t$4.$aj={});
+			(v$4=this.transformBullet(bullet),v$4===c$4.ak || (t$4.set$('transform',c$4.ak=v$4)));
 			b$4 || (t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
 			b$4 || (t$5.set$('width',"50"));
 			b$4 || (t$5.set$('height',"1"));
 			b$4 || (t$5.set$('fill',"yellow"));
 			k$3++;
 		}t$3.end$(k$3);
-		t$3 = c$0.ac || (c$0.ac = t$3 = imba.createIndexedFragment(0,t$2));
+		t$3 = c$0.al || (c$0.al = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
-		for (let zombie of iter$$9(state.player.nearZombies)){
+		for (let zombie of iter$$9(this.player.nearZombies)){
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,null,null,null));
 			b$4||(t$4.up$=t$3);
-			c$4=t$4.$ad || (t$4.$ad={});
-			(v$4=this.transformZombie(zombie),v$4===c$4.ae || (t$4.set$('transform',c$4.ae=v$4)));
-			t$5 = (b$5=d$5=1,c$4.af) || (b$5=d$5=0,c$4.af=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
-			(v$5=zombie.size,v$5===c$4.ag || (t$5.set$('r',c$4.ag=v$5)));
-			b$5 || (t$5.set$('fill',"red"));
-			b$5 || (t$5.set$('stroke','black'));
-			t$5 = (b$5=d$5=1,c$4.ah) || (b$5=d$5=0,c$4.ah=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-			(v$5=zombie.size * 2,v$5===c$4.ai || (t$5.set$('width',c$4.ai=v$5)));
-			b$5 || (t$5.set$('height',"4"));
-			b$5 || (t$5.set$('y',"6"));
-			b$5 || (t$5.set$('fill',"red"));
-			t$5 = (b$5=d$5=1,c$4.aj) || (b$5=d$5=0,c$4.aj=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-			(v$5=zombie.size * 2,v$5===c$4.ak || (t$5.set$('width',c$4.ak=v$5)));
-			b$5 || (t$5.set$('height',"4"));
-			b$5 || (t$5.set$('y',"-10"));
-			b$5 || (t$5.set$('fill',"red"));
+			c$4=t$4.$am || (t$4.$am={});
+			(v$4=this.transformZombie(zombie),v$4===c$4.an || (t$4.set$('transform',c$4.an=v$4)));
+			t$5 = (b$5=d$5=1,c$4.ao) || (b$5=d$5=0,c$4.ao=t$5=imba.createSVGElement('g',0,t$4,null,null,null));
+			(v$5=this.zombieAdjust(zombie),v$5===c$4.ap || (t$5.set$('transform',c$4.ap=v$5)));
+			t$6 = (b$6=d$6=1,c$4.aq) || (b$6=d$6=0,c$4.aq=t$6=imba.createSVGElement('rect',0,t$5,null,null,null));
+			b$6 || (t$6.set$('width',100));
+			b$6 || (t$6.set$('height',100));
+			b$6 || (t$6.set$('transform',"translate(-50,-50)"));
+			(v$6=this.zombieTexture(zombie),v$6===c$4.ar || (t$6.set$('fill',c$4.ar=v$6)));
 			k$3++;
 		}t$3.end$(k$3);
-		t$3 = c$0.al || (c$0.al = t$3 = imba.createIndexedFragment(0,t$2));
+		t$3 = c$0.as || (c$0.as = t$3 = imba.createIndexedFragment(0,t$2));
 		k$3 = 0;
 		c$3=t$3.$;
 		for (let zombie of iter$$9(state.killed)){
 			t$4 = (b$4=d$4=1,c$3[k$3]) || (b$4=d$4=0,c$3[k$3] = t$4=imba.createSVGElement('g',0,t$3,'fadeOut',null,null));
 			b$4||(t$4.up$=t$3);
-			c$4=t$4.$am || (t$4.$am={});
-			(v$4=this.transformZombie(zombie),v$4===c$4.an || (t$4.set$('transform',c$4.an=v$4)));
-			t$5 = (b$5=d$5=1,c$4.ao) || (b$5=d$5=0,c$4.ao=t$5=imba.createSVGElement('circle',0,t$4,null,null,null));
-			(v$5=zombie.size,v$5===c$4.ap || (t$5.set$('r',c$4.ap=v$5)));
-			b$5 || (t$5.set$('fill',"grey"));
-			b$5 || (t$5.set$('stroke','black'));
-			t$5 = (b$5=d$5=1,c$4.aq) || (b$5=d$5=0,c$4.aq=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-			(v$5=zombie.size * 2,v$5===c$4.ar || (t$5.set$('width',c$4.ar=v$5)));
-			b$5 || (t$5.set$('height',"4"));
-			b$5 || (t$5.set$('y',"6"));
-			b$5 || (t$5.set$('fill',"grey"));
-			t$5 = (b$5=d$5=1,c$4.as) || (b$5=d$5=0,c$4.as=t$5=imba.createSVGElement('rect',0,t$4,null,null,null));
-			(v$5=zombie.size * 2,v$5===c$4.at || (t$5.set$('width',c$4.at=v$5)));
-			b$5 || (t$5.set$('height',"4"));
-			b$5 || (t$5.set$('y',"-10"));
-			b$5 || (t$5.set$('fill',"grey"));
+			c$4=t$4.$at || (t$4.$at={});
+			(v$4=this.transformZombie(zombie),v$4===c$4.au || (t$4.set$('transform',c$4.au=v$4)));
+			t$5 = (b$5=d$5=1,c$4.av) || (b$5=d$5=0,c$4.av=t$5=imba.createSVGElement('g',0,t$4,null,null,null));
+			(v$5=this.zombieAdjust(zombie),v$5===c$4.aw || (t$5.set$('transform',c$4.aw=v$5)));
+			t$6 = (b$6=d$6=1,c$4.ax) || (b$6=d$6=0,c$4.ax=t$6=imba.createSVGElement('rect',0,t$5,null,null,null));
+			b$6 || (t$6.set$('width',100));
+			b$6 || (t$6.set$('height',100));
+			b$6 || (t$6.set$('transform',"translate(-50,-50)"));
+			(v$6=this.zombieTexture(zombie),v$6===c$4.ay || (t$6.set$('fill',c$4.ay=v$6)));
 			k$3++;
 		}t$3.end$(k$3);
-		b$2 || (t$3=imba.createSVGElement('circle',0,t$2,null,null,null));
+		b$2 || (t$3=imba.createSVGElement('rect',0,t$2,null,null,null));
 		b$2 || (t$3.set$('x',"0"));
 		b$2 || (t$3.set$('y',"0"));
-		b$2 || (t$3.set$('r',50));
-		b$2 || (t$3.set$('stroke',"green"));
+		b$2 || (t$3.set$('transform',"translate(-100,-100)"));
+		b$2 || (t$3.set$('height',200));
+		b$2 || (t$3.set$('width',200));
+		b$2 || (t$3.set$('stroke',"#888"));
+		b$2 || (t$3.set$('stroke-width','5px'));
 		b$2 || (t$3.set$('fill',"rgba(0,255,0,0.1)"));
 		t$0.close$(d$0);
 		return t$0;
