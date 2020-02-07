@@ -25,7 +25,7 @@ tag player-store
         for own key, sector of state.zombies
             sector.clear()
 
-        for i in [0..(5000 + 1000 * (state.day ** 1.4))]
+        for i in [0..(50000 + 5000 * (state.day ** 1.4))]
             let zombie = Zombie.new(state.player, state.day, state.animations.zombie)
             state.zombies[zombie.currentSector()] ||= Set.new
             state.zombies[zombie.currentSector()].add(zombie)
@@ -228,7 +228,7 @@ tag player-store
 
     .action{
         text-align: right;
-        width: 6vw
+        width: 8vw
     }
 
     .buy-row:hover{
@@ -254,12 +254,13 @@ tag player-store
     }
 
     .buy-row:hover, .action:hover, .next-day:hover, .close:hover, .back:hover {
-        text-shadow: 0px 0px 10px #A00;
+        text-shadow: 0px 0px 5px #F00;
     }
 
     .store {
         font-size: calc(10px + .6vw);
-        background-color: rgba(0,0,0,0.55);
+        background-color: rgba(0,0,0,0.8);
+        padding: 30px
     }
     .open-store {
         cursor: none;

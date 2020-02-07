@@ -1,8 +1,8 @@
 import {GameObject} from '../engine/GameObject'
 
 export class Obstacle < GameObject
-    def constructor player
+    def constructor player, size
         super
         @position = GameObject.randomPosition(player)
-        @rotation = Math.random() * 360
-        @size = 10 + Math.random() * 40
+        @rotation = 0
+        @size = size

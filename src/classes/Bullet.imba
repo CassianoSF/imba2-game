@@ -24,7 +24,7 @@ export class Bullet < GameObject
 
     def checkColision
         for zombie of state.zombies[@currentSector()]
-            if @distanceToObjectX(zombie) < (zombie.size) and @distanceToObjectY(zombie) < (zombie.size)
+            if @distanceToObjectX(zombie) < (@speed*2) and @distanceToObjectY(zombie) < (@speed*2)
                 zombie.takeHit(self)
                 @penetration--
                 if @penetration <= 0

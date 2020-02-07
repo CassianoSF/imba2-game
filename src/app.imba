@@ -21,7 +21,7 @@ tag app-root
 
     def transformCamera
         if state.time - @player.gun.last_shot < 30
-            let power = @player.gun.power / 2
+            let power = (@player.gun.power * @player.gun.projectiles) / 2
             let x = @cameraPosX() + Math.random() * power - power/2
             let y = @cameraPosY() + Math.random() * power - power/2
             "translate({x}, {y})"
@@ -94,8 +94,6 @@ tag app-root
                 })
 
 
-
-
     def render
         <self>
             <.ui>
@@ -104,22 +102,29 @@ tag app-root
             <svg transform="scale(1,-1)" height="100%" width="100%">
                 <defs>
                     for animation in @animations
-                        <pattern id="{animation.name}" patternUnits="userSpaceOnUse" width="100" height="100" patternContentUnits="userSpaceOnUse">
-                            <image href="{animation.path}.png" width="100" height="100">
-
-
-                # CROSSHAIR
-                <g transform="translate({state.mouse.x}, {state.mouse.y})">
-                    <line y1=4 y2=10 stroke='#5F5'>
-                    <line y1=-4 y2=-10 stroke='#5F5'>
-                    <line x1=4 x2=10 stroke='#5F5'>
-                    <line x1=-4 x2=-10 stroke='#5F5'>
+                        <pattern id="{animation.name}" patternUnits="userSpaceOnUse" width=100 height=100 patternContentUnits="userSpaceOnUse">
+                            <image href="{animation.path}.png" width=100 height=100>
+                    <pattern id="mud" patternUnits="userSpaceOnUse" width=650 height=650 patternContentUnits="userSpaceOnUse">
+                        <image href="textures/the_floor/the_floor/Mud.png" width=650 height=650>
+                    <pattern id="bush" patternUnits="userSpaceOnUse" width=110 height=110 patternContentUnits="userSpaceOnUse">
+                        <image href="textures/the_floor/the_floor/bush.png" width=110 height=110>
+                    <pattern id="barrel" patternUnits="userSpaceOnUse" width=40 height=40 patternContentUnits="userSpaceOnUse">
+                        <image href="textures/the_floor/the_floor/barrel.png" width=40 height=40>
 
                 # CAMERA
                 <g transform=@transformCamera() .fadeOut=(@player.dead)>
-                    for obj of @player.nearObstacles
+                    # GROUND
+                    <rect height=100000 width=100000 transform='translate(-40000,-40000)' fill="url(#mud)" stroke="white">
+                    # SHOP
+                    <rect x="0" y="0" transform="translate(-100,-100)"  height=200 width=200 stroke="#888" stroke-width='5px' fill="rgba(0,255,0,0.1)">
+
+                    for obj of @player.nearBushes
                         <g transform=@transformObstacle(obj)>
-                            <circle r=obj.size fill="grey">
+                            <rect fill="url(#bush)" height=(obj.size*2 + 10) width=(obj.size*2 + 10) transform="translate({-obj.size - 5},{-obj.size - 5})">
+
+                    for obj of @player.nearBarrels
+                        <g transform=@transformObstacle(obj)>
+                            <rect fill="url(#barrel)" height=(obj.size*2) width=(obj.size*2) transform="translate({-obj.size},{-obj.size})">
 
                     # SHOP ARROW
                     if @player.distanceTo(0,0) > 1000
@@ -141,7 +146,7 @@ tag app-root
                     # BULLETS
                     for bullet of state.bullets
                         <g transform=@transformBullet(bullet)>
-                            <rect width="50" height="1" fill="yellow">
+                            <rect width=(bullet.speed*4) height="1" fill="yellow">
 
                     # ZOMBIES
                     for zombie of @player.nearZombies
@@ -159,9 +164,12 @@ tag app-root
                                     transform="translate(-50,-50)" 
                                     fill=@zombieTexture(zombie)>
 
-                    # SHOP
-                    <rect x="0" y="0" transform="translate(-100,-100)"  height=200 width=200 stroke="#888" stroke-width='5px' fill="rgba(0,255,0,0.1)">
-
+                # CROSSHAIR
+                <g transform="translate({state.mouse.x}, {state.mouse.y})">
+                    <line y1=4 y2=10 stroke='#5F5'>
+                    <line y1=-4 y2=-10 stroke='#5F5'>
+                    <line x1=4 x2=10 stroke='#5F5'>
+                    <line x1=-4 x2=-10 stroke='#5F5'>
 ### css
 
     body {

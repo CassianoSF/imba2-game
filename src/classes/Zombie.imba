@@ -53,12 +53,15 @@ export class Zombie < GameObject
             @state = AGGRO
 
     def execDrift
-        @animation-state = 'move'
         if @playerDetected()
             @state = AGGRO
         if state.time % 200 == 0
             @turn = Math.floor(Math.random() * 2)
             @speed = Math.random() * @base_speed
+            if @speed < 0.1
+                @animation-state = 'idle'
+            else
+                @animation-state = 'move'
         if state.time % 3 == 0
             if @turn == 0
                 @rotation += Math.random() * 3
@@ -72,7 +75,7 @@ export class Zombie < GameObject
             @state = DRIFT
         if @playerIsClose(@size * 2.1)
             @state = ATTACK
-        @speed += 0.01 unless @speed >= @max_speed
+        @speed += @max_speed/12 unless @speed >= @max_speed
         @rotation = @angleToObject(@player)
         @moveForward()
 
@@ -102,7 +105,7 @@ export class Zombie < GameObject
             state.zombies[@sector].add(self)
 
     def checkColisions
-        let obj = @findColision(state.obstacles)
+        let obj = @findColision(state.bushes) or @findColision(state.barrels)
         if obj
             let dx = Math.sin((@angleToObject(obj) + 90) * 0.01745) * @speed * state.delta
             let dy = Math.cos((@angleToObject(obj) + 90) * 0.01745) * @speed * state.delta
@@ -118,8 +121,9 @@ export class Zombie < GameObject
             @position.y += dy
 
     def takeHit(bullet)
-        @position.x -= Math.sin((bullet.rotation - 90) * 0.01745) * bullet.power
-        @position.y += Math.cos((bullet.rotation - 90) * 0.01745) * bullet.power
+        unless @findColision(state.bushes)
+            @position.x -= Math.sin((bullet.rotation - 90) * 0.01745) * bullet.power
+            @position.y += Math.cos((bullet.rotation - 90) * 0.01745) * bullet.power
         @state = AGGRO
         @life -= bullet.damage
         @speed -= bullet.power / 30 unless @speed < 0

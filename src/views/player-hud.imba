@@ -16,7 +16,7 @@ tag player-hud
                     <b>
                         "{@stamina()}%"
                 <.hud.score>
-                    "score "
+                    "Score "
                     <b css:font-size="50px">
                         state.player.score
                 <.hud.life>

@@ -7,8 +7,8 @@ export class GameObject
         @size
 
     static def randomPosition player
-        let posx = Math.random() * window.innerWidth * 30 - (window.innerWidth * 15)
-        let posy = Math.random() * window.innerHeight * 30 - (window.innerHeight * 15)
+        let posx = Math.random() * window.innerWidth * 100 - (window.innerWidth * 50)
+        let posy = Math.random() * window.innerHeight * 100 - (window.innerHeight * 50)
         let diffx = Math.abs(posx - player.position.x)
         let diffy = Math.abs(posy - player.position.y)
         if diffx < 400 and diffy < 400

@@ -42,7 +42,7 @@ let animations =
                 frame-length: 3
                 adjust: 
                     scale: "-0.8,0.8"
-                    translate: "-5,5"
+                    translate: "0,5"
 
             move:
                 path: "textures/handgun/move/survivor-move_handgun_"
@@ -51,7 +51,7 @@ let animations =
                 frame-length: 3
                 adjust: 
                     scale: "-0.8,0.8"
-                    translate: "-5,5"
+                    translate: "0,5"
 
             attack:
                 path: "textures/handgun/meleeattack/survivor-meleeattack_handgun_"
@@ -60,7 +60,7 @@ let animations =
                 frame-length: 2
                 adjust: 
                     scale: "-0.8,0.8"
-                    translate: "-5,5"
+                    translate: "0,5"
 
             shoot:
                 path: "textures/handgun/shoot/survivor-shoot_handgun_"
@@ -69,7 +69,7 @@ let animations =
                 frame-length: 3
                 adjust: 
                     scale: "-0.8,0.8"
-                    translate: "-5,5"
+                    translate: "0,5"
 
             reload:
                 path: "textures/handgun/reload/survivor-reload_handgun_"
@@ -78,7 +78,7 @@ let animations =
                 frame-length: 3
                 adjust: 
                     scale: "-0.8,0.8"
-                    translate: "-5,5"
+                    translate: "0,5"
 
         rifle:
             idle:
@@ -206,7 +206,7 @@ let animations =
             size: 1
             frame-length: 3
             adjust: 
-                scale: "-0.7,0.7"
+                scale: "-0.6,0.6"
                 translate: "3,0"
 
         run:
@@ -215,7 +215,7 @@ let animations =
             size: 19
             frame-length: 3
             adjust: 
-                scale: "-0.7,0.7"
+                scale: "-0.6,0.6"
                 translate: "3,0"
 
         walk:
@@ -224,7 +224,7 @@ let animations =
             size: 19
             frame-length: 3
             adjust: 
-                scale: "-0.7,0.7"
+                scale: "-0.6,0.6"
                 translate: "3,0"
 
         strafe_left:
@@ -233,7 +233,7 @@ let animations =
             size: 19
             frame-length: 3
             adjust: 
-                scale: "-0.7,0.7"
+                scale: "-0.6,0.6"
                 translate: "3,0"
 
         strafe_right:
@@ -252,7 +252,7 @@ let animations =
             size: 16
             frame-length: 5
             adjust: 
-                scale: ".85,.85"
+                scale: ".70,.70"
                 translate: "6,-1"
 
         attack:
@@ -261,7 +261,7 @@ let animations =
             size: 8
             frame-length: 5
             adjust: 
-                scale: ".9,.9"
+                scale: ".94,.94"
                 translate: "6,-1"
 
         move:
@@ -270,7 +270,7 @@ let animations =
             size: 16
             frame-length: 5
             adjust: 
-                scale: ".85,.85"
+                scale: ".92,.92"
                 translate: "6,-1"
 
 
@@ -281,10 +281,10 @@ let animations =
 
 
 var guns = [   
-    #       cap,   rate,  spread, damage, power, projectiles, speed, reload_time,  name,               price
-    Gun.new(12,    280,   8,     13,     15,    1,           7,     1000,         'handgun',   500)
-    Gun.new(5,     60,    25,     12,     16,    6,           8,     2200,         'shotgun',   20000)
-    Gun.new(15,    600,   15,     40,     20,    1,           12,    1500,         'rifle',     30000)
+    #       cap,   rate,  spread, damage, power, projectiles, speed, reload_time,  name,        price
+    Gun.new(12,    280,   8,      13,     20,    1,           12,     1000,         'handgun',   500)
+    Gun.new(5,     60,    15,     12,     16,    6,           12,     2200,         'shotgun',   20000)
+    Gun.new(15,    600,   10,     40,     28,    1,           22,    1500,         'rifle',     30000, 3)
 ]
 # [   #       cap,   rate,  spread, damage, power, projectiles, speed, reload_time,  name,               price
 #     Gun.new(6,     150,   6,      30,     15,    1,           8,     2000,         'revolver',         0)
@@ -298,17 +298,25 @@ var guns = [
 # ]
 var player = Player.new(guns, animations.player, animations.feet)
 let zombies = {} 
-for i in [0..5000]
+for i in [0..50000]
     let zombie = Zombie.new(player, 1, animations.zombie)
     zombies[zombie.currentSector()] ||= Set.new
     zombies[zombie.currentSector()].add(zombie)
 
 
-let obstacles = {}
-for i in [0..10000]
-    let ob = Obstacle.new(player)
-    obstacles[ob.currentSector()] ||= Set.new
-    obstacles[ob.currentSector()].add(ob)
+let bushes = {}
+for i in [0..200000]
+    let obj = Obstacle.new(player,50)
+    bushes[obj.currentSector()] ||= Set.new
+    bushes[obj.currentSector()].add(obj)
+
+let barrels = {}
+for i in [0..20000]
+    let obj = Obstacle.new(player,20)
+    barrels[obj.currentSector()] ||= Set.new
+    barrels[obj.currentSector()].add(obj)
+
+
 
 export var state = 
     game: Game
@@ -322,7 +330,8 @@ export var state =
     killed: Set.new
     delta: 1
     day: 1
-    obstacles: obstacles
+    bushes: bushes
+    barrels: barrels
     svg: 
         height: 1
         width: 1

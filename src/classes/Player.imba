@@ -14,7 +14,8 @@ export class Player < GameObject
         @speed = 0
         @max-speed = .8
         @nearZombies = Set.new
-        @nearObstacles = Set.new
+        @nearBushes = Set.new
+        @nearBarrels = Set.new
         @max-life = 100
         @life = 100
         @slots = 3
@@ -38,10 +39,12 @@ export class Player < GameObject
         @move()
         @rotate()
         @shoot()
-        @updateNearObjects(state.obstacles, @nearObstacles)
+        @updateNearObjects(state.bushes, @nearBushes)
         @updateNearObjects(state.zombies, @nearZombies)
-        @checkColision(state.obstacles)
+        @updateNearObjects(state.barrels, @nearBarrels)
+        @checkColision(state.bushes)
         @checkColision(state.zombies)
+        @checkColision(state.barrels)
         @checkShop()
         if @gun.reloading
             @animation-state = 'reload'
@@ -73,13 +76,13 @@ export class Player < GameObject
         # Aceleration
         if key-count and state.keys.ShiftLeft and @stamina
             @stamina--
-            @speed += (@max-speed/50) unless @speed >= @max-speed 
+            @speed += (@max-speed/20) unless @speed >= @max-speed 
             @animation-state = 'move'
             @feet-animation-state = 'run'
         elif key-count
             @stamina++ unless (@stamina >= @max-stamina or state.keys.ShiftLeft)
-            @speed += (@max-speed/50) unless @speed >= @max-speed / 2
-            @speed -= (@max-speed/50) if     @speed >= @max-speed / 2
+            @speed += (@max-speed/20) unless @speed >= @max-speed / 2
+            @speed -= (@max-speed/20) if     @speed >= @max-speed / 2
             @animation-state = 'move'
             @feet-animation-state = 'walk'
         else
