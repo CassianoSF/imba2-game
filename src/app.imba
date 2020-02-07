@@ -10,6 +10,15 @@ tag app-root
         @animations = []
         @loadAnimations()
 
+        @rand-ground = []
+        for i in [0..1000]
+            @rand-ground.push({
+                r: Math.random() * 500
+                x: Math.random() * 10000
+                y: Math.random() * 10000
+            })
+
+
     def mount
         state.game.new(self)
 
@@ -104,8 +113,12 @@ tag app-root
                     for animation in @animations
                         <pattern id="{animation.name}" patternUnits="userSpaceOnUse" width=100 height=100 patternContentUnits="userSpaceOnUse">
                             <image href="{animation.path}.png" width=100 height=100>
-                    <pattern id="mud" patternUnits="userSpaceOnUse" width=650 height=650 patternContentUnits="userSpaceOnUse">
-                        <image href="textures/the_floor/the_floor/Mud.png" width=650 height=650>
+                    <pattern id="Mud" patternUnits="userSpaceOnUse" width=500 height=500 patternContentUnits="userSpaceOnUse">
+                        <image href="textures/the_floor/the_floor/Mud.png" width=500 height=500>
+                    <pattern id="Rock" patternUnits="userSpaceOnUse" width=500 height=500 patternContentUnits="userSpaceOnUse">
+                        <image href="textures/the_floor/the_floor/Rock.png" width=500 height=500>
+                    <pattern id="Forest" patternUnits="userSpaceOnUse" width=500 height=500 patternContentUnits="userSpaceOnUse">
+                        <image href="textures/the_floor/the_floor/Forest.png" width=500 height=500>
                     <pattern id="bush" patternUnits="userSpaceOnUse" width=110 height=110 patternContentUnits="userSpaceOnUse">
                         <image href="textures/the_floor/the_floor/bush.png" width=110 height=110>
                     <pattern id="barrel" patternUnits="userSpaceOnUse" width=40 height=40 patternContentUnits="userSpaceOnUse">
@@ -114,7 +127,9 @@ tag app-root
                 # CAMERA
                 <g transform=@transformCamera() .fadeOut=(@player.dead)>
                     # GROUND
-                    <rect height=100000 width=100000 transform='translate(-40000,-40000)' fill="url(#mud)" stroke="white">
+                    <rect height=100000 width=100000 transform='translate(-40000,-40000)' opacity=0.33 fill="url(#Mud)">
+                    <rect height=100000 width=100000 transform='translate(-40000,-40000)' opacity=0.33 fill="url(#Forest)">
+                    <rect height=100000 width=100000 transform='translate(-40000,-40000)' opacity=0.33 fill="url(#Rock)">
                     # SHOP
                     <rect x="0" y="0" transform="translate(-100,-100)"  height=200 width=200 stroke="#888" stroke-width='5px' fill="rgba(0,255,0,0.1)">
 

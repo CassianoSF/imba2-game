@@ -2522,8 +2522,19 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		this.arrow_path = "M0 0l254.38 454.78c-230.68,-167.78 -274.65,-164.19 -508.77,0l254.38 -454.78z";
 		this.player = state.player;
 		this.animations = [];
-		return this.loadAnimations();
+		this.loadAnimations();
+		
+		this.randGround = [];
+		let res = [];
+		for (let i = 0; i <= 1000; i++) {
+			res.push(this.randGround.push({
+				r: Math.random() * 500,
+				x: Math.random() * 10000,
+				y: Math.random() * 10000
+			}));
+		}		return res;
 	}
+	
 	
 	mount(){
 		return new (state.game)(this);
@@ -2668,15 +2679,35 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 			k$3++;
 		}t$3.end$(k$3);
 		b$0 || (t$3=imba.createSVGElement('pattern',0,t$2,null,null,null));
-		b$0 || (t$3.set$('id',"mud"));
+		b$0 || (t$3.set$('id',"Mud"));
 		b$0 || (t$3.set$('patternUnits',"userSpaceOnUse"));
-		b$0 || (t$3.set$('width',650));
-		b$0 || (t$3.set$('height',650));
+		b$0 || (t$3.set$('width',500));
+		b$0 || (t$3.set$('height',500));
 		b$0 || (t$3.set$('patternContentUnits',"userSpaceOnUse"));
 		b$0 || (t$4=imba.createSVGElement('image',0,t$3,null,null,null));
 		b$0 || (t$4.set$('href',"textures/the_floor/the_floor/Mud.png"));
-		b$0 || (t$4.set$('width',650));
-		b$0 || (t$4.set$('height',650));
+		b$0 || (t$4.set$('width',500));
+		b$0 || (t$4.set$('height',500));
+		b$0 || (t$3=imba.createSVGElement('pattern',0,t$2,null,null,null));
+		b$0 || (t$3.set$('id',"Rock"));
+		b$0 || (t$3.set$('patternUnits',"userSpaceOnUse"));
+		b$0 || (t$3.set$('width',500));
+		b$0 || (t$3.set$('height',500));
+		b$0 || (t$3.set$('patternContentUnits',"userSpaceOnUse"));
+		b$0 || (t$4=imba.createSVGElement('image',0,t$3,null,null,null));
+		b$0 || (t$4.set$('href',"textures/the_floor/the_floor/Rock.png"));
+		b$0 || (t$4.set$('width',500));
+		b$0 || (t$4.set$('height',500));
+		b$0 || (t$3=imba.createSVGElement('pattern',0,t$2,null,null,null));
+		b$0 || (t$3.set$('id',"Forest"));
+		b$0 || (t$3.set$('patternUnits',"userSpaceOnUse"));
+		b$0 || (t$3.set$('width',500));
+		b$0 || (t$3.set$('height',500));
+		b$0 || (t$3.set$('patternContentUnits',"userSpaceOnUse"));
+		b$0 || (t$4=imba.createSVGElement('image',0,t$3,null,null,null));
+		b$0 || (t$4.set$('href',"textures/the_floor/the_floor/Forest.png"));
+		b$0 || (t$4.set$('width',500));
+		b$0 || (t$4.set$('height',500));
 		b$0 || (t$3=imba.createSVGElement('pattern',0,t$2,null,null,null));
 		b$0 || (t$3.set$('id',"bush"));
 		b$0 || (t$3.set$('patternUnits',"userSpaceOnUse"));
@@ -2705,8 +2736,20 @@ class AppRootComponent extends imba.tags.get('component','ImbaElement') {
 		b$2 || (t$3.set$('height',100000));
 		b$2 || (t$3.set$('width',100000));
 		b$2 || (t$3.set$('transform','translate(-40000,-40000)'));
-		b$2 || (t$3.set$('fill',"url(#mud)"));
-		b$2 || (t$3.set$('stroke',"white"));
+		b$2 || (t$3.set$('opacity',0.33));
+		b$2 || (t$3.set$('fill',"url(#Mud)"));
+		b$2 || (t$3=imba.createSVGElement('rect',0,t$2,null,null,null));
+		b$2 || (t$3.set$('height',100000));
+		b$2 || (t$3.set$('width',100000));
+		b$2 || (t$3.set$('transform','translate(-40000,-40000)'));
+		b$2 || (t$3.set$('opacity',0.33));
+		b$2 || (t$3.set$('fill',"url(#Forest)"));
+		b$2 || (t$3=imba.createSVGElement('rect',0,t$2,null,null,null));
+		b$2 || (t$3.set$('height',100000));
+		b$2 || (t$3.set$('width',100000));
+		b$2 || (t$3.set$('transform','translate(-40000,-40000)'));
+		b$2 || (t$3.set$('opacity',0.33));
+		b$2 || (t$3.set$('fill',"url(#Rock)"));
 		b$2 || (t$3=imba.createSVGElement('rect',0,t$2,null,null,null));
 		b$2 || (t$3.set$('x',"0"));
 		b$2 || (t$3.set$('y',"0"));
