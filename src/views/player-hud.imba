@@ -16,6 +16,30 @@ tag fps-counter
 	<self style="color: {color};position: fixed; margin: 5px">
 		fps
 
+tag score-hud
+	def mount
+		bounce = true
+		score = STATE.player.score
+		setInterval(checkScoreChange.bind(this, 100))
+
+	def checkScoreChange
+		if score != STATE.player.score
+			diff = STATE.player.score - score
+			score = STATE.player.score
+			bounce = false
+			render()
+			setTimeout(&, 100) do
+				bounce = true
+				render()
+
+	<self.hud.score>
+		<div>
+			"Score "
+			<b .bounce=(bounce)>
+				score
+		<div [text-align: right font-size: 20px] .fadeOutUp=(bounce)>
+			"+ {diff}"
+
 tag player-hud
 	prop selected_gun
 	prop stamina
@@ -35,10 +59,7 @@ tag player-hud
 					"Stamina "
 					<b>
 						"{calcStamina()}%"
-				<.hud.score>
-					"Score "
-					<b css:font-size="50px">
-						STATE.player.score
+				<score-hud>
 				<.hud.life>
 					"Life "
 					<b css:font-size="50px">
@@ -113,3 +134,6 @@ tag player-hud
 
 	css .onHand
 		color: yellow
+
+
+

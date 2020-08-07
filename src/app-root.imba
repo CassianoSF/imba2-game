@@ -101,86 +101,90 @@ tag app-root
 
 	def render
 		<self>
-			<.ui>
-				<player-hud>
-				<player-store>
-			<svg transform="scale(1,-1)" height="100%" width="100%">
-				<defs>
-					for animation in animations
-						<pattern id="{animation.name}" patternUnits="userSpaceOnUse" width=100 height=100 patternContentUnits="userSpaceOnUse">
-							<image href="{animation.path}.png" width=100 height=100>
-					<pattern id="Mud" patternUnits="userSpaceOnUse" width=500 height=500 patternContentUnits="userSpaceOnUse">
-						<image href="textures/the_floor/the_floor/Mud.png" width=500 height=500>
-					<pattern id="Rock" patternUnits="userSpaceOnUse" width=500 height=500 patternContentUnits="userSpaceOnUse">
-						<image href="textures/the_floor/the_floor/Rock.png" width=500 height=500>
-					<pattern id="Forest" patternUnits="userSpaceOnUse" width=500 height=500 patternContentUnits="userSpaceOnUse">
-						<image href="textures/the_floor/the_floor/Forest.png" width=500 height=500>
-					<pattern id="bush" patternUnits="userSpaceOnUse" width=110 height=110 patternContentUnits="userSpaceOnUse">
-						<image href="textures/the_floor/the_floor/bush.png" width=110 height=110>
-					<pattern id="barrel" patternUnits="userSpaceOnUse" width=40 height=40 patternContentUnits="userSpaceOnUse">
-						<image href="textures/the_floor/the_floor/barrel.png" width=40 height=40>
+			if STATE.loading
+				<h1>
+					"Carregando"
+			else
+				<.ui>
+					<player-hud>
+					<player-store>
+				<svg transform="scale(1,-1)" height="100%" width="100%">
+					<defs>
+						for animation in animations
+							<pattern id="{animation.name}" patternUnits="userSpaceOnUse" width=100 height=100 patternContentUnits="userSpaceOnUse">
+								<image href="{animation.path}.png" width=100 height=100>
+						<pattern id="Mud" patternUnits="userSpaceOnUse" width=500 height=500 patternContentUnits="userSpaceOnUse">
+							<image href="textures/the_floor/the_floor/Mud.png" width=500 height=500>
+						<pattern id="Rock" patternUnits="userSpaceOnUse" width=500 height=500 patternContentUnits="userSpaceOnUse">
+							<image href="textures/the_floor/the_floor/Rock.png" width=500 height=500>
+						<pattern id="Forest" patternUnits="userSpaceOnUse" width=500 height=500 patternContentUnits="userSpaceOnUse">
+							<image href="textures/the_floor/the_floor/Forest.png" width=500 height=500>
+						<pattern id="bush" patternUnits="userSpaceOnUse" width=110 height=110 patternContentUnits="userSpaceOnUse">
+							<image href="textures/the_floor/the_floor/bush.png" width=110 height=110>
+						<pattern id="barrel" patternUnits="userSpaceOnUse" width=40 height=40 patternContentUnits="userSpaceOnUse">
+							<image href="textures/the_floor/the_floor/barrel.png" width=40 height=40>
 
-				# CAMERA
-				<g transform=transformCamera() .fadeOut=(player.dead)>
-					# GROUND
-					<rect height=100000 width=100000 transform='translate(-40000,-40000)' opacity=0.33 fill="url(#Mud)">
-					<rect height=100000 width=100000 transform='translate(-40000,-40000)' opacity=0.33 fill="url(#Forest)">
-					<rect height=100000 width=100000 transform='translate(-40000,-40000)' opacity=0.33 fill="url(#Rock)">
-					# SHOP
-					<rect x="0" y="0" transform="translate(-100,-100)"  height=200 width=200 stroke="#888" stroke-width='5px' fill="rgba(0,255,0,0.1)">
+					# CAMERA
+					<g transform=transformCamera() .fadeOut=(player.dead)>
+						# GROUND
+						<rect height=100000 width=100000 transform='translate(-40000,-40000)' opacity=0.33 fill="url(#Mud)">
+						<rect height=100000 width=100000 transform='translate(-40000,-40000)' opacity=0.33 fill="url(#Forest)">
+						<rect height=100000 width=100000 transform='translate(-40000,-40000)' opacity=0.33 fill="url(#Rock)">
+						# SHOP
+						<rect x="0" y="0" transform="translate(-100,-100)"  height=200 width=200 stroke="#888" stroke-width='5px' fill="rgba(0,255,0,0.1)">
 
-					for obj of player.nearBushes
-						<g transform=transformObstacle(obj)>
-							<rect fill="url(#bush)" height=(obj.size*2 + 10) width=(obj.size*2 + 10) transform="translate({-obj.size - 5},{-obj.size - 5})">
+						for obj of player.nearBushes
+							<g transform=transformObstacle(obj)>
+								<rect fill="url(#bush)" height=(obj.size*2 + 10) width=(obj.size*2 + 10) transform="translate({-obj.size - 5},{-obj.size - 5})">
 
-					for obj of player.nearBarrels
-						<g transform=transformObstacle(obj)>
-							<rect fill="url(#barrel)" height=(obj.size*2) width=(obj.size*2) transform="translate({-obj.size},{-obj.size})">
+						for obj of player.nearBarrels
+							<g transform=transformObstacle(obj)>
+								<rect fill="url(#barrel)" height=(obj.size*2) width=(obj.size*2) transform="translate({-obj.size},{-obj.size})">
 
-					# SHOP ARROW
-					if player.distanceTo(0,0) > 1000
-						<g transform=transformShopArrow() .fadeIn>
-							<g transform="translate(0,350) rotate(180) scale(0.08,0.08)">
-								<path fill="rgba(0,255,0,0.4)" d=arrow_path>
+						# SHOP ARROW
+						if player.distanceTo(0,0) > 1000
+							<g transform=transformShopArrow() .fadeIn>
+								<g transform="translate(0,350) rotate(180) scale(0.08,0.08)">
+									<path fill="rgba(0,255,0,0.4)" d=arrow_path>
 
-					# PLAYER
-					<g transform=transformPlayer()>
-						<g transform=feetAdjust()>
-							<rect width=100 height=100 
-								transform="rotate(90) translate(-50,-50)" 
-								fill=feetTexture()>
-						<g transform=animationAdjust()>
-							<rect width=100 height=100 
-								transform="rotate(90) translate(-50,-50)" 
-								fill=playerTexture()>
-
-					# BULLETS
-					for bullet of STATE.bullets
-						<g transform=transformBullet(bullet)>
-							<rect width=(bullet.speed*4) height="1" fill="yellow">
-
-					# ZOMBIES
-					for zombie of player.nearZombies
-						<g transform=transformZombie(zombie)>
-							<g transform=zombieAdjust(zombie)>
+						# PLAYER
+						<g transform=transformPlayer()>
+							<g transform=feetAdjust()>
 								<rect width=100 height=100 
-									transform="translate(-50,-50)" 
-									fill=zombieTexture(zombie)>
-
-					# BODIES
-					for zombie of STATE.killed
-						<g transform=transformZombie(zombie) .fadeOut>
-							<g transform=zombieAdjust(zombie)>
+									transform="rotate(90) translate(-50,-50)" 
+									fill=feetTexture()>
+							<g transform=animationAdjust()>
 								<rect width=100 height=100 
-									transform="translate(-50,-50)" 
-									fill=zombieTexture(zombie)>
+									transform="rotate(90) translate(-50,-50)" 
+									fill=playerTexture()>
 
-				# CROSSHAIR
-				<g transform="translate({STATE.mouse.x}, {STATE.mouse.y})">
-					<line y1=4 y2=10 stroke='#5F5'>
-					<line y1=-4 y2=-10 stroke='#5F5'>
-					<line x1=4 x2=10 stroke='#5F5'>
-					<line x1=-4 x2=-10 stroke='#5F5'>
+						# BULLETS
+						for bullet of STATE.bullets
+							<g transform=transformBullet(bullet)>
+								<rect width=(bullet.speed*4) height="1" fill="yellow">
+
+						# ZOMBIES
+						for zombie of player.nearZombies
+							<g transform=transformZombie(zombie)>
+								<g transform=zombieAdjust(zombie)>
+									<rect width=100 height=100 
+										transform="translate(-50,-50)" 
+										fill=zombieTexture(zombie)>
+
+						# BODIES
+						for zombie of STATE.killed
+							<g transform=transformZombie(zombie) .fadeOut>
+								<g transform=zombieAdjust(zombie)>
+									<rect width=100 height=100 
+										transform="translate(-50,-50)" 
+										fill=zombieTexture(zombie)>
+
+					# CROSSHAIR
+					<g transform="translate({STATE.mouse.x}, {STATE.mouse.y})">
+						<line y1=4 y2=10 stroke='#5F5'>
+						<line y1=-4 y2=-10 stroke='#5F5'>
+						<line x1=4 x2=10 stroke='#5F5'>
+						<line x1=-4 x2=-10 stroke='#5F5'>
 
 	css &
 		display: block 

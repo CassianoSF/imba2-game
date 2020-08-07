@@ -1,15 +1,41 @@
 export default global class Game
 	def constructor renderer
+		theme_start = false
+		current_theme = 1
 		renderer = renderer
 		current_date = Date.new
 		STATE.first_date = Date.new
 		STATE.last_date = Date.new
-		window.addEventListener('keydown', keydownEvent)
-		window.addEventListener('keyup', keyupEvent)
-		window.addEventListener('mousemove', mousemoveEvent)
-		window.addEventListener('mousedown', mousedownEvent)
-		window.addEventListener('mouseup', mouseupEvent)
+		window.addEventListener('keydown', keydownEvent.bind(this))
+		window.addEventListener('keyup', keyupEvent.bind(this))
+		window.addEventListener('mousemove', mousemoveEvent.bind(this))
+		window.addEventListener('mousedown', mousedownEvent.bind(this))
+		window.addEventListener('mouseup', mouseupEvent.bind(this))
 		setInterval(update.bind(this), 16)
+	# 	loadAssets()
+
+
+	# def loadAssets
+	# 	setInterval(startGame.bind(this), 5000)
+	# 	audios-loaded =  {}
+	# 	for k, audio of STATE.audios
+	# 		audio:oncanplaythrough = do audios-loaded[k] = true
+
+	def playTheme
+		let theme = Audio.new("sounds/theme0{current_theme}.ogg")
+		theme.onended = playNext.bind(this)
+		theme.play()
+	
+	def playNext
+		current_theme++
+		current_theme = 0 if current_theme == 8
+		let theme = Audio.new("sounds/theme0{current_theme}.ogg")
+		theme.onended = playNext.bind(this)
+		theme.play()
+
+	def startGame
+		STATE.loading = false
+		imba.commit()
 
 	def update
 		current_date = Date.new
@@ -17,9 +43,6 @@ export default global class Game
 		STATE.time = current_date - STATE.first_date
 		STATE.last_date = current_date
 		STATE.player.update()
-
-
-
 
 		for bullet of STATE.bullets
 			bullet.update() if bullet
@@ -33,6 +56,8 @@ export default global class Game
 		renderer.render()
 
 	def keydownEvent e
+		playTheme() unless theme_start
+		theme_start ||= true
 		STATE.player.onKeyEvent(e.code)
 		STATE.keys[e.code] = true
 

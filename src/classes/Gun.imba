@@ -1,7 +1,7 @@
 import Bullet from './Bullet'
 
 export default class Gun
-	def constructor cap, rate, spread, damage, power, projectiles, speed, reload_time, name, price, penetration=1
+	def constructor cap, rate, spread, damage, power, projectiles, speed, reload_time, name, price, penetration=1, sounds
 		rate = rate
 		spread = spread
 		damage = damage
@@ -16,6 +16,7 @@ export default class Gun
 		name = name
 		price = price
 		penetration = penetration
+		sounds = sounds
 		upgrades = {}
 		upgrades.cap         = 100 + price / 10
 		upgrades.rate        = 100 + price / 10
@@ -29,6 +30,9 @@ export default class Gun
 		if ammo == 0
 			reload()
 		elif STATE.time - last_shot > 60000/rate and ammo > 0
+			let audio = Audio.new(sounds.shot.src)
+			audio.volume = sounds.shot.volume
+			audio.play()
 			ammo--
 			last_shot = STATE.time
 			for i in [0...projectiles]
@@ -40,6 +44,10 @@ export default class Gun
 
 	def update
 		if reloading
+			if !reload_audio or reload_audio.paused
+				reload_audio = Audio.new(sounds.reload.src)
+				reload_audio.volume = sounds.reload.volume
+				reload_audio.play()
 			reloading -= STATE.delta*5
 			if reloading <= 0
 				reloading = false

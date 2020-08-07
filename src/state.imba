@@ -281,10 +281,19 @@ let animations =
 
 
 var guns = [   
-	#       cap,   rate,  spread, damage, power, projectiles, speed, reload_time,  name,        price
-	Gun.new(12,    280,   8,      13,     20,    1,           12,     1000,         'handgun',   500)
-	Gun.new(5,     60,    15,     12,     16,    6,           12,     2200,         'shotgun',   20000)
-	Gun.new(15,    600,   10,     40,     28,    1,           22,    1500,         'rifle',     30000, 3)
+	#       cap,   rate,  spread, damage, power, projectiles, speed, reload_time,  name,        price. penetration
+	Gun.new(12,    150,   8,      13,     20,    1,           12,     1000,         'handgun',   500, 1,{
+		shot:   {src: 'sounds/pistol_shot.ogg', volume: 1}
+		reload: {src: 'sounds/reload.ogg',   volume: 1}
+	})
+	Gun.new(5,     60,    15,     12,     16,    6,           12,     2200,         'shotgun',   20000, 1, {
+		shot:   {src: 'sounds/shotgun_shot.ogg', volume: 1}
+		reload: {src: 'sounds/reload.ogg',   volume: 1}
+	})
+	Gun.new(15,    500,   10,     40,     28,    1,           22,    1500,         'rifle',     30000, 3,{
+		shot:   {src: 'sounds/rifle_shot.ogg', volume: 1}
+		reload: {src: 'sounds/reload.ogg',   volume: 1}
+	})
 ]
 # [   #       cap,   rate,  spread, damage, power, projectiles, speed, reload_time,  name,               price
 #     Gun.new(6,     150,   6,      30,     15,    1,           8,     2000,         'revolver',         0)
@@ -314,8 +323,6 @@ for i in Array.from(Array.new(20000).keys())
 	let obj = Obstacle.new(player,20)
 	barrels[obj.currentSector()] ||= Set.new
 	barrels[obj.currentSector()].add(obj)
-
-
 
 global.STATE = 
 	game: Game

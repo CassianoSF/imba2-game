@@ -109,6 +109,7 @@ export default class Player < GameObject
 				position.y += Math.cos((angleToObject(obj) + 90) * 0.01745) * ((obj.speed * 1.5) or speed) * STATE.delta * 1.8
 
 	def changeGun slot
+		Audio.new('sounds/weapswitch.ogg').play()
 		if holsters[slot]
 			gun.reloading = false
 			gun = holsters[slot]
