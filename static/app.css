@@ -1,0 +1,38 @@
+body {
+    margin: 0px;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: none
+}
+
+@font-face {
+    font-family: Typewriter;
+    src: url("fonts/JMH Typewriter-Black.ots") format("opentype");
+}
+
+@font-face {
+    font-family: MenofNihilist;
+    src: url("fonts/MenofNihilist-Regular.ots") format("opentype");
+}
+
+@keyframes fadeOut {
+    0% {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}

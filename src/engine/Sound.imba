@@ -1,3 +1,3 @@
-export class Sound
+export default class Sound
     def contructor
         return

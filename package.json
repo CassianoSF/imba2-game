@@ -1,12 +1,34 @@
 {
   "scripts": {
-    "build": "imba-rollup",
-    "dev": "imba-rollup --watch --serve --hmr",
-    "check-version": "imbac --version"
+    "dev": "npx snowpack dev",
+    "build": "npx snowpack build"
   },
-  "dependencies": {
-    "imba": "^2.0.0-alpha.20",
-    "imba-rollup": "^1.0.3"
+  "snowpack": {
+    "mount": {
+      "src": "/dist",
+      "static": "/"
+    },
+    "devOptions": {
+      "out": "public",
+      "open": "none",
+      "bundle": true
+    },
+    "install": [],
+    "installOptions": {},
+    "buildOptions": {},
+    "plugins": [
+      [
+        "imba-snowpack",
+        {
+          "entrypoints": [
+            "app-root"
+          ]
+        }
+      ]
+    ]
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "imba-snowpack": "^0.0.6",
+    "snowpack": "^2.7.6"
+  }
 }

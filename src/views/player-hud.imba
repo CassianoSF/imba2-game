@@ -1,98 +1,115 @@
-import {state} from '../state'
+tag fps-counter
+	def mount
+		setInterval(update.bind(this), 200)
+		update()
+
+	def update
+		fps = ~~(1/(STATE.delta/200))
+		if fps < 50 
+			color = '#F99' 
+		elif fps < 60
+			color = '#FF9' 
+		else
+			color = '#9F9' 
+
+
+	<self style="color: {color};position: fixed; margin: 5px">
+		fps
 
 tag player-hud
-    def stamina
-        ~~(state.player.stamina / state.player.max-stamina * 100)
+	prop selected_gun
+	prop stamina
 
-    def render
-        <self>
-            <.fadeOut=(state.player.dead) .fadeIn=(!state.player.dead)>
-                <.hud.day css:font-size="30px">
-                    "Day "
-                    <b>
-                        state.day
-                <.hud.stamina css:font-size="20px" css:color="{@stamina() < 1 ? "red" : "white"}">
-                    "Stamina "
-                    <b>
-                        "{@stamina()}%"
-                <.hud.score>
-                    "Score "
-                    <b css:font-size="50px">
-                        state.player.score
-                <.hud.life>
-                    "Life "
-                    <b css:font-size="50px">
-                        state.player.life
-                    
-                <.hud.slots .select-slot=(@selected_gun)>
-                    for i in [0...state.player.slots]
-                        <.onHand=(state.player.gun == state.player.holsters[i])>
-                            "{i + 1}. {((state.player.holsters[i] or {}).name or '')}"
-                <.hud.ammo>
-                    <b css:font-size="50px">
-                        "{state.player.gun.ammo}/{state.player.gun.cap}"
-                    " Ammo"
-            if state.player.dead
-                <div .you-died .fadeIn>
-                    "you died"
+	def calcStamina
+		~~(STATE.player.stamina / STATE.player.max-stamina * 100)
 
-### css scoped
-    .you-died {
-        left: 33%
-        top: 20%
-        font-size: 15vw;
-        color: #900;
-        position: fixed;
-        z-index: 1;
-        font-family: MenofNihilist;
-    }
+	def render
+		<self>
+			<fps-counter>
+			<.fadeOut=(STATE.player.dead) .fadeIn=(!STATE.player.dead)>
+				<.hud.day css:font-size="30px">
+					"Day "
+					<b>
+						STATE.day
+				<.hud.stamina css:font-size="20px" css:color="{calcStamina() < 1 ? "red" : "white"}">
+					"Stamina "
+					<b>
+						"{calcStamina()}%"
+				<.hud.score>
+					"Score "
+					<b css:font-size="50px">
+						STATE.player.score
+				<.hud.life>
+					"Life "
+					<b css:font-size="50px">
+						STATE.player.life
+					
+				<.hud.slots .select-slot=(selected_gun)>
+					for i in [0...STATE.player.slots]
+						<.onHand=(STATE.player.gun == STATE.player.holsters[i])>
+							"{i + 1}. {((STATE.player.holsters[i] or {}).name or '')}"
+				<.hud.ammo>
+					<b css:font-size="50px">
+						"{STATE.player.gun.ammo}/{STATE.player.gun.cap}"
+					" Ammo"
+			if STATE.player.dead
+				<div .you-died .fadeIn>
+					"you died"
 
-    .hud {
-        position: fixed;
-        z-index: 1;
-        font-family: Typewriter;
-        color: white;
-    }
+	css .you-died
+		left: 33%
+		top: 20%
+		font-size: 15vw
+		color: #900
+		position: fixed
+		z-index: 1
+		font-family: MenofNihilist
 
-    .day {
-        top: 2%;
-        left: 2%;
-    }
 
-    .stamina {
-        bottom: 10%;
-        right: 2%;
-        font-size: 15px;
-    }
+	css .hud
+		position: fixed
+		z-index: 1
+		font-family: Typewriter
+		color: white
 
-    .score {
-        top: 2%;
-        right: 2%;
-        font-size: 30px;
-    }
 
-    .life {
-        bottom: 2%;
-        right: 2%;
-        font-size: 30px;
-    }
-    .slots {
-        left: 2%;
-        bottom: 10%;
-        font-size: 16px;
-    }
+	css .day
+		top: 2%
+		left: 2%
 
-    .select-slot {
-        color: green
-    }
 
-    .ammo {
-        bottom: 2%;
-        left: 2%;
-        font-size: 30px;
-    }
+	css .stamina
+		bottom: 10%
+		right: 2%
+		font-size: 15px
 
-    .onHand { 
-        color: yellow
-    }
-###
+
+	css .score
+		top: 2%
+		right: 2%
+		font-size: 30px
+
+
+	css .life
+		bottom: 2%
+		right: 2%
+		font-size: 30px
+
+	css .slots
+		left: 2%
+		bottom: 10%
+		font-size: 16px
+
+
+	css .select-slot
+		color: green
+
+
+	css .ammo
+		bottom: 2%
+		left: 2%
+		font-size: 30px
+
+
+	css .onHand
+		color: yellow

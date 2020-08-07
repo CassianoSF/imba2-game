@@ -1,54 +1,47 @@
-import {state} from '../state'
+export default class GameObject
+	static def randomPosition player
+		let posx = Math.random() * window.innerWidth * 100 - (window.innerWidth * 50)
+		let posy = Math.random() * window.innerHeight * 100 - (window.innerHeight * 50)
+		let diffx = Math.abs(posx - player.position.x)
+		let diffy = Math.abs(posy - player.position.y)
+		if diffx < 400 and diffy < 400
+			return randomPosition(player)
 
-export class GameObject
-    def constructor
-        @position
-        @rotation
-        @size
+		return {
+			x: posx
+			y: posy
+		}
 
-    static def randomPosition player
-        let posx = Math.random() * window.innerWidth * 100 - (window.innerWidth * 50)
-        let posy = Math.random() * window.innerHeight * 100 - (window.innerHeight * 50)
-        let diffx = Math.abs(posx - player.position.x)
-        let diffy = Math.abs(posy - player.position.y)
-        if diffx < 400 and diffy < 400
-            return self.randomPosition(player)
+	def currentSector
+		"{~~(position.x / 1000)}|{~~(position.y / 800)}"
 
-        return {
-            x: posx
-            y: posy
-        }
+	def colideCircle obj
+		Math.sqrt(distanceToObjectX(obj)**2 + distanceToObjectY(obj)**2) < (size + obj.size)
 
-    def currentSector
-        "{~~(@position.x / 1000)}|{~~(@position.y / 800)}"
+	def colideQuad obj
+		distanceToObjectX() < (obj.size + size) and distanceToObjectY() < (obj.size + size)
 
-    def colideCircle obj
-        Math.sqrt(@distanceToObjectX(obj)**2 + @distanceToObjectY(obj)**2) < (@size + obj.size)
+	def distanceToObjectX obj
+		Math.abs(obj.position.x - position.x)
 
-    def colideQuad obj
-        @distanceToObjectX() < (obj.size + @size) and @distanceToObjectY() < (obj.size + @size)
+	def distanceToObjectY obj
+		Math.abs(obj.position.y - position.y)
 
-    def distanceToObjectX obj
-        Math.abs(obj.position.x - @position.x)
+	def moveForward
+		position.x -= Math.sin((rotation - 90) * 0.01745) * STATE.delta * speed
+		position.y += Math.cos((rotation - 90) * 0.01745) * STATE.delta * speed
 
-    def distanceToObjectY obj
-        Math.abs(obj.position.y - @position.y)
+	def angleToObject obj
+		let dx = obj.position.x - position.x
+		let dy = obj.position.y - position.y
+		-(Math.atan2(dx, dy)/0.01745 - 90) % 360        
 
-    def moveForward
-        @position.x -= Math.sin((@rotation - 90) * 0.01745) * state.delta * @speed
-        @position.y += Math.cos((@rotation - 90) * 0.01745) * state.delta * @speed
+	def angleTo x, y
+		let dx = x - position.x
+		let dy = y - position.y
+		-(Math.atan2(dx, dy)/0.01745 + 180) % 360        
 
-    def angleToObject obj
-        let dx = obj.position.x - @position.x
-        let dy = obj.position.y - @position.y
-        -(Math.atan2(dx, dy)/0.01745 - 90) % 360        
-
-    def angleTo x, y
-        let dx = x - @position.x
-        let dy = y - @position.y
-        -(Math.atan2(dx, dy)/0.01745 + 180) % 360        
-
-    def distanceTo x, y
-        let dx = Math.abs(x - @position.x)
-        let dy = Math.abs(y - @position.y)
-        Math.sqrt(dx**2 + dy**2)
+	def distanceTo x, y
+		let dx = Math.abs(x - position.x)
+		let dy = Math.abs(y - position.y)
+		Math.sqrt(dx**2 + dy**2)

@@ -1,48 +1,50 @@
-import {state} from '../state'
+export default global class Game
+	def constructor renderer
+		renderer = renderer
+		current_date = Date.new
+		STATE.first_date = Date.new
+		STATE.last_date = Date.new
+		window.addEventListener('keydown', keydownEvent)
+		window.addEventListener('keyup', keyupEvent)
+		window.addEventListener('mousemove', mousemoveEvent)
+		window.addEventListener('mousedown', mousedownEvent)
+		window.addEventListener('mouseup', mouseupEvent)
+		setInterval(update.bind(this), 16)
 
-export global class Game
-    def constructor renderer
-        @renderer = renderer
-        state.first_date = Date.new
-        state.last_date = Date.new
-        window.addEventListener('keydown', @keydownEvent)
-        window.addEventListener('keyup', @keyupEvent)
-        window.addEventListener('mousemove', @mousemoveEvent)
-        window.addEventListener('mousedown', @mousedownEvent)
-        window.addEventListener('mouseup', @mouseupEvent)
-        setInterval(@update.bind(this), 16)
+	def update
+		current_date = Date.new
+		STATE.delta = (current_date - STATE.last_date) / 5
+		STATE.time = current_date - STATE.first_date
+		STATE.last_date = current_date
+		STATE.player.update()
 
-    def update
-        let current_date = Date.new
-        state.delta = (current_date - state.last_date) / 5
-        state.time = current_date - state.first_date
-        state.last_date = current_date
-        state.player.update()
 
-        for bullet of state.bullets
-            bullet.update() if bullet
 
-        for zombie of state.player.nearZombies
-            zombie.update() if zombie
 
-        for zombie of state.killed
-            zombie.update() if zombie
+		for bullet of STATE.bullets
+			bullet.update() if bullet
 
-        @renderer.render()
+		for zombie of STATE.player.nearZombies
+			zombie.update() if zombie
 
-    def keydownEvent e
-        state.player.onKeyEvent(e.code)
-        state.keys[e.code] = true
+		for zombie of STATE.killed
+			zombie.update() if zombie
 
-    def keyupEvent e
-        state.keys[e.code] = false
+		renderer.render()
 
-    def mousemoveEvent e
-        state.mouse.x = e.clientX
-        state.mouse.y = window.innerHeight - e.clientY
+	def keydownEvent e
+		STATE.player.onKeyEvent(e.code)
+		STATE.keys[e.code] = true
 
-    def mousedownEvent e
-        state.mouse.press = true
+	def keyupEvent e
+		STATE.keys[e.code] = false
 
-    def mouseupEvent e
-        state.mouse.press = false
+	def mousemoveEvent e
+		STATE.mouse.x = e.clientX
+		STATE.mouse.y = window.innerHeight - e.clientY
+
+	def mousedownEvent e
+		STATE.mouse.press = true
+
+	def mouseupEvent e
+		STATE.mouse.press = false
