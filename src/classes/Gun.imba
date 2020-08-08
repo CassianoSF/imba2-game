@@ -33,6 +33,8 @@ export default class Gun
 			let audio = Audio.new(sounds.shot.src)
 			audio.volume = sounds.shot.volume
 			audio.play()
+			firing = true
+			setTimeout(&, 33) do firing = false
 			ammo--
 			last_shot = STATE.time
 			for i in [0...projectiles]

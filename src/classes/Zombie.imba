@@ -41,6 +41,7 @@ export default class Zombie < GameObject
 	def execAttack
 		animation-STATE = 'attack'
 		if not start_attack
+			Audio.new("sounds/zombie_attack/{~~(Math.random() * 3)}.ogg").play()
 			start_attack = STATE.time
 		if STATE.time - start_attack > 100 and playerIsClose(size * 2) and not player_beaten
 			player_beaten = yes
@@ -126,6 +127,12 @@ export default class Zombie < GameObject
 		self.state = AGGRO
 		life -= bullet.damage
 		speed -= bullet.power / 30 unless speed < 0
+		unless taking_hit
+			Audio.new("sounds/zombie_hit/{~~(Math.random() * 4)}.wav").play()
+			Audio.new("sounds/zombie_sound/{~~(Math.random() * 6)}.mp3").play()
+		taking_hit = true
+		setTimeout(&, 50) do taking_hit = false
+
 		if life <= 0
 			STATE.zombies[sector].delete(self)
 			STATE.killed.add(self)

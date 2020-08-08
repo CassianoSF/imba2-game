@@ -105,6 +105,7 @@ tag app-root
 				<h1>
 					"Carregando"
 			else
+				<.darkness=(!player.gun.firing) style="transform: translate(-50vw, -50vh) rotate({-player.rotation + 90}deg)">
 				<.ui>
 					<player-hud>
 					<player-store>
@@ -123,6 +124,12 @@ tag app-root
 							<image href="textures/the_floor/the_floor/bush.png" width=110 height=110>
 						<pattern id="barrel" patternUnits="userSpaceOnUse" width=40 height=40 patternContentUnits="userSpaceOnUse">
 							<image href="textures/the_floor/the_floor/barrel.png" width=40 height=40>
+						<pattern id="blood" patternUnits="userSpaceOnUse" width=100 height=100 patternContentUnits="userSpaceOnUse">
+							<image href="textures/the_floor/the_floor/blood_0.png" width=100 height=100>
+						<pattern id="shot" patternUnits="userSpaceOnUse" width=100 height=100 patternContentUnits="userSpaceOnUse">
+							<image href="textures/shoot/shoot/0.png" width=100 height=100>
+
+							
 
 					# CAMERA
 					<g transform=transformCamera() .fadeOut=(player.dead)>
@@ -157,6 +164,11 @@ tag app-root
 								<rect width=100 height=100 
 									transform="rotate(90) translate(-50,-50)" 
 									fill=playerTexture()>
+							if player.gun.firing
+								<rect width=100 height=100 
+									transform="rotate(90) translate(30,-65)" 
+									fill="url(#shot)">
+
 
 						# BULLETS
 						for bullet of STATE.bullets
@@ -170,6 +182,10 @@ tag app-root
 									<rect width=100 height=100 
 										transform="translate(-50,-50)" 
 										fill=zombieTexture(zombie)>
+									if zombie.taking_hit
+										<rect width=100 height=100 
+											transform="rotate({Math.random() * 10 - 105}) translate(-50,{Math.random() * 10 - 100})" 
+											fill='url(#blood)'>
 
 						# BODIES
 						for zombie of STATE.killed
@@ -195,6 +211,15 @@ tag app-root
 		top: 0
 		left: 0
 		right: 0
+
+	css .darkness
+		z-index: 1
+		position: absolute
+		top: 0
+		left: 0
+		height: 200vh
+		width: 200vw
+		background-image: radial-gradient(ellipse at 0% 50% , rgba(0, 0, 0, 0) 5%, rgba(0, 0, 0, 0.95) 40%, rgba(0, 0, 0, 1) 100%)
 
 	css .fadeOut
 		-webkit-animation-duration: 1.5s

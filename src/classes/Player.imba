@@ -127,6 +127,8 @@ export default class Player < GameObject
 
 	def takeHit damage
 		return if dead
+
+		Audio.new("sounds/survivor_yell/3yell{~~(Math.random() * 10)}.wav").play()
 		life -= damage
 		if life <= 0
 			dead = true
