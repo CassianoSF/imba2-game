@@ -105,7 +105,7 @@ tag app-root
 				<h1>
 					"Carregando"
 			else
-				<.darkness=(!player.gun.firing) style="transform: translate(-50vw, -50vh) rotate({-player.rotation + 90}deg)">
+				<.darkness=(!player.gun.firing) style="transform: translate(-500vw, -150vh) rotate({-player.rotation + 90}deg)">
 				<.ui>
 					<player-hud>
 					<player-store>
@@ -217,9 +217,9 @@ tag app-root
 		position: absolute
 		top: 0
 		left: 0
-		height: 200vh
-		width: 200vw
-		background-image: radial-gradient(ellipse at 0% 50% , rgba(0, 0, 0, 0) 5%, rgba(0, 0, 0, 0.95) 40%, rgba(0, 0, 0, 1) 100%)
+		height: 400vh
+		width: 1100vw
+		background-image: radial-gradient(ellipse at 0% 50% , rgba(0, 0, 0, 0) 33%, rgba(0, 0, 0, 0.98) 35.8%, rgba(0, 0, 0, 1) 100%)
 
 	css .fadeOut
 		-webkit-animation-duration: 1.5s
